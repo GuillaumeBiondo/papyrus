@@ -46,7 +46,7 @@ class KeywordController extends Controller
 
         $occurrences = \App\Models\KeywordOccurrence::whereHas('cardKeyword', fn ($q) =>
             $q->where('card_id', $card->id)
-        )->paginate(15);
+        )->with('scene')->paginate(50);
 
         return KeywordOccurrenceResource::collection($occurrences);
     }

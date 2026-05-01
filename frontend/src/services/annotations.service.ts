@@ -2,6 +2,9 @@ import api from './api'
 import type { Annotation, PaginatedResponse } from '@/types'
 
 export const annotationsService = {
+  searchInProject: (projectId: string, q?: string): Promise<PaginatedResponse<Annotation>> =>
+    api.get(`/projects/${projectId}/annotations`, { params: q ? { q } : {} }).then((r) => r.data),
+
   index: (sceneId: string): Promise<PaginatedResponse<Annotation>> =>
     api.get(`/scenes/${sceneId}/annotations`).then((r) => r.data),
 

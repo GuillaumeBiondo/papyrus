@@ -17,6 +17,6 @@ export const scenesService = {
   destroy: (id: string): Promise<void> =>
     api.delete(`/scenes/${id}`),
 
-  reorder: (items: { id: string; order: number }[]): Promise<void> =>
+  reorder: (items: { id: string; order: number; chapter_id?: string }[]): Promise<void> =>
     api.post('/scenes/reorder', { items }),
 }

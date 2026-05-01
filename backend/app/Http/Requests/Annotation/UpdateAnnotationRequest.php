@@ -16,6 +16,7 @@ class UpdateAnnotationRequest extends FormRequest
             'type'         => ['sometimes', Rule::in(['inline', 'global'])],
             'anchor_start' => ['nullable', 'integer', 'min:0'],
             'anchor_end'   => ['nullable', 'integer', 'min:0'],
+            'color'        => ['sometimes', 'string', 'regex:/^#[0-9a-fA-F]{6}$/'],
         ];
     }
 }

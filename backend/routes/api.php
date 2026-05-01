@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\Api\AnnotationController;
+use App\Http\Controllers\Api\ArcController;
 use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\Api\CardController;
 use App\Http\Controllers\Api\ChapterController;
@@ -48,9 +49,16 @@ Route::prefix('v1')->middleware(['auth:sanctum', 'throttle:60,1'])->group(functi
     Route::post('projects/{project}/rebuild-index', [ProjectController::class, 'rebuildIndex'])
         ->middleware('throttle:10,1');
 
+    // Arcs
+    Route::get('projects/{project}/arcs', [ArcController::class, 'index']);
+    Route::post('projects/{project}/arcs', [ArcController::class, 'store']);
+    Route::put('arcs/{arc}', [ArcController::class, 'update']);
+    Route::delete('arcs/{arc}', [ArcController::class, 'destroy']);
+    Route::post('projects/{project}/arcs/reorder', [ArcController::class, 'reorder']);
+
     // Chapters
-    Route::get('projects/{project}/chapters', [ChapterController::class, 'index']);
-    Route::post('projects/{project}/chapters', [ChapterController::class, 'store']);
+    Route::get('arcs/{arc}/chapters', [ChapterController::class, 'index']);
+    Route::post('arcs/{arc}/chapters', [ChapterController::class, 'store']);
     Route::put('chapters/{chapter}', [ChapterController::class, 'update']);
     Route::delete('chapters/{chapter}', [ChapterController::class, 'destroy']);
     Route::post('chapters/reorder', [ChapterController::class, 'reorder']);
@@ -76,10 +84,13 @@ Route::prefix('v1')->middleware(['auth:sanctum', 'throttle:60,1'])->group(functi
     Route::delete('cards/{card}/links/{link}', [CardController::class, 'destroyLink']);
 
     Route::get('scenes/{scene}/cards', [CardController::class, 'sceneCards']);
+    Route::get('scenes/{scene}/cards-by-keywords', [CardController::class, 'byKeywordsInScene']);
     Route::post('scenes/{scene}/cards/{card}', [CardController::class, 'attachToScene']);
     Route::delete('scenes/{scene}/cards/{card}', [CardController::class, 'detachFromScene']);
 
     // Notes
+    Route::get('projects/{project}/notes', [NoteController::class, 'indexForProject']);
+    Route::post('projects/{project}/notes', [NoteController::class, 'storeForProject']);
     Route::get('scenes/{scene}/notes', [NoteController::class, 'indexForScene']);
     Route::post('scenes/{scene}/notes', [NoteController::class, 'storeForScene']);
     Route::get('cards/{card}/notes', [NoteController::class, 'indexForCard']);
@@ -88,6 +99,7 @@ Route::prefix('v1')->middleware(['auth:sanctum', 'throttle:60,1'])->group(functi
     Route::delete('notes/{note}', [NoteController::class, 'destroy']);
 
     // Annotations
+    Route::get('projects/{project}/annotations', [AnnotationController::class, 'indexForProject']);
     Route::get('scenes/{scene}/annotations', [AnnotationController::class, 'index'])
         ->name('scenes.annotations.index');
     Route::post('scenes/{scene}/annotations', [AnnotationController::class, 'store'])
@@ -109,4 +121,5 @@ Route::prefix('v1')->middleware(['auth:sanctum', 'throttle:60,1'])->group(functi
     Route::get('notebook/{notebookEntry}', [NotebookController::class, 'show']);
     Route::put('notebook/{notebookEntry}', [NotebookController::class, 'update']);
     Route::delete('notebook/{notebookEntry}', [NotebookController::class, 'destroy']);
+    Route::post('notebook/{notebookEntry}/transfer', [NotebookController::class, 'transfer']);
 });

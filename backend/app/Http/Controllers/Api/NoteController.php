@@ -8,12 +8,31 @@ use App\Http\Requests\Note\UpdateNoteRequest;
 use App\Http\Resources\NoteResource;
 use App\Models\Card;
 use App\Models\Note;
+use App\Models\Project;
 use App\Models\Scene;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Resources\Json\ResourceCollection;
 
 class NoteController extends Controller
 {
+    public function indexForProject(Project $project): ResourceCollection
+    {
+        $this->authorize('view', $project);
+
+        return NoteResource::collection($project->notes()->paginate(50));
+    }
+
+    public function storeForProject(StoreNoteRequest $request, Project $project): JsonResponse
+    {
+        $this->authorize('update', $project);
+
+        $note = $project->notes()->create($request->validated());
+
+        return (new NoteResource($note))
+            ->response()
+            ->setStatusCode(201);
+    }
+
     public function indexForScene(Scene $scene): ResourceCollection
     {
         $this->authorize('view', $scene);

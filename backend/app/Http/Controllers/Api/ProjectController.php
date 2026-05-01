@@ -11,6 +11,7 @@ use App\Http\Resources\ProjectResource;
 use App\Http\Resources\UserResource;
 use App\Jobs\RebuildKeywordIndex;
 use App\Models\Project;
+use App\Models\Scene;
 use App\Models\User;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -22,10 +23,26 @@ class ProjectController extends Controller
     {
         $this->authorize('viewAny', Project::class);
 
+        $sceneBase = fn () => Scene::query()
+            ->join('chapters', 'scenes.chapter_id', '=', 'chapters.id')
+            ->join('arcs', 'chapters.arc_id', '=', 'arcs.id')
+            ->whereColumn('arcs.project_id', 'projects.id');
+
         $projects = Project::where('owner_id', $request->user()->id)
             ->orWhereHas('members', fn ($q) => $q->where('user_id', $request->user()->id))
-            ->with('owner')
-            ->paginate(15);
+            ->with(['owner', 'members'])
+            ->withCount('cards')
+            ->addSelect([
+                'projects.*',
+                'word_count' => $sceneBase()->selectRaw('COALESCE(SUM(scenes.word_count), 0)'),
+                'scene_count' => $sceneBase()->selectRaw('COUNT(*)'),
+                'last_scene_title' => $sceneBase()
+                    ->select('scenes.title')
+                    ->orderByDesc('scenes.updated_at')
+                    ->limit(1),
+            ])
+            ->orderByDesc('updated_at')
+            ->get();
 
         return ProjectResource::collection($projects);
     }

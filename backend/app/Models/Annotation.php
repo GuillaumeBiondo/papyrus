@@ -18,6 +18,7 @@ class Annotation extends Model
         'anchor_end',
         'body',
         'type',
+        'color',
     ];
 
     protected function casts(): array

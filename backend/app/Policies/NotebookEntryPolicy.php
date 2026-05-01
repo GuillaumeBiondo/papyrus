@@ -5,7 +5,7 @@ namespace App\Policies;
 use App\Models\NotebookEntry;
 use App\Models\User;
 
-class NotebookPolicy
+class NotebookEntryPolicy
 {
     public function viewAny(User $user): bool
     {

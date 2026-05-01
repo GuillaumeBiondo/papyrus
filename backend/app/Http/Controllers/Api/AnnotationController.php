@@ -8,6 +8,7 @@ use App\Http\Requests\Annotation\UpdateAnnotationRequest;
 use App\Http\Resources\AnnotationResource;
 use App\Models\Annotation;
 use App\Models\Card;
+use App\Models\Project;
 use App\Models\Scene;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -15,6 +16,20 @@ use Illuminate\Http\Resources\Json\ResourceCollection;
 
 class AnnotationController extends Controller
 {
+    public function indexForProject(Request $request, Project $project): ResourceCollection
+    {
+        $this->authorize('view', $project);
+
+        $query = Annotation::with(['user', 'cards', 'scene.chapter.arc'])
+            ->whereHas('scene.chapter.arc', fn ($q) => $q->where('project_id', $project->id));
+
+        if ($request->filled('q')) {
+            $query->where('body', 'like', '%' . $request->q . '%');
+        }
+
+        return AnnotationResource::collection($query->latest()->paginate(30));
+    }
+
     public function index(Scene $scene): ResourceCollection
     {
         $this->authorize('viewAny', [Annotation::class, $scene]);

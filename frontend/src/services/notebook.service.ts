@@ -16,4 +16,7 @@ export const notebookService = {
 
   destroy: (id: string): Promise<void> =>
     api.delete(`/notebook/${id}`),
+
+  transfer: (id: string, projectId: string): Promise<void> =>
+    api.post(`/notebook/${id}/transfer`, { project_id: projectId }),
 }

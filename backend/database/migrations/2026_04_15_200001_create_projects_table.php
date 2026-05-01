@@ -16,6 +16,8 @@ return new class extends Migration
             $table->string('genre', 100)->nullable();
             $table->string('color', 7)->nullable();
             $table->integer('target_words')->default(80000);
+            $table->integer('target_scenes')->nullable();
+            $table->enum('status', ['draft', 'in_progress', 'revision', 'complete'])->default('draft');
             $table->softDeletes();
             $table->timestamps();
         });

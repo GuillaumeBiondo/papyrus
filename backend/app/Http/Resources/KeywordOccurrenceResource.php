@@ -13,6 +13,7 @@ class KeywordOccurrenceResource extends JsonResource
             'id'               => $this->id,
             'card_keyword_id'  => $this->card_keyword_id,
             'scene_id'         => $this->scene_id,
+            'scene'            => $this->scene ? ['id' => $this->scene->id, 'title' => $this->scene->title] : null,
             'position_start'   => $this->position_start,
             'position_end'     => $this->position_end,
             'context_excerpt'  => $this->context_excerpt,

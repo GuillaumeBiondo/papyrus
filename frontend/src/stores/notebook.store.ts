@@ -28,8 +28,15 @@ export const useNotebookStore = defineStore('notebook', () => {
     if (activeEntry.value) {
       const updated = await notebookService.update(activeEntry.value.id, payload)
       const idx = entries.value.findIndex((e) => e.id === updated.id)
-      if (idx !== -1) entries.value[idx] = updated
-      activeEntry.value = updated
+      if (idx !== -1) {
+        if (updated.project_id) {
+          entries.value.splice(idx, 1)
+          activeEntry.value = null
+        } else {
+          entries.value[idx] = updated
+          activeEntry.value = updated
+        }
+      }
     } else {
       const created = await notebookService.store(payload)
       entries.value.unshift(created)
@@ -44,6 +51,12 @@ export const useNotebookStore = defineStore('notebook', () => {
     activeEntry.value = null
   }
 
+  async function transfer(id: string, projectId: string) {
+    await notebookService.transfer(id, projectId)
+    entries.value = entries.value.filter((e) => e.id !== id)
+    activeEntry.value = null
+  }
+
   return {
     entries,
     drawerOpen,
@@ -54,5 +67,6 @@ export const useNotebookStore = defineStore('notebook', () => {
     fetchAll,
     save,
     remove,
+    transfer,
   }
 })

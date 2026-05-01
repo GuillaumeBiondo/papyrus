@@ -15,12 +15,18 @@
   },
   "dependencies": {
     "@tailwindcss/vite": "^4.2.2",
+    "@tiptap/extension-placeholder": "^3.22.3",
+    "@tiptap/pm": "^3.22.3",
+    "@tiptap/starter-kit": "^3.22.3",
+    "@tiptap/vue-3": "^3.22.3",
     "axios": "^1.15.0",
     "pinia": "^3.0.4",
+    "primevue": "^4.5.5",
     "tailwindcss": "^4.2.2",
     "vite-plugin-pwa": "^1.2.0",
     "vue": "^3.5.31",
-    "vue-router": "^5.0.4"
+    "vue-router": "^5.0.4",
+    "vuedraggable": "^4.1.0"
   },
   "devDependencies": {
     "@tsconfig/node24": "^24.0.4",

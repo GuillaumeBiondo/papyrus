@@ -8,7 +8,7 @@ return new class extends Migration
 {
     public function up(): void
     {
-        Schema::create('chapters', function (Blueprint $table) {
+        Schema::create('arcs', function (Blueprint $table) {
             $table->uuid('id')->primary();
             $table->uuid('project_id');
             $table->foreign('project_id')->references('id')->on('projects')->cascadeOnDelete();
@@ -20,6 +20,6 @@ return new class extends Migration
 
     public function down(): void
     {
-        Schema::dropIfExists('chapters');
+        Schema::dropIfExists('arcs');
     }
 };

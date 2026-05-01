@@ -11,9 +11,10 @@ class ReorderSceneRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'items'         => ['required', 'array'],
-            'items.*.id'    => ['required', 'uuid', 'exists:scenes,id'],
-            'items.*.order' => ['required', 'integer', 'min:0'],
+            'items'              => ['required', 'array'],
+            'items.*.id'         => ['required', 'uuid', 'exists:scenes,id'],
+            'items.*.order'      => ['required', 'integer', 'min:0'],
+            'items.*.chapter_id' => ['sometimes', 'uuid', 'exists:chapters,id'],
         ];
     }
 }

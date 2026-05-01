@@ -10,7 +10,13 @@ export interface Project {
   title: string
   genre: string | null
   color: string | null
+  status: 'draft' | 'in_progress' | 'revision' | 'complete'
   target_words: number
+  target_scenes: number | null
+  word_count: number
+  scene_count: number
+  cards_count: number
+  last_scene_title: string | null
   owner: User
   members?: UserMember[]
   updated_at: string
@@ -21,9 +27,18 @@ export interface UserMember extends User {
   pivot?: { role: 'owner' | 'co_author' | 'beta_reader' }
 }
 
-export interface Chapter {
+export interface Arc {
   id: string
   project_id: string
+  title: string
+  order: number
+  chapters?: Chapter[]
+  updated_at: string
+}
+
+export interface Chapter {
+  id: string
+  arc_id: string
   title: string
   order: number
   scenes?: Scene[]
@@ -85,7 +100,9 @@ export interface Annotation {
   anchor_end: number | null
   body: string
   type: 'inline' | 'global'
+  color: string
   cards?: Card[]
+  scene?: { id: string; title: string; chapter_title: string | null; arc_title: string | null }
   updated_at: string
 }
 
@@ -100,6 +117,7 @@ export interface KeywordOccurrence {
   id: string
   card_keyword_id: string
   scene_id: string
+  scene?: { id: string; title: string }
   position_start: number
   position_end: number
   context_excerpt: string | null

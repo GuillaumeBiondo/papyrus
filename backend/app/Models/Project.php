@@ -8,6 +8,7 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\MorphMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
 class Project extends Model
@@ -20,12 +21,15 @@ class Project extends Model
         'genre',
         'color',
         'target_words',
+        'target_scenes',
+        'status',
     ];
 
     protected function casts(): array
     {
         return [
-            'target_words' => 'integer',
+            'target_words'  => 'integer',
+            'target_scenes' => 'integer',
         ];
     }
 
@@ -40,9 +44,9 @@ class Project extends Model
             ->withPivot('role');
     }
 
-    public function chapters(): HasMany
+    public function arcs(): HasMany
     {
-        return $this->hasMany(Chapter::class)->orderBy('order');
+        return $this->hasMany(Arc::class)->orderBy('order');
     }
 
     public function cards(): HasMany
@@ -53,5 +57,10 @@ class Project extends Model
     public function notebookEntries(): HasMany
     {
         return $this->hasMany(NotebookEntry::class);
+    }
+
+    public function notes(): MorphMany
+    {
+        return $this->morphMany(Note::class, 'noteable')->latest();
     }
 }

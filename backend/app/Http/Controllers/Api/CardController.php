@@ -34,7 +34,9 @@ class CardController extends Controller
             $query->where('title', 'ilike', '%' . $request->q . '%');
         }
 
-        return CardResource::collection($query->paginate(15));
+        $perPage = min($request->integer('per_page', 15), 200);
+
+        return CardResource::collection($query->orderBy('title')->paginate($perPage));
     }
 
     public function store(StoreCardRequest $request, Project $project): JsonResponse
@@ -86,7 +88,7 @@ class CardController extends Controller
         $this->authorize('update', $card);
 
         $card->attributes()->delete();
-        $card->attributes()->createMany($request->attributes);
+        $card->attributes()->createMany($request->input('attributes'));
 
         return new CardResource($card->load('attributes'));
     }
@@ -127,6 +129,23 @@ class CardController extends Controller
         $this->authorize('view', $scene);
 
         return CardResource::collection($scene->cards()->with('attributes')->get());
+    }
+
+    public function byKeywordsInScene(Scene $scene): ResourceCollection
+    {
+        $this->authorize('view', $scene);
+
+        $projectId = $scene->chapter->arc->project_id;
+
+        $cards = Card::where('project_id', $projectId)
+            ->whereHas('keywords', function ($q) use ($scene) {
+                $q->whereHas('occurrences', fn ($q2) => $q2->where('scene_id', $scene->id));
+            })
+            ->with(['keywords'])
+            ->orderBy('title')
+            ->get();
+
+        return CardResource::collection($cards);
     }
 
     public function attachToScene(Scene $scene, Card $card): JsonResponse

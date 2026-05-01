@@ -8,12 +8,12 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
-class Chapter extends Model
+class Arc extends Model
 {
     use HasFactory, HasUuids;
 
     protected $fillable = [
-        'arc_id',
+        'project_id',
         'title',
         'order',
     ];
@@ -25,18 +25,13 @@ class Chapter extends Model
         ];
     }
 
-    public function arc(): BelongsTo
+    public function project(): BelongsTo
     {
-        return $this->belongsTo(Arc::class);
+        return $this->belongsTo(Project::class);
     }
 
-    public function project()
+    public function chapters(): HasMany
     {
-        return $this->arc->project();
-    }
-
-    public function scenes(): HasMany
-    {
-        return $this->hasMany(Scene::class)->orderBy('order');
+        return $this->hasMany(Chapter::class)->orderBy('order');
     }
 }

@@ -27,7 +27,7 @@ onMounted(() => notebook.fetchAll())
       <div
         v-for="entry in notebook.entries"
         :key="entry.id"
-        class="border border-gray-200 dark:border-gray-700 rounded-lg p-4
+        class="border border-gray-300 dark:border-gray-700 rounded-lg p-4
                bg-white dark:bg-gray-900 cursor-pointer hover:shadow-sm transition-shadow"
         @click="notebook.activeEntry = entry"
       >
