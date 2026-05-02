@@ -34,6 +34,9 @@ RUN composer install --no-dev --no-autoloader --no-scripts --no-interaction
 # Copier le reste de l'application
 COPY . .
 
+# Créer les répertoires runtime exclus du .dockerignore
+RUN mkdir -p bootstrap/cache storage/framework/sessions storage/framework/views storage/framework/cache storage/logs
+
 # Finaliser l'autoloader
 RUN composer dump-autoload --optimize --no-dev
 
