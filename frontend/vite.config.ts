@@ -13,7 +13,7 @@ export default defineConfig({
     tailwindcss(),
     VitePWA({
       registerType: 'autoUpdate',
-      injectRegister: null,
+      selfDestroying: true,
       manifest: {
         name: 'Papyrus',
         short_name: 'Papyrus',
