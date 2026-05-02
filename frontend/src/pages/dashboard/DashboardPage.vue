@@ -2,6 +2,7 @@
 import { computed, onMounted, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { useProjectsStore } from '@/stores/projects.store'
+import ProjectSettingsDialog from '@/components/dashboard/ProjectSettingsDialog.vue'
 import type { Project } from '@/types'
 
 const router = useRouter()
@@ -88,6 +89,18 @@ function relativeDate(dateStr: string) {
 function initials(name: string) {
   return name.split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase()
 }
+
+// ── Paramètres projet ─────────────────────────────────────
+const settingsProject = ref<Project | null>(null)
+
+function onProjectUpdated(updated: Project) {
+  const idx = projects.projects.findIndex(p => p.id === updated.id)
+  if (idx !== -1) projects.projects[idx] = updated
+}
+
+function onProjectDeleted(id: string) {
+  projects.projects = projects.projects.filter(p => p.id !== id)
+}
 </script>
 
 <template>
@@ -141,13 +154,27 @@ function initials(name: string) {
               class="font-semibold text-base leading-tight"
               :style="{ color: cardColor(p) }"
             >{{ p.title }}</h2>
-            <span
-              class="text-xs rounded-full px-2 py-0.5 font-medium shrink-0 ml-2 mt-0.5"
-              :style="{
-                background: hexRgba(cardColor(p), 0.12),
-                color: cardColor(p),
-              }"
-            >{{ STATUS_LABEL[p.status] }}</span>
+            <div class="flex items-center gap-1 shrink-0 ml-2 mt-0.5">
+              <span
+                class="text-xs rounded-full px-2 py-0.5 font-medium"
+                :style="{
+                  background: hexRgba(cardColor(p), 0.12),
+                  color: cardColor(p),
+                }"
+              >{{ STATUS_LABEL[p.status] }}</span>
+              <button
+                class="p-1 rounded-md opacity-50 hover:opacity-100 transition-opacity"
+                :style="{ color: cardColor(p) }"
+                title="Paramètres du roman"
+                @click.stop="settingsProject = p"
+              >
+                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                    d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/>
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
+                </svg>
+              </button>
+            </div>
           </div>
           <p class="text-xs" :style="{ color: cardColor(p), opacity: 0.7 }">
             {{ p.genre ?? '—' }}
@@ -246,6 +273,15 @@ function initials(name: string) {
         <span class="text-sm">Nouveau roman</span>
       </button>
     </div>
+
+    <!-- Dialog paramètres roman ─────────────────── -->
+    <ProjectSettingsDialog
+      v-if="settingsProject"
+      :project="settingsProject"
+      @close="settingsProject = null"
+      @updated="onProjectUpdated"
+      @deleted="onProjectDeleted"
+    />
 
     <!-- Modal création ──────────────────────────── -->
     <Transition name="fade">

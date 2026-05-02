@@ -16,4 +16,7 @@ export const projectsService = {
 
   destroy: (id: string): Promise<void> =>
     api.delete(`/projects/${id}`),
+
+  export: (id: string, format: 'txt' | 'md' | 'zip'): Promise<Blob> =>
+    api.get(`/projects/${id}/export/${format}`, { responseType: 'blob' }).then(r => r.data),
 }

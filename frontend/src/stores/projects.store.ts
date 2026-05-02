@@ -23,10 +23,22 @@ export const useProjectsStore = defineStore('projects', () => {
     return project
   }
 
+  async function update(id: string, payload: Partial<Project>): Promise<Project> {
+    const updated = await projectsService.update(id, payload)
+    const idx = projects.value.findIndex(p => p.id === id)
+    if (idx !== -1) projects.value[idx] = updated
+    return updated
+  }
+
+  async function remove(id: string): Promise<void> {
+    await projectsService.destroy(id)
+    projects.value = projects.value.filter(p => p.id !== id)
+  }
+
   async function checkAccess(projectId: string): Promise<boolean> {
     if (!projects.value.length) await fetchAll()
     return projects.value.some((p) => p.id === projectId)
   }
 
-  return { projects, loading, fetchAll, create, checkAccess }
+  return { projects, loading, fetchAll, create, update, remove, checkAccess }
 })
