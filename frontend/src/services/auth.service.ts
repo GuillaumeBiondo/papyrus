@@ -2,9 +2,9 @@ import axios from 'axios'
 import api from './api'
 import type { User } from '@/types'
 
-const apiUrl = import.meta.env.VITE_API_URL ?? '/api/v1'
+const apiUrl = import.meta.env.VITE_API_URL ?? 'http://localhost:8000/api/v1'
 const baseURL = apiUrl.replace(/\/v1$/, '')          // https://api.papyrus.guigeek.tech/api
-const sanctumBase = apiUrl.replace(/\/api.*$/, '')   // https://api.papyrus.guigeek.tech
+const sanctumBase = new URL(apiUrl).origin           // https://api.papyrus.guigeek.tech
 
 export const authService = {
   csrfCookie: () =>
