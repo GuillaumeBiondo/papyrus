@@ -52,6 +52,12 @@ const filtered = computed(() => {
 const STATUS_LABEL: Record<Project['status'], string> = {
   draft: 'brouillon', in_progress: 'en cours', revision: 'révision', complete: 'terminé',
 }
+const STATUS_COLOR: Record<Project['status'], { bg: string; text: string }> = {
+  draft:       { bg: 'rgba(156,163,175,0.18)', text: '#6b7280' },
+  in_progress: { bg: 'rgba(59,130,246,0.15)',  text: '#2563eb' },
+  revision:    { bg: 'rgba(245,158,11,0.15)',  text: '#d97706' },
+  complete:    { bg: 'rgba(34,197,94,0.15)',   text: '#16a34a' },
+}
 
 function wordPct(p: Project) {
   return p.target_words ? Math.round((p.word_count / p.target_words) * 100) : 0
@@ -163,8 +169,8 @@ function onProjectDeleted(id: string) {
               <span
                 class="text-xs rounded-full px-2 py-0.5 font-medium"
                 :style="{
-                  background: hexRgba(cardColor(p), 0.12),
-                  color: cardColor(p),
+                  background: STATUS_COLOR[p.status].bg,
+                  color: STATUS_COLOR[p.status].text,
                 }"
               >{{ STATUS_LABEL[p.status] }}</span>
               <button

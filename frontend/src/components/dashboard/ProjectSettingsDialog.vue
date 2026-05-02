@@ -23,11 +23,11 @@ watch(() => props.project, p => {
   status.value = p.status
 })
 
-const STATUS_OPTS: { value: Project['status']; label: string }[] = [
-  { value: 'draft',       label: 'Brouillon' },
-  { value: 'in_progress', label: 'En cours' },
-  { value: 'revision',    label: 'Révision' },
-  { value: 'complete',    label: 'Terminé' },
+const STATUS_OPTS: { value: Project['status']; label: string; active: string; inactive: string }[] = [
+  { value: 'draft',       label: 'Brouillon', active: 'bg-gray-500 text-white border-gray-500',       inactive: 'text-gray-500 border-gray-300 dark:border-gray-600 hover:border-gray-400' },
+  { value: 'in_progress', label: 'En cours',  active: 'bg-blue-600 text-white border-blue-600',       inactive: 'text-blue-600 border-gray-300 dark:border-gray-600 hover:border-blue-400' },
+  { value: 'revision',    label: 'Révision',  active: 'bg-amber-500 text-white border-amber-500',     inactive: 'text-amber-600 border-gray-300 dark:border-gray-600 hover:border-amber-400' },
+  { value: 'complete',    label: 'Terminé',   active: 'bg-green-600 text-white border-green-600',     inactive: 'text-green-600 border-gray-300 dark:border-gray-600 hover:border-green-400' },
 ]
 
 async function saveInfos() {
@@ -130,9 +130,7 @@ async function confirmDelete() {
                     v-for="opt in STATUS_OPTS"
                     :key="opt.value"
                     class="text-xs px-3 py-1.5 rounded-lg border transition-colors font-medium"
-                    :class="status === opt.value
-                      ? 'bg-brand-600 text-white border-brand-600'
-                      : 'text-gray-500 dark:text-gray-400 border-gray-300 dark:border-gray-600 hover:border-brand-400'"
+                    :class="status === opt.value ? opt.active : opt.inactive"
                     @click="status = opt.value"
                   >{{ opt.label }}</button>
                 </div>
