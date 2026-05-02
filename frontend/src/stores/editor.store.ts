@@ -231,7 +231,7 @@ export const useEditorStore = defineStore('editor', () => {
     await arcsService.destroy(arcId)
     const idx = arcs.value.findIndex(a => a.id === arcId)
     if (idx !== -1) {
-      const arc = arcs.value[idx]
+      const arc = arcs.value[idx]!
       const activeInArc = arc.chapters?.some(ch =>
         ch.scenes?.some(s => s.id === activeScene.value?.id),
       )
@@ -245,7 +245,7 @@ export const useEditorStore = defineStore('editor', () => {
     for (const arc of arcs.value) {
       const idx = arc.chapters?.findIndex(c => c.id === chapterId) ?? -1
       if (idx !== -1) {
-        const ch = arc.chapters![idx]
+        const ch = arc.chapters![idx]!
         if (ch.scenes?.some(s => s.id === activeScene.value?.id)) activeScene.value = null
         arc.chapters!.splice(idx, 1)
         break

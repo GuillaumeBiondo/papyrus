@@ -291,7 +291,7 @@ const rightPanelPt = { root: { class: 'flex flex-col overflow-hidden h-full bord
                             :class="editor.activeScene?.id === scene.id ? 'text-brand-700 dark:text-brand-300' : 'text-gray-600 dark:text-gray-400'"
                             @click="editor.setActiveScene(scene); if (isMobile) leftSidebarOpen = false"
                           >
-                            <span class="w-1.5 h-1.5 rounded-full shrink-0" :class="STATUS_DOT[scene.status]" />
+                            <span class="w-1.5 h-1.5 rounded-full shrink-0" :class="STATUS_DOT[scene.status as Scene['status']]" />
                             <span class="text-xs truncate flex-1">{{ scene.title }}</span>
                             <span class="text-xs text-gray-400 shrink-0">{{ scene.word_count }}</span>
                           </button>

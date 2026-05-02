@@ -30,7 +30,7 @@ const ANNOTATION_COLORS = [
   { value: '#8b5cf6', label: 'Violet' },
   { value: '#ec4899', label: 'Rose' },
 ]
-const selectedColor = ref(ANNOTATION_COLORS[0].value)
+const selectedColor = ref(ANNOTATION_COLORS[0]?.value ?? '#f59e0b')
 
 // ── Annotations ───────────────────────────────────────────────
 const showGlobalForm = ref(false)

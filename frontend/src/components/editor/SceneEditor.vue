@@ -111,7 +111,7 @@ const editor = useEditor({
 // Sync quand on change de scène
 watch(() => props.content, (val) => {
   if (editor.value && editor.value.getHTML() !== val) {
-    editor.value.commands.setContent(val || '', false)
+    editor.value.commands.setContent(val || '')
     refreshDecorations()
   }
 })
