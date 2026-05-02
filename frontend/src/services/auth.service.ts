@@ -2,11 +2,13 @@ import axios from 'axios'
 import api from './api'
 import type { User } from '@/types'
 
-const baseURL = import.meta.env.VITE_API_URL?.replace('/v1', '') ?? '/api'
+const apiUrl = import.meta.env.VITE_API_URL ?? '/api/v1'
+const baseURL = apiUrl.replace(/\/v1$/, '')          // https://api.papyrus.guigeek.tech/api
+const sanctumBase = apiUrl.replace(/\/api.*$/, '')   // https://api.papyrus.guigeek.tech
 
 export const authService = {
   csrfCookie: () =>
-    axios.get(`${baseURL.replace('/api', '')}/sanctum/csrf-cookie`, {
+    axios.get(`${sanctumBase}/sanctum/csrf-cookie`, {
       withCredentials: true,
     }),
 
