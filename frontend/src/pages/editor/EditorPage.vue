@@ -35,6 +35,9 @@ const newChapterTitle = ref('')
 const addingScene = ref<string | null>(null)
 const newSceneTitle = ref('')
 
+const editingItemId = ref<string | null>(null)
+const editingTitleVal = ref('')
+
 function onChapterDragChange(event: { added?: unknown; moved?: unknown }, arc: Arc) {
   if (event.added || event.moved) editor.reorderChapters(arc.id, arc.chapters ?? [])
 }
@@ -191,6 +194,32 @@ async function submitScene(chapterId: string) {
   if (isMobile.value) leftSidebarOpen.value = false
 }
 
+// ── Renommage inline ──────────────────────────────────────────
+function startRename(id: string, currentTitle: string) {
+  editingItemId.value = id
+  editingTitleVal.value = currentTitle
+}
+
+async function commitRename(type: 'arc' | 'chapter' | 'scene', id: string) {
+  if (editingItemId.value !== id) return
+  const title = editingTitleVal.value.trim()
+  editingItemId.value = null
+  if (!title) return
+  if (type === 'arc') await editor.renameArc(id, title)
+  else if (type === 'chapter') await editor.renameChapter(id, title)
+  else await editor.renameScene(id, title)
+}
+
+function cancelRename() {
+  editingItemId.value = null
+}
+
+function onSceneTitleBlur(event: FocusEvent) {
+  const t = (event.target as HTMLElement).innerText.trim()
+  if (!t || !editor.activeScene) return
+  editor.renameScene(editor.activeScene.id, t)
+}
+
 // ── Helpers statut ────────────────────────────────────────────
 const STATUS_LABEL: Record<Scene['status'], string> = {
   idea: 'idée', draft: 'brouillon', revised: 'révisé', final: 'final',
@@ -258,9 +287,20 @@ const rightPanelPt = { root: { class: 'flex flex-col overflow-hidden h-full bord
             <div class="mb-2">
               <div class="flex items-center gap-1 px-2 py-1 group">
                 <span class="drag-arc shrink-0 cursor-grab text-gray-300 dark:text-gray-600 opacity-0 group-hover:opacity-100 transition-opacity select-none text-base leading-none" title="Déplacer">⠿</span>
-                <span class="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide truncate flex-1">{{ arc.title }}</span>
+                <input
+                  v-if="editingItemId === arc.id"
+                  v-focus
+                  v-model="editingTitleVal"
+                  type="text"
+                  class="flex-1 text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide rounded border border-brand-300 dark:border-brand-600 bg-white dark:bg-gray-800 px-1 py-0 focus:outline-none focus:ring-1 focus:ring-brand-500 min-w-0"
+                  @keyup.enter="commitRename('arc', arc.id)"
+                  @keyup.escape="cancelRename"
+                  @blur="commitRename('arc', arc.id)"
+                />
+                <span v-else class="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide truncate flex-1">{{ arc.title }}</span>
                 <div class="flex items-center gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity shrink-0">
                   <button class="px-1 text-sm text-gray-400 hover:text-gray-600 dark:hover:text-gray-300" @click="addingChapter = arc.id; newChapterTitle = ''">+</button>
+                  <button class="px-1 text-xs text-gray-300 hover:text-brand-400 transition-colors" @click.stop="startRename(arc.id, arc.title)">✎</button>
                   <button class="px-1 text-xs text-gray-300 hover:text-red-400 transition-colors" @click="askDeleteArc(arc)">✕</button>
                 </div>
               </div>
@@ -271,9 +311,20 @@ const rightPanelPt = { root: { class: 'flex flex-col overflow-hidden h-full bord
                   <div class="mb-1">
                     <div class="flex items-center gap-1 px-2 py-0.5 group">
                       <span class="drag-chapter shrink-0 cursor-grab text-gray-300 dark:text-gray-600 opacity-0 group-hover:opacity-100 transition-opacity select-none text-base leading-none">⠿</span>
-                      <span class="text-xs text-gray-500 dark:text-gray-400 italic truncate flex-1">{{ chapter.title }}</span>
+                      <input
+                        v-if="editingItemId === chapter.id"
+                        v-focus
+                        v-model="editingTitleVal"
+                        type="text"
+                        class="flex-1 text-xs text-gray-500 dark:text-gray-400 italic rounded border border-brand-300 dark:border-brand-600 bg-white dark:bg-gray-800 px-1 py-0 focus:outline-none focus:ring-1 focus:ring-brand-500 min-w-0"
+                        @keyup.enter="commitRename('chapter', chapter.id)"
+                        @keyup.escape="cancelRename"
+                        @blur="commitRename('chapter', chapter.id)"
+                      />
+                      <span v-else class="text-xs text-gray-500 dark:text-gray-400 italic truncate flex-1">{{ chapter.title }}</span>
                       <div class="flex items-center gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity shrink-0">
                         <button class="px-1 text-sm text-gray-400 hover:text-gray-600 dark:hover:text-gray-300" @click="addingScene = chapter.id; newSceneTitle = ''">+</button>
+                        <button class="px-1 text-xs text-gray-300 hover:text-brand-400 transition-colors" @click.stop="startRename(chapter.id, chapter.title)">✎</button>
                         <button class="px-1 text-xs text-gray-300 hover:text-red-400 transition-colors" @click="askDeleteChapter(chapter)">✕</button>
                       </div>
                     </div>
@@ -286,7 +337,18 @@ const rightPanelPt = { root: { class: 'flex flex-col overflow-hidden h-full bord
                           :class="editor.activeScene?.id === scene.id ? 'bg-brand-50 dark:bg-brand-900/20' : 'hover:bg-gray-100 dark:hover:bg-gray-800'"
                         >
                           <span class="drag-scene shrink-0 cursor-grab text-gray-300 dark:text-gray-600 opacity-0 group-hover/scene:opacity-100 transition-opacity select-none text-base leading-none">⠿</span>
+                          <input
+                            v-if="editingItemId === scene.id"
+                            v-focus
+                            v-model="editingTitleVal"
+                            type="text"
+                            class="flex-1 text-xs rounded border border-brand-300 dark:border-brand-600 bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 px-1 py-0.5 focus:outline-none focus:ring-1 focus:ring-brand-500 min-w-0"
+                            @keyup.enter="commitRename('scene', scene.id)"
+                            @keyup.escape="cancelRename"
+                            @blur="commitRename('scene', scene.id)"
+                          />
                           <button
+                            v-else
                             class="flex-1 text-left flex items-center gap-2 py-1.5 min-w-0"
                             :class="editor.activeScene?.id === scene.id ? 'text-brand-700 dark:text-brand-300' : 'text-gray-600 dark:text-gray-400'"
                             @click="editor.setActiveScene(scene); if (isMobile) leftSidebarOpen = false"
@@ -295,6 +357,7 @@ const rightPanelPt = { root: { class: 'flex flex-col overflow-hidden h-full bord
                             <span class="text-xs truncate flex-1">{{ scene.title }}</span>
                             <span class="text-xs text-gray-400 shrink-0">{{ scene.word_count }}</span>
                           </button>
+                          <button class="shrink-0 px-1 text-xs text-gray-300 hover:text-brand-400 opacity-0 group-hover/scene:opacity-100 transition-all" @click.stop="startRename(scene.id, scene.title)">✎</button>
                           <button class="shrink-0 px-1 text-xs text-gray-300 hover:text-red-400 opacity-0 group-hover/scene:opacity-100 transition-all" @click="askDeleteScene(scene)">✕</button>
                         </div>
                       </template>
@@ -456,10 +519,11 @@ const rightPanelPt = { root: { class: 'flex flex-col overflow-hidden h-full bord
           <!-- Éditeur TipTap -->
           <div class="flex-1 overflow-y-auto px-4 md:px-8 py-6">
             <h1
+              :key="editor.activeScene.id"
               class="text-xl font-semibold text-gray-900 dark:text-gray-100 mb-6 outline-none empty:before:content-[attr(data-placeholder)] empty:before:text-gray-400"
               contenteditable
               data-placeholder="Titre de la scène…"
-              @blur="editor.activeScene.title = ($event.target as HTMLElement).innerText.trim()"
+              @blur="onSceneTitleBlur"
             >{{ editor.activeScene.title }}</h1>
             <SceneEditor
               ref="sceneEditorRef"

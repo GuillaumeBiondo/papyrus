@@ -307,6 +307,23 @@ export const useEditorStore = defineStore('editor', () => {
     }
   }
 
+  async function renameArc(arcId: string, title: string) {
+    const arc = arcs.value.find(a => a.id === arcId)
+    if (arc) arc.title = title
+    await arcsService.update(arcId, { title })
+  }
+
+  async function renameChapter(chapterId: string, title: string) {
+    const chapter = _findChapter(chapterId)
+    if (chapter) chapter.title = title
+    await chaptersService.update(chapterId, { title })
+  }
+
+  async function renameScene(sceneId: string, title: string) {
+    _updateSceneInTree(sceneId, { title })
+    await scenesService.update(sceneId, { title })
+  }
+
   function reset() {
     currentProject.value = null
     arcs.value = []
@@ -333,6 +350,7 @@ export const useEditorStore = defineStore('editor', () => {
     createArc, createChapter, createScene,
     deleteArc, deleteChapter, deleteScene,
     reorderArcs, reorderChapters, reorderScenes,
+    renameArc, renameChapter, renameScene,
     reset,
   }
 })
