@@ -19,7 +19,7 @@ class BugReportController extends Controller
             Mail::to('bot@guigeek.dev')->send(new BugReportMail(
                 userName:      $user->name,
                 userEmail:     $user->email,
-                message:       $data['message'],
+                body:          $data['message'],
                 url:           $data['url'],
                 apiCalls:      $data['api_calls'] ?? [],
                 consoleErrors: $data['console_errors'] ?? [],

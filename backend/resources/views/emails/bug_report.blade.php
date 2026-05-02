@@ -33,7 +33,7 @@
 
     <div class="section">
       <div class="section-title">Message</div>
-      <div class="value">{{ $message }}</div>
+      <div class="value">{{ $body }}</div>
     </div>
 
     <div class="section">

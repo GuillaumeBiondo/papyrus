@@ -15,7 +15,7 @@ class BugReportMail extends Mailable
     public function __construct(
         public readonly string $userName,
         public readonly string $userEmail,
-        public readonly string $message,
+        public readonly string $body,
         public readonly string $url,
         public readonly array  $apiCalls,
         public readonly array  $consoleErrors,
