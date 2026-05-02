@@ -10,7 +10,7 @@ COPY package*.json ./
 RUN npm ci --legacy-peer-deps
 
 COPY . .
-RUN npm run build
+RUN npm run build-only
 
 # ── Étape 2 : servir les fichiers statiques ───────────────────
 FROM nginx:1.27-alpine
