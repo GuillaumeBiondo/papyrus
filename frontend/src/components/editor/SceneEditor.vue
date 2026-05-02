@@ -82,6 +82,9 @@ const AnnotationDecorations = Extension.create({
 })
 
 // ── Éditeur ──────────────────────────────────────────────────────
+// TipTap v3 fires onUpdate via domObserver during mount — skip until ready
+let editorReady = false
+
 const editor = useEditor({
   content: props.content,
   extensions: [
@@ -94,10 +97,16 @@ const editor = useEditor({
       class: 'prose prose-gray dark:prose-invert max-w-none focus:outline-none',
     },
   },
+  onCreate() {
+    // Defer so the initial domObserver flush is already done
+    setTimeout(() => { editorReady = true }, 0)
+  },
   onUpdate({ editor }) {
+    if (!editorReady) return
     emit('change', editor.getHTML())
   },
   onSelectionUpdate({ editor }) {
+    if (!editorReady) return
     const { from, to } = editor.state.selection
     if (from === to) {
       emit('selectionChange', null)
