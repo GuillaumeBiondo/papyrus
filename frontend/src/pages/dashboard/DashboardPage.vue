@@ -94,8 +94,13 @@ function initials(name: string) {
 const settingsProject = ref<Project | null>(null)
 
 function onProjectUpdated(updated: Project) {
-  const idx = projects.projects.findIndex(p => p.id === updated.id)
-  if (idx !== -1) projects.projects[idx] = updated
+  const existing = projects.projects.find(p => p.id === updated.id)
+  if (existing) {
+    existing.title  = updated.title
+    existing.genre  = updated.genre
+    existing.status = updated.status
+    existing.color  = updated.color
+  }
 }
 
 function onProjectDeleted(id: string) {
