@@ -3,6 +3,8 @@ services:
   # ── Reverse proxy + SSL automatique ──────────────────────────
   traefik:
     image: traefik:v3.3
+    environment:
+      - DOCKER_API_VERSION=1.47
     command:
       - "--providers.docker=true"
       - "--providers.docker.exposedbydefault=false"
