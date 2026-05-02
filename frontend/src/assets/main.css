@@ -4,22 +4,38 @@
 @variant dark (&:where(.dark, .dark *));
 
 @theme {
-  /* Palette brand */
-  --color-brand-50:  #EEEDFE;
-  --color-brand-200: #AFA9EC;
-  --color-brand-400: #7F77DD;
-  --color-brand-600: #534AB7;
-  --color-brand-800: #3C3489;
+  /* Palette brand complète */
+  --color-brand-50:  #EEEEFF;
+  --color-brand-100: #DDDAFF;
+  --color-brand-200: #BCB6FA;
+  --color-brand-300: #9B92F5;
+  --color-brand-400: #8476EE;
+  --color-brand-500: #6D5FE6;
+  --color-brand-600: #5446CC;
+  --color-brand-700: #4337AA;
+  --color-brand-800: #342C89;
+  --color-brand-900: #1E196A;
 
   /* Tokens sémantiques */
   --color-background:      #ffffff;
-  --color-background-dark: #0f1117;
+  --color-background-dark: #0c0b18;
   --color-surface:         #f8f8fc;
-  --color-surface-dark:    #1a1d27;
+  --color-surface-dark:    #16152a;
   --color-border:          #e4e4f0;
-  --color-border-dark:     #2a2d3e;
+  --color-border-dark:     #252340;
   --color-muted:           #6b7280;
   --color-muted-dark:      #9ca3af;
+}
+
+/* En mode sombre, les couleurs brand sont remappées vers des teintes plus claires
+   pour garantir le contraste sur les fonds sombres. CSS variables cascade automatiquement
+   à tous les composants sans modifier chaque fichier. */
+:root.dark {
+  --color-brand-300: #C5BEFF;
+  --color-brand-400: #A99BF7;
+  --color-brand-500: #9285F0;
+  --color-brand-600: #7B6EE8;
+  --color-brand-700: #6558D8;
 }
 
 /* Classes utilitaires custom */

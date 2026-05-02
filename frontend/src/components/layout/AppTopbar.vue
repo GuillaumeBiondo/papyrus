@@ -41,7 +41,7 @@ function closeOnOutside(e: MouseEvent) {
 <template>
   <header
     class="flex items-center h-12 px-4 border-b border-gray-300 dark:border-gray-800
-           bg-[#f5f4f1] dark:bg-gray-950 shrink-0"
+           bg-[#f5f4f1] dark:bg-[#0c0b18] shrink-0"
     @click="closeOnOutside"
   >
     <!-- Logo -->
