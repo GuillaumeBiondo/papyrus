@@ -163,7 +163,7 @@ function onProjectDeleted(id: string) {
                 }"
               >{{ STATUS_LABEL[p.status] }}</span>
               <button
-                class="p-1 rounded-md opacity-50 hover:opacity-100 transition-opacity"
+                class="p-1 rounded-md opacity-60 hover:opacity-100 transition-opacity"
                 :style="{ color: cardColor(p) }"
                 title="Paramètres du roman"
                 @click.stop="settingsProject = p"
