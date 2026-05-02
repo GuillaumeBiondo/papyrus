@@ -15,7 +15,7 @@ class BugReportController extends Controller
         $user = $request->user();
         $data = $request->validated();
 
-        Mail::send(new BugReportMail(
+        Mail::to('bot@guigeek.dev')->send(new BugReportMail(
             userName:      $user->name,
             userEmail:     $user->email,
             message:       $data['message'],
