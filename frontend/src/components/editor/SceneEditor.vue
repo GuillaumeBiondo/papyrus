@@ -111,7 +111,9 @@ const editor = useEditor({
 // Sync quand on change de scène
 watch(() => props.content, (val) => {
   if (editor.value && editor.value.getHTML() !== val) {
-    editor.value.commands.setContent(val || '')
+    // emitUpdate: false — TipTap v3 defaults to true, but switching scenes
+    // must not trigger onContentChange and schedule a spurious autosave
+    editor.value.commands.setContent(val || '', { emitUpdate: false })
     refreshDecorations()
   }
 })

@@ -15,7 +15,7 @@ class UpdateSceneRequest extends FormRequest
     {
         return [
             'title'   => ['sometimes', 'string', 'max:200'],
-            'content' => ['nullable', 'string'],
+            'content' => ['sometimes', 'nullable', 'string'],
             'status'  => ['sometimes', Rule::in(['idea', 'draft', 'revised', 'final'])],
             'order'   => ['sometimes', 'integer', 'min:0'],
         ];

@@ -46,10 +46,10 @@ export const useEditorStore = defineStore('editor', () => {
       await scenesService.update(activeScene.value.id, {
         content: activeScene.value.content,
         title: activeScene.value.title,
-        status: activeScene.value.status,
       })
-      // Refresh scene cards silently after save (keyword occurrences just rescanned)
       if (activeScene.value) loadSceneCards(activeScene.value.id)
+    } catch (err: any) {
+      console.error('[saveScene] 422 details:', err?.response?.data ?? err)
     } finally {
       saving.value = false
     }
