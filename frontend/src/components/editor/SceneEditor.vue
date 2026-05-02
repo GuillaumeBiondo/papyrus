@@ -155,9 +155,12 @@ defineExpose({ editor, focusAnnotation })
 
 /* Styles prose de base sans dépendance @tailwindcss/typography */
 .prose {
-  color: inherit;
+  color: #111827;
   line-height: 1.75;
   font-size: 1rem;
+}
+.dark .prose {
+  color: #f3f4f6;
 }
 .prose p { margin-bottom: 1em; }
 .prose strong { font-weight: 600; }
