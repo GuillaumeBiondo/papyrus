@@ -15,22 +15,15 @@ class BugReportController extends Controller
         $user = $request->user();
         $data = $request->validated();
 
-        try {
-            Mail::to('bot@guigeek.dev')->send(new BugReportMail(
-                userName:      $user->name,
-                userEmail:     $user->email,
-                body:          $data['message'],
-                url:           $data['url'],
-                apiCalls:      $data['api_calls'] ?? [],
-                consoleErrors: $data['console_errors'] ?? [],
-                reportedAt:    now()->format('d/m/Y H:i:s'),
-            ));
-        } catch (\Throwable $e) {
-            return response()->json([
-                'message' => 'Erreur mail : ' . $e->getMessage(),
-                'class'   => get_class($e),
-            ], 500);
-        }
+        Mail::to('bot@guigeek.dev')->send(new BugReportMail(
+            userName:      $user->name,
+            userEmail:     $user->email,
+            body:          $data['message'],
+            url:           $data['url'],
+            apiCalls:      $data['api_calls'] ?? [],
+            consoleErrors: $data['console_errors'] ?? [],
+            reportedAt:    now()->format('d/m/Y H:i:s'),
+        ));
 
         return response()->json(['message' => 'Rapport envoyé.']);
     }
