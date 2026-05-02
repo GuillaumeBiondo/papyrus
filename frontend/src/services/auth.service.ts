@@ -19,4 +19,7 @@ export const authService = {
     api.get(`${baseURL}/auth/me`).then((r) => r.data.user),
 
   logout: () => api.post(`${baseURL}/auth/logout`),
+
+  updatePassword: (payload: { current_password: string; password: string; password_confirmation: string }) =>
+    api.put(`${baseURL}/auth/password`, payload),
 }
