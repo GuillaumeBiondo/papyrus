@@ -157,7 +157,7 @@ function initials(name: string) {
         <!-- Stats ────────────────────────────────── -->
         <div class="px-4 py-3 flex-1 space-y-2.5">
           <!-- Mots -->
-          <div>
+          <div v-if="p.target_words">
             <div class="flex justify-between text-xs text-gray-500 dark:text-gray-400 mb-1">
               <span>Mots</span>
               <span :style="{ color: cardColor(p) }" class="font-medium">{{ wordPct(p) }}%</span>
@@ -171,6 +171,9 @@ function initials(name: string) {
             <p class="text-xs text-gray-400 mt-0.5">
               {{ p.word_count.toLocaleString('fr-FR') }} / {{ p.target_words.toLocaleString('fr-FR') }}
             </p>
+          </div>
+          <div v-else class="text-xs text-gray-400">
+            {{ p.word_count.toLocaleString('fr-FR') }} mot{{ p.word_count !== 1 ? 's' : '' }}
           </div>
 
           <!-- Scènes -->
