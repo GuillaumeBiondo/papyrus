@@ -5,6 +5,7 @@ import { useAuthStore } from '@/stores/auth.store'
 import { useThemeStore } from '@/stores/theme.store'
 import { useEditorStore } from '@/stores/editor.store'
 import { useNotebookStore } from '@/stores/notebook.store'
+import BugReportButton from '@/components/layout/BugReportButton.vue'
 
 const router = useRouter()
 const route = useRoute()
@@ -55,6 +56,9 @@ function closeOnOutside(e: MouseEvent) {
     </span>
 
     <div class="ml-auto flex items-center gap-2">
+      <!-- Bug report -->
+      <BugReportButton />
+
       <!-- Carnet -->
       <button class="btn-ghost text-gray-600 dark:text-gray-300" @click="notebook.toggleDrawer()">
         <svg class="w-4 h-4 mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">

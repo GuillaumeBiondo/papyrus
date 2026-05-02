@@ -1,4 +1,6 @@
 import './assets/main.css'
+import { installConsoleInterceptor } from '@/composables/bugBuffer'
+installConsoleInterceptor()
 
 import { createApp } from 'vue'
 import { createPinia } from 'pinia'

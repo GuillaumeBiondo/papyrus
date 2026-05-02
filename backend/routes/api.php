@@ -3,6 +3,7 @@
 use App\Http\Controllers\Api\AnnotationController;
 use App\Http\Controllers\Api\ArcController;
 use App\Http\Controllers\Api\AuthController;
+use App\Http\Controllers\Api\BugReportController;
 use App\Http\Controllers\Api\CardController;
 use App\Http\Controllers\Api\ChapterController;
 use App\Http\Controllers\Api\KeywordController;
@@ -32,6 +33,9 @@ Route::prefix('auth')->group(function () {
 |--------------------------------------------------------------------------
 */
 Route::prefix('v1')->middleware(['auth:sanctum', 'throttle:60,1'])->group(function () {
+
+    // Bug report
+    Route::post('bug-report', [BugReportController::class, 'store']);
 
     // Projects
     Route::get('projects', [ProjectController::class, 'index']);
