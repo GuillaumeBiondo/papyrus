@@ -50,7 +50,9 @@ class SceneController extends Controller
     {
         $this->authorize('update', $scene);
 
-        $scene->update($request->validated());
+        // Exclude null values so nullable fields (e.g. status) don't overwrite DB values
+        $data = array_filter($request->validated(), fn($v) => !is_null($v));
+        $scene->update($data);
 
         if ($request->has('content')) {
             $this->scanKeywordsForScene($scene);
