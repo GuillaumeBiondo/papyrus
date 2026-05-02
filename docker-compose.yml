@@ -105,7 +105,7 @@ services:
     build:
       context: ./frontend
       args:
-        VITE_API_URL: https://api.papyrus.guigeek.tech/api/v1
+        VITE_API_URL: https://api.papyrus.guigeek.tech/api
     labels:
       - "traefik.enable=true"
       - "traefik.http.routers.frontend.rule=Host(`papyrus.guigeek.tech`)"
