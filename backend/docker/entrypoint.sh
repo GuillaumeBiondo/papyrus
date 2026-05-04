@@ -30,5 +30,9 @@ php artisan view:cache
 echo "[backend] Lien de stockage..."
 php artisan storage:link 2>/dev/null || true
 
+echo "[backend] Préparation répertoire tmp nginx..."
+mkdir -p /tmp/nginx-client-body
+chown www-data:www-data /tmp/nginx-client-body
+
 echo "[backend] Démarrage Nginx + PHP-FPM..."
 exec /usr/bin/supervisord -c /etc/supervisord.conf
