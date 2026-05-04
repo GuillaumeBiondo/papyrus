@@ -10,6 +10,7 @@ use App\Http\Controllers\Api\ChapterController;
 use App\Http\Controllers\Api\KeywordController;
 use App\Http\Controllers\Api\NotebookController;
 use App\Http\Controllers\Api\NoteController;
+use App\Http\Controllers\Api\TranscriptionController;
 use App\Http\Controllers\Api\ProjectController;
 use App\Http\Controllers\Api\SceneController;
 use Illuminate\Support\Facades\Route;
@@ -121,6 +122,9 @@ Route::prefix('v1')->middleware(['auth:sanctum', 'throttle:60,1'])->group(functi
     Route::post('cards/{card}/keywords', [KeywordController::class, 'store']);
     Route::delete('cards/{card}/keywords/{keyword}', [KeywordController::class, 'destroy']);
     Route::get('cards/{card}/occurrences', [KeywordController::class, 'occurrences']);
+
+    // Transcription STT
+    Route::post('transcribe', [TranscriptionController::class, 'transcribe']);
 
     // Notebook
     Route::get('notebook', [NotebookController::class, 'index']);

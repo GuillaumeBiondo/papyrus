@@ -3,6 +3,7 @@ import { ref, watch } from 'vue'
 import { useNotebookStore } from '@/stores/notebook.store'
 import { projectsService } from '@/services/projects.service'
 import type { Project } from '@/types'
+import VoiceRecorder from '@/components/shared/VoiceRecorder.vue'
 
 const notebook = useNotebookStore()
 
@@ -142,14 +143,19 @@ async function deleteEntry() {
                  bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100
                  focus:outline-none focus:ring-2 focus:ring-brand-400"
         />
-        <textarea
-          v-model="editBody"
-          rows="10"
-          placeholder="Corps de la note…"
-          class="w-full text-sm border border-gray-300 dark:border-gray-700 rounded-md p-3
-                 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100
-                 focus:outline-none focus:ring-2 focus:ring-brand-400 resize-none"
-        />
+        <div class="relative">
+          <textarea
+            v-model="editBody"
+            rows="10"
+            placeholder="Corps de la note…"
+            class="w-full text-sm border border-gray-300 dark:border-gray-700 rounded-md p-3
+                   bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100
+                   focus:outline-none focus:ring-2 focus:ring-brand-400 resize-none"
+          />
+          <div class="absolute bottom-2 right-2">
+            <VoiceRecorder @chunk="editBody += (editBody && !editBody.endsWith(' ') ? ' ' : '') + $event" />
+          </div>
+        </div>
 
         <!-- Affectation à un roman -->
         <div>
@@ -202,15 +208,18 @@ async function deleteEntry() {
                    bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100
                    focus:outline-none focus:ring-2 focus:ring-brand-400 resize-none"
           />
-          <div class="flex justify-end gap-2">
-            <button class="text-xs text-gray-500 px-2 py-1" @click="cancelNew">Annuler</button>
-            <button
-              :disabled="!newBody.trim()"
-              class="text-xs bg-brand-600 disabled:opacity-40 text-white rounded px-3 py-1 hover:bg-brand-800"
-              @click="submitNew"
-            >
-              Enregistrer
-            </button>
+          <div class="flex items-center justify-between">
+            <VoiceRecorder @chunk="newBody += (newBody && !newBody.endsWith(' ') ? ' ' : '') + $event" />
+            <div class="flex gap-2">
+              <button class="text-xs text-gray-500 px-2 py-1" @click="cancelNew">Annuler</button>
+              <button
+                :disabled="!newBody.trim()"
+                class="text-xs bg-brand-600 disabled:opacity-40 text-white rounded px-3 py-1 hover:bg-brand-800"
+                @click="submitNew"
+              >
+                Enregistrer
+              </button>
+            </div>
           </div>
         </div>
 

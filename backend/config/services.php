@@ -35,4 +35,10 @@ return [
         ],
     ],
 
+    'whisper' => [
+        'url'   => env('WHISPER_URL', 'http://stt-whisper:8000'),
+        'token' => env('WHISPER_TOKEN'),
+        'model' => env('WHISPER_MODEL', 'Systran/faster-whisper-turbo'),
+    ],
+
 ];
