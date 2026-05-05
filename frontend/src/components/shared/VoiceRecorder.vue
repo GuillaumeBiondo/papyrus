@@ -138,7 +138,7 @@ onUnmounted(() => {
       class="flex items-center justify-center w-7 h-7 rounded-full transition-colors disabled:opacity-40"
       :class="isRecording
         ? 'bg-red-500 hover:bg-red-600 text-white animate-pulse'
-        : 'bg-gray-100 hover:bg-gray-200 dark:bg-gray-700 dark:hover:bg-gray-600 text-gray-600 dark:text-gray-300'"
+        : 'bg-gray-200 hover:bg-gray-300 dark:bg-gray-600 dark:hover:bg-gray-500 text-gray-700 dark:text-gray-200 shadow-sm'"
       @click="isRecording ? stop() : start()"
     >
       <svg v-if="!isRecording" class="w-3.5 h-3.5" fill="currentColor" viewBox="0 0 24 24">

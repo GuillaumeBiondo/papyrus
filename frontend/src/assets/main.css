@@ -31,11 +31,11 @@
    pour garantir le contraste sur les fonds sombres. CSS variables cascade automatiquement
    à tous les composants sans modifier chaque fichier. */
 :root.dark {
-  --color-brand-300: #C5BEFF;
-  --color-brand-400: #A99BF7;
-  --color-brand-500: #9285F0;
-  --color-brand-600: #7B6EE8;
-  --color-brand-700: #6558D8;
+  --color-brand-300: #CAC3FF;
+  --color-brand-400: #B0A5FA;
+  --color-brand-500: #9888F2;
+  --color-brand-600: #8578EC; /* ratio 5.0:1 sur surface-dark — WCAG AA */
+  --color-brand-700: #7264DC;
 }
 
 /* Classes utilitaires custom */

@@ -214,7 +214,7 @@ async function deleteEntry() {
               <button class="text-xs text-gray-500 px-2 py-1" @click="cancelNew">Annuler</button>
               <button
                 :disabled="!newBody.trim()"
-                class="text-xs bg-brand-600 disabled:opacity-40 text-white rounded px-3 py-1 hover:bg-brand-800"
+                class="text-xs bg-brand-600 disabled:opacity-40 text-white rounded px-3 py-1 hover:bg-brand-700"
                 @click="submitNew"
               >
                 Enregistrer

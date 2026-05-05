@@ -286,7 +286,7 @@ const rightPanelPt = { root: { class: 'flex flex-col overflow-hidden h-full bord
           <template #item="{ element: arc }">
             <div class="mb-2">
               <div class="flex items-center gap-1 px-2 py-1 group">
-                <span class="drag-arc shrink-0 cursor-grab text-gray-300 dark:text-gray-600 opacity-0 group-hover:opacity-100 transition-opacity select-none text-base leading-none" title="Déplacer">⠿</span>
+                <span class="drag-arc shrink-0 cursor-grab text-gray-400 dark:text-gray-500 md:opacity-0 group-hover:opacity-100 transition-opacity select-none text-base leading-none" title="Déplacer">⠿</span>
                 <input
                   v-if="editingItemId === arc.id"
                   v-focus
@@ -298,10 +298,10 @@ const rightPanelPt = { root: { class: 'flex flex-col overflow-hidden h-full bord
                   @blur="commitRename('arc', arc.id)"
                 />
                 <span v-else class="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide truncate flex-1">{{ arc.title }}</span>
-                <div class="flex items-center gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity shrink-0">
-                  <button class="px-1 text-sm text-gray-400 hover:text-gray-600 dark:hover:text-gray-300" @click="addingChapter = arc.id; newChapterTitle = ''">+</button>
-                  <button class="px-1 text-xs text-gray-300 hover:text-brand-400 transition-colors" @click.stop="startRename(arc.id, arc.title)">✎</button>
-                  <button class="px-1 text-xs text-gray-300 hover:text-red-400 transition-colors" @click="askDeleteArc(arc)">✕</button>
+                <div class="flex items-center gap-0.5 md:opacity-0 group-hover:opacity-100 transition-opacity shrink-0">
+                  <button class="px-1.5 py-0.5 text-sm text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-100" @click="addingChapter = arc.id; newChapterTitle = ''">+</button>
+                  <button class="px-1.5 py-0.5 text-xs text-gray-500 dark:text-gray-400 hover:text-brand-600 dark:hover:text-brand-400 transition-colors" @click.stop="startRename(arc.id, arc.title)">✎</button>
+                  <button class="px-1.5 py-0.5 text-xs text-gray-500 dark:text-gray-400 hover:text-red-500 dark:hover:text-red-400 transition-colors" @click="askDeleteArc(arc)">✕</button>
                 </div>
               </div>
 
@@ -310,7 +310,7 @@ const rightPanelPt = { root: { class: 'flex flex-col overflow-hidden h-full bord
                 <template #item="{ element: chapter }">
                   <div class="mb-1">
                     <div class="flex items-center gap-1 px-2 py-0.5 group">
-                      <span class="drag-chapter shrink-0 cursor-grab text-gray-300 dark:text-gray-600 opacity-0 group-hover:opacity-100 transition-opacity select-none text-base leading-none">⠿</span>
+                      <span class="drag-chapter shrink-0 cursor-grab text-gray-400 dark:text-gray-500 md:opacity-0 group-hover:opacity-100 transition-opacity select-none text-base leading-none">⠿</span>
                       <input
                         v-if="editingItemId === chapter.id"
                         v-focus
@@ -322,10 +322,10 @@ const rightPanelPt = { root: { class: 'flex flex-col overflow-hidden h-full bord
                         @blur="commitRename('chapter', chapter.id)"
                       />
                       <span v-else class="text-xs text-gray-500 dark:text-gray-400 italic truncate flex-1">{{ chapter.title }}</span>
-                      <div class="flex items-center gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity shrink-0">
-                        <button class="px-1 text-sm text-gray-400 hover:text-gray-600 dark:hover:text-gray-300" @click="addingScene = chapter.id; newSceneTitle = ''">+</button>
-                        <button class="px-1 text-xs text-gray-300 hover:text-brand-400 transition-colors" @click.stop="startRename(chapter.id, chapter.title)">✎</button>
-                        <button class="px-1 text-xs text-gray-300 hover:text-red-400 transition-colors" @click="askDeleteChapter(chapter)">✕</button>
+                      <div class="flex items-center gap-0.5 md:opacity-0 group-hover:opacity-100 transition-opacity shrink-0">
+                        <button class="px-1.5 py-0.5 text-sm text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-100" @click="addingScene = chapter.id; newSceneTitle = ''">+</button>
+                        <button class="px-1.5 py-0.5 text-xs text-gray-500 dark:text-gray-400 hover:text-brand-600 dark:hover:text-brand-400 transition-colors" @click.stop="startRename(chapter.id, chapter.title)">✎</button>
+                        <button class="px-1.5 py-0.5 text-xs text-gray-500 dark:text-gray-400 hover:text-red-500 dark:hover:text-red-400 transition-colors" @click="askDeleteChapter(chapter)">✕</button>
                       </div>
                     </div>
 
@@ -336,7 +336,7 @@ const rightPanelPt = { root: { class: 'flex flex-col overflow-hidden h-full bord
                           class="flex items-center gap-1 pl-3 pr-2 rounded-md group/scene transition-colors"
                           :class="editor.activeScene?.id === scene.id ? 'bg-brand-50 dark:bg-brand-900/20' : 'hover:bg-gray-100 dark:hover:bg-gray-800'"
                         >
-                          <span class="drag-scene shrink-0 cursor-grab text-gray-300 dark:text-gray-600 opacity-0 group-hover/scene:opacity-100 transition-opacity select-none text-base leading-none">⠿</span>
+                          <span class="drag-scene shrink-0 cursor-grab text-gray-400 dark:text-gray-500 md:opacity-0 group-hover/scene:opacity-100 transition-opacity select-none text-base leading-none">⠿</span>
                           <input
                             v-if="editingItemId === scene.id"
                             v-focus
@@ -357,8 +357,8 @@ const rightPanelPt = { root: { class: 'flex flex-col overflow-hidden h-full bord
                             <span class="text-xs truncate flex-1">{{ scene.title }}</span>
                             <span class="text-xs text-gray-400 shrink-0">{{ scene.word_count }}</span>
                           </button>
-                          <button class="shrink-0 px-1 text-xs text-gray-300 hover:text-brand-400 opacity-0 group-hover/scene:opacity-100 transition-all" @click.stop="startRename(scene.id, scene.title)">✎</button>
-                          <button class="shrink-0 px-1 text-xs text-gray-300 hover:text-red-400 opacity-0 group-hover/scene:opacity-100 transition-all" @click="askDeleteScene(scene)">✕</button>
+                          <button class="shrink-0 px-1.5 py-0.5 text-xs text-gray-500 dark:text-gray-400 hover:text-brand-600 dark:hover:text-brand-400 md:opacity-0 group-hover/scene:opacity-100 transition-all" @click.stop="startRename(scene.id, scene.title)">✎</button>
+                          <button class="shrink-0 px-1.5 py-0.5 text-xs text-gray-500 dark:text-gray-400 hover:text-red-500 dark:hover:text-red-400 md:opacity-0 group-hover/scene:opacity-100 transition-all" @click="askDeleteScene(scene)">✕</button>
                         </div>
                       </template>
                     </draggable>
@@ -368,11 +368,11 @@ const rightPanelPt = { root: { class: 'flex flex-col overflow-hidden h-full bord
                         class="w-full text-xs rounded border border-brand-300 dark:border-brand-600 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 px-2 py-1 focus:outline-none focus:ring-1 focus:ring-brand-500"
                         v-focus @keyup.enter="submitScene(chapter.id)" @keyup.escape="addingScene = null" />
                       <div class="flex gap-2 mt-1">
-                        <button class="text-xs text-brand-600 hover:text-brand-800 font-medium" @click="submitScene(chapter.id)">Créer</button>
-                        <button class="text-xs text-gray-400 hover:text-gray-600" @click="addingScene = null">Annuler</button>
+                        <button class="text-xs text-brand-600 dark:text-brand-400 hover:text-brand-700 dark:hover:text-brand-300 font-medium" @click="submitScene(chapter.id)">Créer</button>
+                        <button class="text-xs text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200" @click="addingScene = null">Annuler</button>
                       </div>
                     </div>
-                    <button v-if="!chapter.scenes?.length && addingScene !== chapter.id" class="w-full text-left text-xs text-gray-400 hover:text-gray-600 pl-4 pr-2 py-1" @click="addingScene = chapter.id; newSceneTitle = ''">+ scène</button>
+                    <button v-if="!chapter.scenes?.length && addingScene !== chapter.id" class="w-full text-left text-xs text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 pl-4 pr-2 py-1" @click="addingScene = chapter.id; newSceneTitle = ''">+ scène</button>
                   </div>
                 </template>
               </draggable>
@@ -382,11 +382,11 @@ const rightPanelPt = { root: { class: 'flex flex-col overflow-hidden h-full bord
                   class="w-full text-xs rounded border border-brand-300 dark:border-brand-600 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 px-2 py-1 focus:outline-none focus:ring-1 focus:ring-brand-500"
                   v-focus @keyup.enter="submitChapter(arc.id)" @keyup.escape="addingChapter = null" />
                 <div class="flex gap-2 mt-1">
-                  <button class="text-xs text-brand-600 hover:text-brand-800 font-medium" @click="submitChapter(arc.id)">Créer</button>
-                  <button class="text-xs text-gray-400 hover:text-gray-600" @click="addingChapter = null">Annuler</button>
+                  <button class="text-xs text-brand-600 dark:text-brand-400 hover:text-brand-700 dark:hover:text-brand-300 font-medium" @click="submitChapter(arc.id)">Créer</button>
+                  <button class="text-xs text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200" @click="addingChapter = null">Annuler</button>
                 </div>
               </div>
-              <button v-if="!arc.chapters?.length && addingChapter !== arc.id" class="w-full text-left text-xs text-gray-400 hover:text-gray-600 px-3 py-1" @click="addingChapter = arc.id; newChapterTitle = ''">+ chapitre</button>
+              <button v-if="!arc.chapters?.length && addingChapter !== arc.id" class="w-full text-left text-xs text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 px-3 py-1" @click="addingChapter = arc.id; newChapterTitle = ''">+ chapitre</button>
             </div>
           </template>
         </draggable>
@@ -396,14 +396,14 @@ const rightPanelPt = { root: { class: 'flex flex-col overflow-hidden h-full bord
             class="w-full text-xs rounded border border-brand-300 dark:border-brand-600 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 px-2 py-1 focus:outline-none focus:ring-1 focus:ring-brand-500"
             v-focus @keyup.enter="submitArc" @keyup.escape="addingArc = false" />
           <div class="flex gap-2 mt-1">
-            <button class="text-xs text-brand-600 hover:text-brand-800 font-medium" @click="submitArc">Créer</button>
-            <button class="text-xs text-gray-400 hover:text-gray-600" @click="addingArc = false">Annuler</button>
+            <button class="text-xs text-brand-600 dark:text-brand-400 hover:text-brand-700 dark:hover:text-brand-300 font-medium" @click="submitArc">Créer</button>
+            <button class="text-xs text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200" @click="addingArc = false">Annuler</button>
           </div>
         </div>
       </div>
 
       <div class="px-3 py-3 border-t border-gray-300 dark:border-gray-700 shrink-0">
-        <button class="w-full text-xs text-gray-500 hover:text-gray-700 dark:hover:text-gray-300 flex items-center gap-1.5 transition-colors" @click="addingArc = true">
+        <button class="w-full text-xs text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 flex items-center gap-1.5 transition-colors" @click="addingArc = true">
           <span class="text-base leading-none">+</span> Nouvel arc
         </button>
       </div>
