@@ -8,6 +8,7 @@ export const useAuthStore = defineStore('auth', () => {
 
   const isAuthenticated = computed(() => !!user.value)
   const isBetaReader = computed(() => user.value?.currentRole === 'beta_reader')
+  const isAdmin = computed(() => user.value?.role === 'admin')
 
   async function login(email: string, password: string) {
     await authService.csrfCookie()
@@ -28,5 +29,5 @@ export const useAuthStore = defineStore('auth', () => {
     }
   }
 
-  return { user, isAuthenticated, isBetaReader, login, logout, tryRestoreSession }
+  return { user, isAuthenticated, isBetaReader, isAdmin, login, logout, tryRestoreSession }
 })

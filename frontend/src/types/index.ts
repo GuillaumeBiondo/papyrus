@@ -2,7 +2,66 @@ export interface User {
   id: string
   name: string
   email: string
+  role: 'user' | 'admin'
+  preferences: Record<string, unknown>
+  last_login_at: string | null
   currentRole?: 'owner' | 'co_author' | 'beta_reader'
+}
+
+export interface ContentType {
+  id: string
+  name: string
+  slug: string
+  is_active: boolean
+  type_schema: Record<string, unknown> | null
+  description: string | null
+  projects_count?: number
+  created_at: string
+  updated_at: string
+}
+
+export interface Changelog {
+  id: string
+  version: string | null
+  title: string
+  body: string
+  published_at: string | null
+  reads_count?: number
+  created_at: string
+  updated_at: string
+}
+
+export interface Setting {
+  key: string
+  value: unknown
+  label: string | null
+  group: string
+  updated_at: string
+}
+
+export interface AdminStats {
+  total_users: number
+  total_admins: number
+  total_projects: number
+  total_words: number
+  new_users_week: number
+  active_users_week: number
+}
+
+export interface AdminUser {
+  id: string
+  name: string
+  email: string
+  role: 'user' | 'admin'
+  last_login_at: string | null
+  created_at: string
+  preferences: Record<string, unknown>
+  projects_count: number
+  arcs_count: number
+  chapters_count: number
+  scenes_count: number
+  total_words: number
+  avg_words_per_project: number
 }
 
 export interface Project {

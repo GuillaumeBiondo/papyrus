@@ -23,6 +23,8 @@ class AuthController extends Controller
 
         $request->session()->regenerate();
 
+        Auth::user()->update(['last_login_at' => now()]);
+
         return response()->json([
             'user' => new UserResource(Auth::user()),
         ]);

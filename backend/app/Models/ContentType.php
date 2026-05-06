@@ -15,6 +15,7 @@ class ContentType extends Model
         'slug',
         'is_active',
         'type_schema',
+        'description',
     ];
 
     protected function casts(): array
