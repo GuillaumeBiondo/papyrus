@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { watch, onBeforeUnmount } from 'vue'
 import { useEditor, EditorContent } from '@tiptap/vue-3'
+import SelectionToolbar from './SelectionToolbar.vue'
 import StarterKit from '@tiptap/starter-kit'
 import Placeholder from '@tiptap/extension-placeholder'
 import { Extension } from '@tiptap/core'
@@ -15,7 +16,7 @@ const props = defineProps<{
 
 const emit = defineEmits<{
   change: [html: string]
-  selectionChange: [sel: { from: number; to: number; text: string } | null]
+  annotate: [sel: { from: number; to: number; text: string }]
   annotationClick: [annotationId: string]
 }>()
 
@@ -105,16 +106,6 @@ const editor = useEditor({
     if (!editorReady) return
     emit('change', editor.getHTML())
   },
-  onSelectionUpdate({ editor }) {
-    if (!editorReady) return
-    const { from, to } = editor.state.selection
-    if (from === to) {
-      emit('selectionChange', null)
-    } else {
-      const text = editor.state.doc.textBetween(from, to, ' ')
-      emit('selectionChange', { from, to, text })
-    }
-  },
 })
 
 // Sync quand on change de scène
@@ -151,7 +142,10 @@ defineExpose({ editor, focusAnnotation })
 </script>
 
 <template>
-  <EditorContent :editor="editor" class="h-full" />
+  <div class="h-full">
+    <EditorContent :editor="editor" class="h-full" />
+    <SelectionToolbar :editor="editor" @annotate="emit('annotate', $event)" />
+  </div>
 </template>
 
 <style>

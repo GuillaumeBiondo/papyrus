@@ -53,10 +53,21 @@ type PendingDelete = {
 }
 const pendingDelete = ref<PendingDelete | null>(null)
 const deleteLoading = ref(false)
+const deleteBlockMessage = ref<string | null>(null)
+
+function isSceneProtected(scene: Scene) {
+  return scene.status === 'revised' || scene.status === 'final'
+}
 
 function askDeleteArc(arc: Arc) {
+  const scenes = arc.chapters?.flatMap(ch => ch.scenes ?? []) ?? []
+  const protectedScene = scenes.find(isSceneProtected)
+  if (protectedScene) {
+    deleteBlockMessage.value = `Impossible de supprimer cet arc : il contient des scènes révisées ou finalisées (ex. « ${protectedScene.title} »). Remets-les à l'état brouillon ou idée avant de supprimer.`
+    return
+  }
   const chaptersCount = arc.chapters?.length ?? 0
-  const scenesCount = arc.chapters?.reduce((s, ch) => s + (ch.scenes?.length ?? 0), 0) ?? 0
+  const scenesCount = scenes.length
   pendingDelete.value = {
     type: 'arc', id: arc.id, title: arc.title,
     dialogTitle: `Supprimer l'arc « ${arc.title} » ?`,
@@ -66,6 +77,11 @@ function askDeleteArc(arc: Arc) {
 }
 
 function askDeleteChapter(chapter: Chapter) {
+  const protectedScene = chapter.scenes?.find(isSceneProtected)
+  if (protectedScene) {
+    deleteBlockMessage.value = `Impossible de supprimer ce chapitre : il contient des scènes révisées ou finalisées (ex. « ${protectedScene.title} »). Remets-les à l'état brouillon ou idée avant de supprimer.`
+    return
+  }
   pendingDelete.value = {
     type: 'chapter', id: chapter.id, title: chapter.title,
     dialogTitle: `Supprimer le chapitre « ${chapter.title} » ?`,
@@ -75,6 +91,10 @@ function askDeleteChapter(chapter: Chapter) {
 }
 
 function askDeleteScene(scene: Scene) {
+  if (isSceneProtected(scene)) {
+    deleteBlockMessage.value = `La scène « ${scene.title} » est ${scene.status === 'final' ? 'finalisée' : 'révisée'} et ne peut pas être supprimée. Remets-la à l'état brouillon ou idée avant de supprimer.`
+    return
+  }
   pendingDelete.value = {
     type: 'scene', id: scene.id, title: scene.title,
     dialogTitle: `Supprimer la scène « ${scene.title} » ?`,
@@ -99,21 +119,11 @@ async function confirmDelete() {
 
 // ── Sélection de texte (inline annotations) ───────────────────
 const pendingSelection = ref<{ from: number; to: number; text: string } | null>(null)
-let selectionDebounceTimer: ReturnType<typeof setTimeout> | null = null
-let suppressSelectionChange = false
 
-function onSelectionChange(sel: { from: number; to: number; text: string } | null) {
-  if (suppressSelectionChange) return
-  if (selectionDebounceTimer) { clearTimeout(selectionDebounceTimer); selectionDebounceTimer = null }
-  if (sel) {
-    selectionDebounceTimer = setTimeout(() => {
-      pendingSelection.value = sel
-      rightTab.value = 'annotations'
-      if (isMobile.value) rightSidebarOpen.value = true
-    }, 300)
-  } else {
-    pendingSelection.value = null
-  }
+function onAnnotate(sel: { from: number; to: number; text: string }) {
+  pendingSelection.value = sel
+  rightTab.value = 'annotations'
+  if (isMobile.value) rightSidebarOpen.value = true
 }
 
 // ── Annotation ciblée (clic sur surligné) ────────────────────
@@ -134,9 +144,7 @@ const sceneEditorRef = ref<InstanceType<typeof SceneEditor> | null>(null)
 function tiptap() { return sceneEditorRef.value?.editor }
 
 function focusAnnotation(anchorStart: number, anchorEnd: number) {
-  suppressSelectionChange = true
   sceneEditorRef.value?.focusAnnotation(anchorStart, anchorEnd)
-  setTimeout(() => { suppressSelectionChange = false }, 400)
 }
 
 function getAnchorText(ann: { anchor_start: number | null; anchor_end: number | null }): string {
@@ -460,24 +468,6 @@ const rightPanelPt = { root: { class: 'flex flex-col overflow-hidden h-full bord
               >{{ label }}</button>
             </div>
 
-            <div class="w-px h-4 bg-gray-200 dark:bg-gray-700" />
-
-            <!-- Mise en forme -->
-            <div class="flex items-center gap-0.5">
-              <button
-                class="w-7 h-7 rounded text-sm font-bold transition-colors"
-                :class="tiptap()?.isActive('bold') ? 'bg-gray-200 dark:bg-gray-700 text-gray-900 dark:text-gray-100' : 'text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800'"
-                title="Gras (Ctrl+B)"
-                @click="tiptap()?.chain().focus().toggleBold().run()"
-              >G</button>
-              <button
-                class="w-7 h-7 rounded text-sm italic transition-colors"
-                :class="tiptap()?.isActive('italic') ? 'bg-gray-200 dark:bg-gray-700 text-gray-900 dark:text-gray-100' : 'text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800'"
-                title="Italique (Ctrl+I)"
-                @click="tiptap()?.chain().focus().toggleItalic().run()"
-              >I</button>
-            </div>
-
             <span class="ml-auto text-xs text-gray-400 hidden md:inline">
               {{ editor.saving ? 'Enregistrement…' : `${editor.activeScene.word_count ?? 0} mots` }}
             </span>
@@ -530,7 +520,7 @@ const rightPanelPt = { root: { class: 'flex flex-col overflow-hidden h-full bord
               :content="editor.activeScene.content ?? ''"
               :annotations="editor.annotations"
               @change="editor.onContentChange"
-              @selection-change="onSelectionChange"
+              @annotate="onAnnotate"
               @annotation-click="onAnnotationClick"
             />
           </div>
@@ -584,6 +574,28 @@ const rightPanelPt = { root: { class: 'flex flex-col overflow-hidden h-full bord
   </div>
 
   <!-- ══ Dialogue de confirmation de suppression ══ -->
+  <!-- ══ Dialog blocage suppression ══ -->
+  <Teleport to="body">
+    <div v-if="deleteBlockMessage" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm" @click.self="deleteBlockMessage = null">
+      <div class="bg-white dark:bg-gray-900 rounded-xl shadow-2xl w-full max-w-sm border border-gray-200 dark:border-gray-700">
+        <div class="flex items-start gap-3 p-5 border-b border-gray-100 dark:border-gray-800">
+          <div class="mt-0.5 shrink-0 w-9 h-9 rounded-full bg-amber-100 dark:bg-amber-900/30 flex items-center justify-center">
+            <svg class="w-5 h-5 text-amber-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v-4m0-4h.01M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/>
+            </svg>
+          </div>
+          <div>
+            <h3 class="text-sm font-semibold text-gray-900 dark:text-gray-100">Suppression impossible</h3>
+            <p class="text-xs text-gray-500 dark:text-gray-400 mt-1">{{ deleteBlockMessage }}</p>
+          </div>
+        </div>
+        <div class="flex p-4 border-t border-gray-100 dark:border-gray-800">
+          <button class="flex-1 px-4 py-2 text-xs rounded-lg bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors font-medium" @click="deleteBlockMessage = null">Compris</button>
+        </div>
+      </div>
+    </div>
+  </Teleport>
+
   <ConfirmDeleteDialog
     v-if="pendingDelete"
     :title="pendingDelete.dialogTitle"
