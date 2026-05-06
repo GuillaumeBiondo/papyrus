@@ -1,5 +1,12 @@
 <script setup lang="ts">
+import { onMounted } from 'vue'
 import AppTopbar from '@/components/layout/AppTopbar.vue'
+import ChangelogModal from '@/components/shared/ChangelogModal.vue'
+import { useChangelogStore } from '@/stores/changelog.store'
+
+const changelog = useChangelogStore()
+
+onMounted(() => changelog.fetchUnread())
 </script>
 
 <template>
@@ -9,5 +16,6 @@ import AppTopbar from '@/components/layout/AppTopbar.vue'
       <RouterView />
       <NotebookDrawer />
     </main>
+    <ChangelogModal />
   </div>
 </template>

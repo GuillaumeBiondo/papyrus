@@ -1,6 +1,7 @@
 import { createRouter, createWebHistory } from 'vue-router'
 import { setupGuards } from './guards'
 
+import AdminLayout from '@/layouts/AdminLayout.vue'
 import AppLayout from '@/layouts/AppLayout.vue'
 import AuthLayout from '@/layouts/AuthLayout.vue'
 import BetaLayout from '@/layouts/BetaLayout.vue'
@@ -55,6 +56,18 @@ const router = createRouter({
             },
           ],
         },
+      ],
+    },
+    {
+      path: '/admin',
+      component: AdminLayout,
+      meta: { requiresAuth: true, requiresAdmin: true },
+      children: [
+        { path: '', name: 'admin-dashboard', component: () => import('@/pages/admin/AdminDashboardPage.vue') },
+        { path: 'users', name: 'admin-users', component: () => import('@/pages/admin/UsersPage.vue') },
+        { path: 'content-types', name: 'admin-content-types', component: () => import('@/pages/admin/ContentTypesPage.vue') },
+        { path: 'changelogs', name: 'admin-changelogs', component: () => import('@/pages/admin/ChangelogsPage.vue') },
+        { path: 'settings', name: 'admin-settings', component: () => import('@/pages/admin/SettingsPage.vue') },
       ],
     },
     {

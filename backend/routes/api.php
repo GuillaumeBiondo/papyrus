@@ -1,10 +1,16 @@
 <?php
 
+use App\Http\Controllers\Api\Admin\ChangelogController as AdminChangelogController;
+use App\Http\Controllers\Api\Admin\ContentTypeController as AdminContentTypeController;
+use App\Http\Controllers\Api\Admin\DashboardController as AdminDashboardController;
+use App\Http\Controllers\Api\Admin\SettingController as AdminSettingController;
+use App\Http\Controllers\Api\Admin\UserController as AdminUserController;
 use App\Http\Controllers\Api\AnnotationController;
 use App\Http\Controllers\Api\ArcController;
 use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\Api\BugReportController;
 use App\Http\Controllers\Api\CardController;
+use App\Http\Controllers\Api\ChangelogController;
 use App\Http\Controllers\Api\ProjectExportController;
 use App\Http\Controllers\Api\ChapterController;
 use App\Http\Controllers\Api\KeywordController;
@@ -133,4 +139,29 @@ Route::prefix('v1')->middleware(['auth:sanctum', 'throttle:60,1'])->group(functi
     Route::put('notebook/{notebookEntry}', [NotebookController::class, 'update']);
     Route::delete('notebook/{notebookEntry}', [NotebookController::class, 'destroy']);
     Route::post('notebook/{notebookEntry}/transfer', [NotebookController::class, 'transfer']);
+
+    // Changelogs (user-facing)
+    Route::get('changelogs/unread', [ChangelogController::class, 'unread']);
+    Route::post('changelogs/mark-all-read', [ChangelogController::class, 'markAllRead']);
+    Route::post('changelogs/{changelog}/read', [ChangelogController::class, 'markRead']);
+
+    // Admin
+    Route::prefix('admin')->middleware('admin')->group(function () {
+        Route::get('dashboard', [AdminDashboardController::class, 'index']);
+
+        Route::get('users', [AdminUserController::class, 'index']);
+        Route::post('users', [AdminUserController::class, 'store']);
+
+        Route::get('content-types', [AdminContentTypeController::class, 'index']);
+        Route::post('content-types', [AdminContentTypeController::class, 'store']);
+        Route::put('content-types/{contentType}', [AdminContentTypeController::class, 'update']);
+
+        Route::get('changelogs', [AdminChangelogController::class, 'index']);
+        Route::post('changelogs', [AdminChangelogController::class, 'store']);
+        Route::put('changelogs/{changelog}', [AdminChangelogController::class, 'update']);
+        Route::delete('changelogs/{changelog}', [AdminChangelogController::class, 'destroy']);
+
+        Route::get('settings', [AdminSettingController::class, 'index']);
+        Route::put('settings/{key}', [AdminSettingController::class, 'update']);
+    });
 });
