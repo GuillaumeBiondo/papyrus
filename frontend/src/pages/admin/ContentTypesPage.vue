@@ -82,7 +82,7 @@ async function save() {
       slug: form.slug,
       is_active: form.is_active,
       description: form.description || null,
-      type_schema: form.type_schema,
+      type_schema: JSON.parse(form.type_schema) as Record<string, unknown>,
     }
     if (editTarget.value) {
       const { content_type } = await adminService.updateContentType(editTarget.value.id, payload)
