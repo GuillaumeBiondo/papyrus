@@ -15,3 +15,4 @@ Outil d'écriture assisté par ordinateur simple
 - sommaire
 - paramètres utilisateur
   - choix de la police 
+  - possibilité de paramètres thème couleur
