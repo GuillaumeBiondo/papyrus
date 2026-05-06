@@ -17,12 +17,14 @@ class Project extends Model
 
     protected $fillable = [
         'owner_id',
+        'content_type_id',
         'title',
         'genre',
         'color',
         'target_words',
         'target_scenes',
         'status',
+        'type_data',
     ];
 
     protected function casts(): array
@@ -30,12 +32,18 @@ class Project extends Model
         return [
             'target_words'  => 'integer',
             'target_scenes' => 'integer',
+            'type_data'     => 'array',
         ];
     }
 
     public function owner(): BelongsTo
     {
         return $this->belongsTo(User::class, 'owner_id');
+    }
+
+    public function contentType(): BelongsTo
+    {
+        return $this->belongsTo(ContentType::class);
     }
 
     public function members(): BelongsToMany
