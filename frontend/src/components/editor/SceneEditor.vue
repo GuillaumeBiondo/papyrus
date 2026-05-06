@@ -96,6 +96,7 @@ const editor = useEditor({
   editorProps: {
     attributes: {
       class: 'prose prose-gray dark:prose-invert max-w-none focus:outline-none',
+      spellcheck: 'false',
     },
   },
   onCreate() {
