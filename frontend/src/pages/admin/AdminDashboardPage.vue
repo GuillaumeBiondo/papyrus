@@ -36,26 +36,16 @@ function formatNumber(n: number) {
     <template v-else-if="stats">
       <!-- Stats cards -->
       <div class="grid grid-cols-2 md:grid-cols-3 gap-4 mb-8">
-        <div class="admin-card">
-          <p class="admin-card-label">Utilisateurs</p>
-          <p class="admin-card-value">{{ formatNumber(stats.total_users) }}</p>
-          <p class="admin-card-sub">+{{ stats.new_users_week }} cette semaine</p>
-        </div>
-        <div class="admin-card">
-          <p class="admin-card-label">Actifs (7 jours)</p>
-          <p class="admin-card-value">{{ formatNumber(stats.active_users_week) }}</p>
-        </div>
-        <div class="admin-card">
-          <p class="admin-card-label">Projets</p>
-          <p class="admin-card-value">{{ formatNumber(stats.total_projects) }}</p>
-        </div>
-        <div class="admin-card">
-          <p class="admin-card-label">Mots écrits</p>
-          <p class="admin-card-value">{{ formatNumber(stats.total_words) }}</p>
-        </div>
-        <div class="admin-card">
-          <p class="admin-card-label">Administrateurs</p>
-          <p class="admin-card-value">{{ formatNumber(stats.total_admins) }}</p>
+        <div v-for="card in [
+          { label: 'Utilisateurs', value: formatNumber(stats.total_users), sub: `+${stats.new_users_week} cette semaine` },
+          { label: 'Actifs (7 jours)', value: formatNumber(stats.active_users_week) },
+          { label: 'Projets', value: formatNumber(stats.total_projects) },
+          { label: 'Mots écrits', value: formatNumber(stats.total_words) },
+          { label: 'Administrateurs', value: formatNumber(stats.total_admins) },
+        ]" :key="card.label" class="bg-white dark:bg-gray-900 rounded-lg border border-gray-200 dark:border-gray-800 p-4">
+          <p class="text-xs text-gray-500 dark:text-gray-500 mb-1">{{ card.label }}</p>
+          <p class="text-2xl font-semibold text-gray-900 dark:text-gray-100">{{ card.value }}</p>
+          <p v-if="card.sub" class="text-xs text-gray-400 mt-0.5">{{ card.sub }}</p>
         </div>
       </div>
 
@@ -89,17 +79,3 @@ function formatNumber(n: number) {
   </div>
 </template>
 
-<style scoped>
-.admin-card {
-  @apply bg-white dark:bg-gray-900 rounded-lg border border-gray-200 dark:border-gray-800 p-4;
-}
-.admin-card-label {
-  @apply text-xs text-gray-500 dark:text-gray-500 mb-1;
-}
-.admin-card-value {
-  @apply text-2xl font-semibold text-gray-900 dark:text-gray-100;
-}
-.admin-card-sub {
-  @apply text-xs text-gray-400 mt-0.5;
-}
-</style>

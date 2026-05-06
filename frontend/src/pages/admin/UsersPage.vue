@@ -167,6 +167,7 @@ function hasPreferences(u: AdminUser) {
 </template>
 
 <style scoped>
+@reference "@/assets/main.css";
 .th { @apply px-3 py-2.5 text-gray-500 dark:text-gray-500 font-medium text-xs; }
 .td { @apply px-3 py-2.5; }
 .admin-label { @apply block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1; }
