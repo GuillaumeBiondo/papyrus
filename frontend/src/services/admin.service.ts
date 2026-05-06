@@ -25,12 +25,12 @@ export const adminService = {
     return data
   },
 
-  async createContentType(payload: Partial<ContentType> & { type_schema?: string }): Promise<{ content_type: ContentType }> {
+  async createContentType(payload: Partial<ContentType>): Promise<{ content_type: ContentType }> {
     const { data } = await api.post('/admin/content-types', payload)
     return data
   },
 
-  async updateContentType(id: string, payload: Partial<ContentType> & { type_schema?: string }): Promise<{ content_type: ContentType }> {
+  async updateContentType(id: string, payload: Partial<ContentType>): Promise<{ content_type: ContentType }> {
     const { data } = await api.put(`/admin/content-types/${id}`, payload)
     return data
   },
