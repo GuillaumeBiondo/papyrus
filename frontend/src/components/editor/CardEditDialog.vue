@@ -3,6 +3,7 @@ import { computed, ref, watch } from 'vue'
 import Dialog from 'primevue/dialog'
 import { useCardsStore } from '@/stores/cards.store'
 import { notesService } from '@/services/notes.service'
+import CardImagesTab from '@/components/editor/CardImagesTab.vue'
 import type { Note } from '@/types'
 
 const props = defineProps<{
@@ -23,7 +24,7 @@ const cards = useCardsStore()
 const loading = ref(false)
 
 // ── Tabs ──────────────────────────────────────────────────────
-const activeTab = ref<'attributs' | 'liaisons' | 'referentiel'>('attributs')
+const activeTab = ref<'attributs' | 'liaisons' | 'referentiel' | 'images'>('attributs')
 
 // ── Titre éditable ────────────────────────────────────────────
 const editingTitle = ref(false)
@@ -171,6 +172,10 @@ async function saveEditNote() {
   editingNoteBody.value = ''
 }
 
+const avatarImage = computed(() =>
+  cards.activeCard?.images?.find(i => i.is_avatar) ?? null
+)
+
 // ── Chargement ────────────────────────────────────────────────
 watch(() => props.cardId, async (id) => {
   if (!id) return
@@ -261,10 +266,19 @@ const dialogPt = computed(() => ({
   >
     <!-- En-tête : avatar + titre + type -->
     <template #header>
-      <div
-        class="w-9 h-9 rounded-full flex items-center justify-center text-white text-sm font-semibold shrink-0"
-        :class="cards.activeCard ? typeConfig(cards.activeCard.type).bg : 'bg-gray-300'"
-      >{{ cards.activeCard ? initials(cards.activeCard.title) : '…' }}</div>
+      <div class="w-9 h-9 rounded-full overflow-hidden shrink-0">
+        <img
+          v-if="avatarImage"
+          :src="avatarImage.url"
+          :alt="cards.activeCard?.title"
+          class="w-full h-full object-cover"
+        />
+        <div
+          v-else
+          class="w-full h-full flex items-center justify-center text-white text-sm font-semibold"
+          :class="cards.activeCard ? typeConfig(cards.activeCard.type).bg : 'bg-gray-300'"
+        >{{ cards.activeCard ? initials(cards.activeCard.title) : '…' }}</div>
+      </div>
 
       <div class="flex-1 min-w-0">
         <template v-if="editingTitle">
@@ -309,6 +323,7 @@ const dialogPt = computed(() => ({
             { key: 'attributs',   label: 'Attributs'   },
             { key: 'liaisons',    label: 'Liaisons'    },
             { key: 'referentiel', label: 'Référentiel' },
+            { key: 'images',      label: 'Images'      },
           ]"
           :key="key"
           class="py-3 px-1 mr-3 text-sm border-b-2 transition-colors -mb-px"
@@ -654,6 +669,9 @@ const dialogPt = computed(() => ({
             @click="showLinkForm = true"
           >+ nouvelle liaison</button>
         </div>
+
+        <!-- ── Images ── -->
+        <CardImagesTab v-else-if="activeTab === 'images'" />
 
         <!-- ── Référentiel ── -->
         <div v-else-if="activeTab === 'referentiel'" class="p-6">

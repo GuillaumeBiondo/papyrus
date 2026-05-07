@@ -118,6 +118,17 @@ export interface Scene {
   updated_at: string
 }
 
+export interface CardImage {
+  id: string
+  card_id: string
+  original_name: string
+  mime_type: string
+  size: number
+  is_avatar: boolean
+  url: string
+  created_at: string
+}
+
 export interface Card {
   id: string
   project_id: string
@@ -127,6 +138,7 @@ export interface Card {
   links?: CardLink[]
   keywords?: CardKeyword[]
   notes?: Note[]
+  images?: CardImage[]
   updated_at: string
 }
 

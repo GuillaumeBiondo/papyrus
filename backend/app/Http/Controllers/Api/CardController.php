@@ -58,7 +58,7 @@ class CardController extends Controller
     {
         $this->authorize('view', $card);
 
-        $card->load('attributes', 'links.linkedCard', 'keywords', 'notes');
+        $card->load('attributes', 'links.linkedCard', 'keywords', 'notes', 'images');
 
         return new CardResource($card);
     }

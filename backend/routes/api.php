@@ -10,6 +10,7 @@ use App\Http\Controllers\Api\ArcController;
 use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\Api\BugReportController;
 use App\Http\Controllers\Api\CardController;
+use App\Http\Controllers\Api\CardImageController;
 use App\Http\Controllers\Api\ChangelogController;
 use App\Http\Controllers\Api\ProjectExportController;
 use App\Http\Controllers\Api\ChapterController;
@@ -96,6 +97,15 @@ Route::prefix('v1')->middleware(['auth:sanctum', 'throttle:60,1'])->group(functi
     Route::get('cards/{card}/links', [CardController::class, 'links']);
     Route::post('cards/{card}/links', [CardController::class, 'storeLink']);
     Route::delete('cards/{card}/links/{link}', [CardController::class, 'destroyLink']);
+
+    // Card images
+    Route::get('cards/{card}/images', [CardImageController::class, 'index']);
+    Route::post('cards/{card}/images', [CardImageController::class, 'store'])
+        ->middleware('throttle:20,1');
+    Route::delete('cards/{card}/images/{image}', [CardImageController::class, 'destroy']);
+    Route::put('cards/{card}/images/{image}/avatar', [CardImageController::class, 'setAvatar']);
+    Route::get('cards/{card}/images/{image}/file', [CardImageController::class, 'serve'])
+        ->name('cards.images.serve');
 
     Route::get('scenes/{scene}/cards', [CardController::class, 'sceneCards']);
     Route::get('scenes/{scene}/cards-by-keywords', [CardController::class, 'byKeywordsInScene']);

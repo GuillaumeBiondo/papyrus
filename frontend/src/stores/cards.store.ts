@@ -2,7 +2,7 @@ import { defineStore } from 'pinia'
 import { ref } from 'vue'
 import { cardsService } from '@/services/cards.service'
 import { keywordsService } from '@/services/keywords.service'
-import type { Card, CardKeyword, CardLink, KeywordOccurrence } from '@/types'
+import type { Card, CardImage, CardKeyword, CardLink, KeywordOccurrence } from '@/types'
 
 export const useCardsStore = defineStore('cards', () => {
   const cards = ref<Card[]>([])
@@ -110,11 +110,43 @@ export const useCardsStore = defineStore('cards', () => {
     }
   }
 
+  async function uploadImage(file: File): Promise<CardImage> {
+    if (!activeCard.value) throw new Error('No active card')
+    const image = await cardsService.uploadImage(activeCard.value.id, file)
+    if (!activeCard.value.images) activeCard.value.images = []
+    activeCard.value.images.push(image)
+    return image
+  }
+
+  async function removeImage(imageId: string) {
+    if (!activeCard.value) return
+    await cardsService.destroyImage(activeCard.value.id, imageId)
+    if (activeCard.value.images) {
+      activeCard.value.images = activeCard.value.images.filter((i) => i.id !== imageId)
+      const hasAvatar = activeCard.value.images.some((i) => i.is_avatar)
+      if (!hasAvatar && activeCard.value.images.length > 0) {
+        activeCard.value.images[0].is_avatar = true
+      }
+    }
+  }
+
+  async function setAvatarImage(imageId: string) {
+    if (!activeCard.value) return
+    const updated = await cardsService.setAvatarImage(activeCard.value.id, imageId)
+    if (activeCard.value.images) {
+      activeCard.value.images = activeCard.value.images.map((i) => ({
+        ...i,
+        is_avatar: i.id === updated.id,
+      }))
+    }
+  }
+
   return {
     cards, activeCard, occurrences, rebuildStatus, loading, showKeywordForm,
     fetchForProject, loadCard, createCard, updateCard, updateAttributes,
     addKeyword, removeKeyword, openKeywordForm,
     rebuildIndex, loadOccurrences,
     addLink, removeLink,
+    uploadImage, removeImage, setAvatarImage,
   }
 })

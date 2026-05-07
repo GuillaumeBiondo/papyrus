@@ -1,5 +1,5 @@
 import api from './api'
-import type { Card, CardLink, PaginatedResponse } from '@/types'
+import type { Card, CardImage, CardLink, PaginatedResponse } from '@/types'
 
 export const cardsService = {
   index: (
@@ -31,4 +31,21 @@ export const cardsService = {
 
   destroyLink: (cardId: string, linkId: string): Promise<void> =>
     api.delete(`/cards/${cardId}/links/${linkId}`),
+
+  indexImages: (cardId: string): Promise<{ data: CardImage[] }> =>
+    api.get(`/cards/${cardId}/images`).then((r) => r.data),
+
+  uploadImage: (cardId: string, file: File): Promise<CardImage> => {
+    const form = new FormData()
+    form.append('image', file)
+    return api.post(`/cards/${cardId}/images`, form, {
+      headers: { 'Content-Type': 'multipart/form-data' },
+    }).then((r) => r.data.data)
+  },
+
+  destroyImage: (cardId: string, imageId: string): Promise<void> =>
+    api.delete(`/cards/${cardId}/images/${imageId}`),
+
+  setAvatarImage: (cardId: string, imageId: string): Promise<CardImage> =>
+    api.put(`/cards/${cardId}/images/${imageId}/avatar`).then((r) => r.data.data),
 }
