@@ -17,6 +17,9 @@ const notebook = useNotebookStore()
 
 const changelog = useChangelogStore()
 
+const latestChangelog = computed(() => changelog.all[0] ?? null)
+const latestIsUnread = computed(() => latestChangelog.value ? !latestChangelog.value.read : false)
+
 const dropdownOpen = ref(false)
 
 const themeLabel = computed(() => {
@@ -62,27 +65,27 @@ function closeOnOutside(e: MouseEvent) {
       <!-- Bug report -->
       <BugReportButton />
 
-      <!-- Changelog badge -->
+      <!-- Dernier changelog -->
       <button
-        class="relative btn-ghost transition-colors"
-        :class="changelog.unreadCount > 0 ? 'text-gray-600 dark:text-gray-300' : 'text-gray-400 dark:text-gray-600'"
+        v-if="latestChangelog"
+        class="flex items-center gap-1.5 px-2 py-1 rounded-lg transition-colors hover:bg-gray-100 dark:hover:bg-gray-800"
+        :class="latestIsUnread ? 'text-gray-700 dark:text-gray-200' : 'text-gray-400 dark:text-gray-600'"
         title="Nouveautés"
         @click="changelog.openModal()"
       >
         <svg
-          class="w-4 h-4"
-          :class="changelog.unreadCount > 0 ? 'bell-ring' : ''"
+          class="w-3.5 h-3.5 shrink-0"
+          :class="[latestIsUnread ? 'bell-ring text-red-500' : '', 'transition-colors']"
           fill="none" stroke="currentColor" viewBox="0 0 24 24"
         >
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                 d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
         </svg>
-        <span
-          v-if="changelog.unreadCount > 0"
-          class="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-red-500 text-white text-[10px] font-bold flex items-center justify-center leading-none"
-        >
-          {{ changelog.unreadCount > 9 ? '9+' : changelog.unreadCount }}
+        <span v-if="latestChangelog.version" class="text-[10px] font-mono font-semibold"
+              :class="latestIsUnread ? 'text-red-500' : 'text-gray-400 dark:text-gray-600'">
+          v{{ latestChangelog.version }}
         </span>
+        <span class="text-xs truncate max-w-[140px] hidden sm:inline">{{ latestChangelog.title }}</span>
       </button>
 
       <!-- Carnet -->
