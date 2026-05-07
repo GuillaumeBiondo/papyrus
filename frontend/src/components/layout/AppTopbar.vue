@@ -64,7 +64,6 @@ function closeOnOutside(e: MouseEvent) {
 
       <!-- Changelog badge -->
       <button
-        v-if="changelog.loaded"
         class="relative btn-ghost transition-colors"
         :class="changelog.unreadCount > 0 ? 'text-gray-600 dark:text-gray-300' : 'text-gray-400 dark:text-gray-600'"
         title="Nouveautés"

@@ -14,12 +14,20 @@ export const useChangelogStore = defineStore('changelog', () => {
   const hasAny = computed(() => loaded.value)
 
   async function fetchAll() {
-    const data = await changelogService.getAll()
-    all.value = data.changelogs
-    loaded.value = true
+    try {
+      const data = await changelogService.getAll()
+      all.value = data.changelogs
+    } catch {
+      // Fallback : récupère au moins les non-lus
+      try {
+        const data = await changelogService.getUnread()
+        all.value = data.changelogs.map(c => ({ ...c, read: false }))
+      } catch { /* silencieux */ }
+    } finally {
+      loaded.value = true
+    }
   }
 
-  // Keep backward compat — fetches all and populates unread count
   async function fetchUnread() {
     await fetchAll()
   }
