@@ -11,7 +11,9 @@ use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\Api\BugReportController;
 use App\Http\Controllers\Api\CardController;
 use App\Http\Controllers\Api\CardImageController;
+use App\Http\Controllers\Api\FontController;
 use App\Http\Controllers\Api\ProfileController;
+use App\Http\Controllers\Api\Admin\AvailableFontController;
 use App\Http\Controllers\Api\ChangelogController;
 use App\Http\Controllers\Api\ProjectExportController;
 use App\Http\Controllers\Api\ChapterController;
@@ -43,6 +45,9 @@ Route::prefix('auth')->group(function () {
 |--------------------------------------------------------------------------
 */
 Route::prefix('v1')->middleware(['auth:sanctum', 'throttle:60,1'])->group(function () {
+
+    // Polices disponibles (liste publique des polices actives)
+    Route::get('fonts', [FontController::class, 'index']);
 
     // Profile
     Route::put('profile', [ProfileController::class, 'update']);
@@ -182,5 +187,11 @@ Route::prefix('v1')->middleware(['auth:sanctum', 'throttle:60,1'])->group(functi
 
         Route::get('settings', [AdminSettingController::class, 'index']);
         Route::put('settings/{key}', [AdminSettingController::class, 'update']);
+
+        Route::get('fonts', [AvailableFontController::class, 'index']);
+        Route::post('fonts', [AvailableFontController::class, 'store']);
+        Route::put('fonts/reorder', [AvailableFontController::class, 'reorder']);
+        Route::put('fonts/{font}', [AvailableFontController::class, 'update']);
+        Route::delete('fonts/{font}', [AvailableFontController::class, 'destroy']);
     });
 });

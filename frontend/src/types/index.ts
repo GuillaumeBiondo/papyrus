@@ -1,5 +1,15 @@
+export interface AvailableFont {
+  id: number
+  name: string
+  google_font_slug: string
+  css_family: string
+  category: 'serif' | 'sans-serif' | 'monospace'
+  enabled: boolean
+  sort_order: number
+}
+
 export interface AppearancePrefs {
-  fontFamily: string
+  fontFamily: number | null   // null = système, number = id dans available_fonts
   fontSize: number
   editorBg: string
   accentColor: string

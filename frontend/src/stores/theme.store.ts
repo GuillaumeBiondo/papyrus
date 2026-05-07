@@ -1,6 +1,7 @@
 import { defineStore } from 'pinia'
 import { computed, ref } from 'vue'
 import { applyAccent, applyEditorAppearance } from '@/utils/accentColors'
+import { useFontsStore } from '@/stores/fonts.store'
 
 type Theme = 'light' | 'dark' | 'system'
 
@@ -26,13 +27,14 @@ export const useThemeStore = defineStore('theme', () => {
   }
 
   function applyPreferences(prefs: {
-    light?: { accentColor?: string; fontFamily?: string; fontSize?: number; editorBg?: string }
-    dark?:  { accentColor?: string; fontFamily?: string; fontSize?: number; editorBg?: string }
+    light?: { accentColor?: string; fontFamily?: number | null; fontSize?: number; editorBg?: string }
+    dark?:  { accentColor?: string; fontFamily?: number | null; fontSize?: number; editorBg?: string }
   }) {
     const isDark = applied.value === 'dark'
     const mode   = isDark ? prefs.dark : prefs.light
     if (mode?.accentColor) applyAccent(mode.accentColor)
-    applyEditorAppearance(isDark, prefs)
+    const fonts = useFontsStore()
+    applyEditorAppearance(isDark, prefs, (id) => fonts.cssForId(id))
   }
 
   matchMedia('(prefers-color-scheme: dark)').addEventListener('change', () => {

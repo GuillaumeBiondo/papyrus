@@ -94,15 +94,6 @@ export function applyAccent(key: string): void {
   el.textContent = `:root {\n${lightVars}\n}\n:root.dark {\n${darkVars}\n}`
 }
 
-export const FONT_FAMILIES = [
-  { key: 'system',  name: 'Système',         css: 'system-ui, sans-serif' },
-  { key: 'georgia', name: 'Georgia',          css: 'Georgia, serif' },
-  { key: 'palatino',name: 'Palatino',         css: '"Palatino Linotype", Palatino, serif' },
-  { key: 'times',   name: 'Times New Roman',  css: '"Times New Roman", Times, serif' },
-  { key: 'verdana', name: 'Verdana',          css: 'Verdana, Geneva, sans-serif' },
-  { key: 'courier', name: 'Courier New',      css: '"Courier New", Courier, monospace' },
-]
-
 export const FONT_SIZES = [
   { value: 15, label: 'Petit' },
   { value: 17, label: 'Normal' },
@@ -110,15 +101,19 @@ export const FONT_SIZES = [
   { value: 22, label: 'Très grand' },
 ]
 
-export function applyEditorAppearance(isDark: boolean, prefs: {
-  light?: { fontFamily?: string; fontSize?: number; editorBg?: string }
-  dark?:  { fontFamily?: string; fontSize?: number; editorBg?: string }
-}): void {
-  const mode  = isDark ? prefs.dark : prefs.light
-  const ffKey = mode?.fontFamily ?? 'system'
-  const ff    = FONT_FAMILIES.find(f => f.key === ffKey)?.css ?? 'system-ui, sans-serif'
-  const fs    = mode?.fontSize ?? 17
-  const bg    = mode?.editorBg ?? (isDark ? '#0c0b18' : '#f5f4f1')
+// cssFamilyResolver est injecté depuis fonts.store au moment de l'appel
+export function applyEditorAppearance(
+  isDark: boolean,
+  prefs: {
+    light?: { fontFamily?: number | null; fontSize?: number; editorBg?: string }
+    dark?:  { fontFamily?: number | null; fontSize?: number; editorBg?: string }
+  },
+  cssFamilyResolver: (id: number | null | undefined) => string = () => 'system-ui, sans-serif',
+): void {
+  const mode = isDark ? prefs.dark : prefs.light
+  const ff   = cssFamilyResolver(mode?.fontFamily)
+  const fs   = mode?.fontSize ?? 17
+  const bg   = mode?.editorBg ?? (isDark ? '#0c0b18' : '#f5f4f1')
 
   // Validate bg as hex to prevent CSS injection
   const safeBg = /^#[0-9a-fA-F]{6}$/.test(bg) ? bg : (isDark ? '#0c0b18' : '#f5f4f1')

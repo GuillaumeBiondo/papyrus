@@ -2,11 +2,13 @@
 import { ref, computed, watch } from 'vue'
 import { useAuthStore } from '@/stores/auth.store'
 import { useThemeStore } from '@/stores/theme.store'
-import { ACCENT_PALETTES, FONT_FAMILIES, FONT_SIZES } from '@/utils/accentColors'
+import { useFontsStore } from '@/stores/fonts.store'
+import { ACCENT_PALETTES, FONT_SIZES } from '@/utils/accentColors'
 import type { UserPreferences } from '@/types'
 
 const auth  = useAuthStore()
 const theme = useThemeStore()
+const fonts = useFontsStore()
 
 // ── Section active ────────────────────────────────────────────
 const activeSection = ref<'theme' | 'appearance' | 'cards' | 'attributes'>('theme')
@@ -31,7 +33,7 @@ function accentFor(mode: 'light' | 'dark') {
   return getAppearance(mode).accentColor ?? 'indigo'
 }
 function fontFor(mode: 'light' | 'dark') {
-  return getAppearance(mode).fontFamily ?? 'system'
+  return getAppearance(mode).fontFamily ?? null   // null = système
 }
 function fontSizeFor(mode: 'light' | 'dark') {
   return getAppearance(mode).fontSize ?? 17
@@ -204,24 +206,59 @@ watch(() => theme.applied, (t) => { appearanceMode.value = t }, { immediate: tru
 
           <!-- Police -->
           <div>
-            <p class="text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400 mb-3">
-              Police de l'éditeur
-            </p>
+            <div class="flex items-center justify-between mb-3">
+              <p class="text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">
+                Police de l'éditeur
+              </p>
+              <span class="text-xs text-gray-400">
+                {{ fonts.fonts.length }} police{{ fonts.fonts.length > 1 ? 's' : '' }} disponible{{ fonts.fonts.length > 1 ? 's' : '' }}
+              </span>
+            </div>
             <div class="space-y-2">
+              <!-- Option système -->
               <button
-                v-for="f in FONT_FAMILIES"
-                :key="f.key"
                 class="w-full text-left px-4 py-2.5 rounded-lg border transition-colors flex items-center justify-between"
-                :class="fontFor(appearanceMode) === f.key
+                :class="fontFor(appearanceMode) === null
                   ? 'border-brand-400 bg-brand-50 dark:bg-brand-900/20 text-brand-700 dark:text-brand-300'
                   : 'border-gray-200 dark:border-gray-700 text-gray-700 dark:text-gray-300 hover:border-gray-300'"
-                @click="saveAppearance(appearanceMode, { fontFamily: f.key })"
+                @click="saveAppearance(appearanceMode, { fontFamily: null })"
               >
-                <span :style="{ fontFamily: f.css }">{{ f.name }}</span>
-                <span :style="{ fontFamily: f.css }" class="text-sm text-gray-400">
-                  Exemple de texte
+                <span>Système</span>
+                <span class="text-sm text-gray-400" style="font-family: system-ui">
+                  La nuit était noire…
                 </span>
               </button>
+              <!-- Polices Google -->
+              <button
+                v-for="f in fonts.fonts"
+                :key="f.id"
+                class="w-full text-left px-4 py-2.5 rounded-lg border transition-colors flex items-center justify-between"
+                :class="fontFor(appearanceMode) === f.id
+                  ? 'border-brand-400 bg-brand-50 dark:bg-brand-900/20 text-brand-700 dark:text-brand-300'
+                  : 'border-gray-200 dark:border-gray-700 text-gray-700 dark:text-gray-300 hover:border-gray-300'"
+                @click="saveAppearance(appearanceMode, { fontFamily: f.id })"
+              >
+                <div class="flex items-center gap-2">
+                  <span :style="{ fontFamily: f.css_family }">{{ f.name }}</span>
+                  <span
+                    class="text-[10px] px-1.5 py-0.5 rounded-full"
+                    :class="{
+                      'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400': f.category === 'serif',
+                      'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400': f.category === 'sans-serif',
+                      'bg-gray-100 text-gray-600 dark:bg-gray-800 dark:text-gray-400': f.category === 'monospace',
+                    }"
+                  >{{ f.category }}</span>
+                </div>
+                <span :style="{ fontFamily: f.css_family }" class="text-sm text-gray-400">
+                  La nuit était noire…
+                </span>
+              </button>
+              <p v-if="!fonts.fonts.length" class="text-sm text-gray-400 py-2">
+                Aucune police configurée.
+                <RouterLink to="/admin/fonts" class="text-brand-500 hover:underline ml-1">
+                  Ajouter dans l'admin ↗
+                </RouterLink>
+              </p>
             </div>
           </div>
 
