@@ -23,5 +23,10 @@ class DatabaseSeeder extends Seeder
         ]);
 
         $this->call(AvailableFontsSeeder::class);
+
+        \App\Models\Setting::firstOrCreate(
+            ['key' => 'snapshot_interval_words'],
+            ['value' => '100', 'label' => 'Auto-snapshot (mots entre chaque sauvegarde)', 'group' => 'editor']
+        );
     }
 }

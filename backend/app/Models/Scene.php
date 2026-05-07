@@ -56,4 +56,9 @@ class Scene extends Model
     {
         return $this->hasMany(KeywordOccurrence::class);
     }
+
+    public function snapshots(): HasMany
+    {
+        return $this->hasMany(SceneSnapshot::class);
+    }
 }

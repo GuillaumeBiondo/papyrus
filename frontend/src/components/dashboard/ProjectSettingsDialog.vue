@@ -1,7 +1,10 @@
 <script setup lang="ts">
-import { ref, watch } from 'vue'
+import { ref, watch, onMounted } from 'vue'
 import { projectsService } from '@/services/projects.service'
-import type { Project } from '@/types'
+import { activityService } from '@/services/activity.service'
+import ActivityGrid from '@/components/activity/ActivityGrid.vue'
+import ActivityHeatmap from '@/components/activity/ActivityHeatmap.vue'
+import type { ActivityDay, ActivityHour, Project } from '@/types'
 
 const props = defineProps<{ project: Project }>()
 const emit  = defineEmits<{
@@ -65,6 +68,21 @@ async function exportProject(format: 'txt' | 'md' | 'zip') {
   }
 }
 
+// ── Activité projet ───────────────────────────────────────────
+const activityDays     = ref<ActivityDay[]>([])
+const activityHours    = ref<ActivityHour[]>([])
+const activityLoading  = ref(true)
+
+onMounted(async () => {
+  try {
+    const data = await activityService.forProject(props.project.id)
+    activityDays.value  = data.daily
+    activityHours.value = data.hourly
+  } finally {
+    activityLoading.value = false
+  }
+})
+
 // ── Suppression ───────────────────────────────────────────────
 const deleteStep    = ref<'idle' | 'confirm'>('idle')
 const deleteConfirm = ref('')
@@ -98,6 +116,22 @@ async function confirmDelete() {
         </div>
 
         <div class="overflow-y-auto flex-1 px-6 py-5 space-y-8">
+
+          <!-- ── Section : Activité ── -->
+          <section>
+            <h3 class="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-4">Activité sur ce roman</h3>
+            <div v-if="activityLoading" class="text-xs text-gray-400">Chargement…</div>
+            <template v-else>
+              <div class="mb-5">
+                <p class="text-xs text-gray-400 mb-2">365 derniers jours</p>
+                <ActivityGrid :days="activityDays" />
+              </div>
+              <div>
+                <p class="text-xs text-gray-400 mb-2">Habitudes par heure</p>
+                <ActivityHeatmap :hours="activityHours" />
+              </div>
+            </template>
+          </section>
 
           <!-- ── Section : Informations ── -->
           <section>

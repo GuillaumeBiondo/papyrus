@@ -1,14 +1,18 @@
 <script setup lang="ts">
-import { onMounted, onUnmounted, ref } from 'vue'
+import { onMounted, onUnmounted, ref, watch } from 'vue'
 import { useRoute } from 'vue-router'
 import { useEditorStore } from '@/stores/editor.store'
 import SceneEditor from '@/components/editor/SceneEditor.vue'
 import EditorRightPanel from '@/components/editor/EditorRightPanel.vue'
 import ConfirmDeleteDialog from '@/components/editor/ConfirmDeleteDialog.vue'
 import CardEditDialog from '@/components/editor/CardEditDialog.vue'
+import SceneTimelineDrawer from '@/components/editor/SceneTimelineDrawer.vue'
+import SnapshotManualModal from '@/components/editor/SnapshotManualModal.vue'
 import Splitter from 'primevue/splitter'
 import SplitterPanel from 'primevue/splitterpanel'
 import draggable from 'vuedraggable'
+import { snapshotsService } from '@/services/snapshots.service'
+import { activityService } from '@/services/activity.service'
 import type { Arc, Chapter, Scene } from '@/types'
 
 const route = useRoute()
@@ -163,6 +167,76 @@ function navigateToSceneById(sceneId: string) {
       if (scene) { editor.setActiveScene(scene); selectedCardId.value = null; return }
     }
   }
+}
+
+// ── Snapshots ─────────────────────────────────────────────────
+const timelineOpen    = ref(false)
+const snapshotModal   = ref(false)
+const snapshotSaving  = ref(false)
+
+// Seuil d'auto-snapshot (chargé depuis /api/v1/config)
+const snapshotInterval = ref(100)
+activityService.config().then(c => { snapshotInterval.value = c.snapshot_interval_words })
+
+// Mots au moment du dernier snapshot (réinitialisé à chaque changement de scène)
+const wordsAtLastSnap = ref(0)
+
+watch(() => editor.activeScene?.id, () => {
+  wordsAtLastSnap.value = countWords(editor.activeScene?.content)
+})
+
+function countWords(json: string | null | undefined): number {
+  if (!json) return 0
+  try {
+    const extract = (n: any): string => {
+      if (n?.type === 'text') return n.text ?? ''
+      if (n?.content) return n.content.map(extract).join(' ')
+      return ''
+    }
+    return extract(JSON.parse(json)).trim().split(/\s+/).filter(Boolean).length
+  } catch { return 0 }
+}
+
+async function triggerAutoSnapshot(content: string) {
+  if (!editor.activeScene) return
+  const wc    = countWords(content)
+  const delta = wc - wordsAtLastSnap.value
+  if (delta < snapshotInterval.value) return
+  wordsAtLastSnap.value = wc
+  try {
+    await snapshotsService.store(editor.activeScene.id, {
+      content, word_count: wc, word_delta: delta, trigger: 'auto',
+    })
+  } catch { /* silencieux */ }
+}
+
+async function onContentChange(content: string) {
+  editor.onContentChange(content)
+  await triggerAutoSnapshot(content)
+}
+
+async function saveManualSnapshot(label: string) {
+  if (!editor.activeScene) return
+  snapshotModal.value  = false
+  snapshotSaving.value = true
+  const content = editor.activeScene.content ?? ''
+  const wc      = countWords(content)
+  try {
+    await snapshotsService.store(editor.activeScene.id, {
+      content, word_count: wc,
+      word_delta: wc - wordsAtLastSnap.value,
+      trigger: 'manual', label: label || null,
+    })
+    wordsAtLastSnap.value = wc
+  } finally {
+    snapshotSaving.value = false
+  }
+}
+
+function onRestored(content: string) {
+  if (!editor.activeScene) return
+  editor.activeScene.content = content
+  wordsAtLastSnap.value = countWords(content)
 }
 
 // ── Lifecycle ─────────────────────────────────────────────────
@@ -536,11 +610,34 @@ const rightPanelPt = { root: { class: 'flex flex-col overflow-hidden h-full bord
               data-placeholder="Titre de la scène…"
               @blur="onSceneTitleBlur"
             >{{ editor.activeScene.title }}</h1>
+            <!-- Boutons snapshot (header éditeur) -->
+            <div class="flex items-center gap-1 mb-4">
+              <button
+                class="flex items-center gap-1 text-xs text-gray-400 hover:text-gray-600 dark:hover:text-gray-300
+                       px-2 py-1 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
+                :disabled="snapshotSaving"
+                title="Snapshot manuel"
+                @click="snapshotModal = true"
+              >
+                <span>📷</span>
+                <span class="hidden sm:inline">{{ snapshotSaving ? 'Sauvegarde…' : 'Snapshot' }}</span>
+              </button>
+              <button
+                class="flex items-center gap-1 text-xs text-gray-400 hover:text-gray-600 dark:hover:text-gray-300
+                       px-2 py-1 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
+                title="Timeline"
+                @click="timelineOpen = true"
+              >
+                <span>🎞️</span>
+                <span class="hidden sm:inline">Timeline</span>
+              </button>
+            </div>
+
             <SceneEditor
               ref="sceneEditorRef"
               :content="editor.activeScene.content ?? ''"
               :annotations="editor.annotations"
-              @change="editor.onContentChange"
+              @change="onContentChange"
               @annotate="onAnnotate"
               @annotation-click="onAnnotationClick"
             />
@@ -633,6 +730,22 @@ const rightPanelPt = { root: { class: 'flex flex-col overflow-hidden h-full bord
     :project-id="editor.currentProject?.id ?? ''"
     @close="selectedCardId = null"
     @navigate-to-scene="navigateToSceneById"
+  />
+
+  <!-- ══ Timeline snapshots ══ -->
+  <SceneTimelineDrawer
+    v-if="editor.activeScene"
+    :scene-id="editor.activeScene.id"
+    :open="timelineOpen"
+    @close="timelineOpen = false"
+    @restored="onRestored"
+  />
+
+  <!-- ══ Modal snapshot manuel ══ -->
+  <SnapshotManualModal
+    v-if="snapshotModal"
+    @confirm="saveManualSnapshot"
+    @cancel="snapshotModal = false"
   />
 </template>
 

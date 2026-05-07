@@ -1,7 +1,11 @@
 <script setup lang="ts">
-import { ref, computed } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import { useAuthStore } from '@/stores/auth.store'
 import { authService } from '@/services/auth.service'
+import { activityService } from '@/services/activity.service'
+import ActivityGrid from '@/components/activity/ActivityGrid.vue'
+import ActivityHeatmap from '@/components/activity/ActivityHeatmap.vue'
+import type { ActivityDay, ActivityHour } from '@/types'
 
 const auth = useAuthStore()
 
@@ -112,6 +116,21 @@ async function submitPasswordChange() {
 const initials = computed(() =>
   (auth.user?.name ?? '').split(' ').slice(0, 2).map(n => n[0]).join('').toUpperCase() || '?'
 )
+
+// ── Activité ──────────────────────────────────────────────────
+const activityDays  = ref<ActivityDay[]>([])
+const activityHours = ref<ActivityHour[]>([])
+const activityLoading = ref(true)
+
+onMounted(async () => {
+  try {
+    const data = await activityService.global()
+    activityDays.value  = data.daily
+    activityHours.value = data.hourly
+  } finally {
+    activityLoading.value = false
+  }
+})
 </script>
 
 <template>
@@ -237,6 +256,23 @@ const initials = computed(() =>
                  hover:bg-brand-700 disabled:opacity-50 transition-colors"
         >{{ profileSaving ? 'Enregistrement…' : 'Sauvegarder' }}</button>
       </form>
+    </div>
+
+    <!-- ── Activité ── -->
+    <div class="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-xl p-6">
+      <h2 class="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-5">Activité d'écriture</h2>
+
+      <div v-if="activityLoading" class="text-xs text-gray-400">Chargement…</div>
+      <template v-else>
+        <div class="mb-6">
+          <p class="text-xs text-gray-400 mb-3">365 derniers jours</p>
+          <ActivityGrid :days="activityDays" />
+        </div>
+        <div>
+          <p class="text-xs text-gray-400 mb-3">Habitudes par heure et jour de semaine</p>
+          <ActivityHeatmap :hours="activityHours" />
+        </div>
+      </template>
     </div>
 
     <!-- ── Mot de passe ── -->

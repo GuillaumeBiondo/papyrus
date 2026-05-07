@@ -9,10 +9,13 @@ use App\Http\Controllers\Api\AnnotationController;
 use App\Http\Controllers\Api\ArcController;
 use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\Api\BugReportController;
+use App\Http\Controllers\Api\ActivityController;
+use App\Http\Controllers\Api\AppConfigController;
 use App\Http\Controllers\Api\CardController;
 use App\Http\Controllers\Api\CardImageController;
 use App\Http\Controllers\Api\FontController;
 use App\Http\Controllers\Api\ProfileController;
+use App\Http\Controllers\Api\SceneSnapshotController;
 use App\Http\Controllers\Api\Admin\AvailableFontController;
 use App\Http\Controllers\Api\ChangelogController;
 use App\Http\Controllers\Api\ProjectExportController;
@@ -46,8 +49,21 @@ Route::prefix('auth')->group(function () {
 */
 Route::prefix('v1')->middleware(['auth:sanctum', 'throttle:60,1'])->group(function () {
 
+    // Config publique (seuil snapshot, etc.)
+    Route::get('config', [AppConfigController::class, 'index']);
+
     // Polices disponibles (liste publique des polices actives)
     Route::get('fonts', [FontController::class, 'index']);
+
+    // Snapshots de scènes
+    Route::get('scenes/{scene}/snapshots',                    [SceneSnapshotController::class, 'index']);
+    Route::post('scenes/{scene}/snapshots',                   [SceneSnapshotController::class, 'store']);
+    Route::get('scenes/{scene}/snapshots/{snapshot}',         [SceneSnapshotController::class, 'show'])->name('snapshots.show');
+    Route::post('scenes/{scene}/snapshots/{snapshot}/restore',[SceneSnapshotController::class, 'restore']);
+
+    // Activité (grilles)
+    Route::get('activity',                      [ActivityController::class, 'global']);
+    Route::get('projects/{project}/activity',   [ActivityController::class, 'forProject']);
 
     // Profile
     Route::put('profile', [ProfileController::class, 'update']);

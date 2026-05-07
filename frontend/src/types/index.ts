@@ -1,3 +1,30 @@
+export interface SceneSnapshot {
+  id: number
+  trigger: 'auto' | 'manual' | 'restore'
+  label: string | null
+  word_count: number
+  word_delta: number
+  created_at: string
+  content?: string  // chargé à la demande
+}
+
+export interface ActivityDay {
+  date: string
+  logins: number
+  words: number
+}
+
+export interface ActivityHour {
+  day: number    // 0 = dimanche, 1 = lundi … 6 = samedi
+  hour: number   // 0-23
+  logins: number
+  words: number
+}
+
+export interface AppConfig {
+  snapshot_interval_words: number
+}
+
 export interface AvailableFont {
   id: number
   name: string
