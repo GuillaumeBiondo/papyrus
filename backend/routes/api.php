@@ -11,6 +11,7 @@ use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\Api\BugReportController;
 use App\Http\Controllers\Api\CardController;
 use App\Http\Controllers\Api\CardImageController;
+use App\Http\Controllers\Api\ProfileController;
 use App\Http\Controllers\Api\ChangelogController;
 use App\Http\Controllers\Api\ProjectExportController;
 use App\Http\Controllers\Api\ChapterController;
@@ -42,6 +43,13 @@ Route::prefix('auth')->group(function () {
 |--------------------------------------------------------------------------
 */
 Route::prefix('v1')->middleware(['auth:sanctum', 'throttle:60,1'])->group(function () {
+
+    // Profile
+    Route::put('profile', [ProfileController::class, 'update']);
+    Route::post('profile/avatar', [ProfileController::class, 'uploadAvatar'])->middleware('throttle:10,1');
+    Route::delete('profile/avatar', [ProfileController::class, 'destroyAvatar']);
+    Route::get('profile/avatar', [ProfileController::class, 'serveAvatar'])->name('profile.avatar');
+    Route::put('profile/preferences', [ProfileController::class, 'updatePreferences']);
 
     // Bug report
     Route::post('bug-report', [BugReportController::class, 'store']);

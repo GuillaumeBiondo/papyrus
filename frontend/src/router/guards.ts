@@ -1,14 +1,18 @@
 import type { Router } from 'vue-router'
 import { useAuthStore } from '@/stores/auth.store'
 import { useProjectsStore } from '@/stores/projects.store'
+import { useThemeStore } from '@/stores/theme.store'
 
 export function setupGuards(router: Router) {
   router.beforeEach(async (to) => {
-    const auth = useAuthStore()
+    const auth  = useAuthStore()
+    const theme = useThemeStore()
 
     if (to.meta.requiresAuth && !auth.isAuthenticated) {
       await auth.tryRestoreSession()
       if (!auth.isAuthenticated) return { name: 'login' }
+      // Apply saved appearance after session restore
+      theme.applyPreferences(auth.preferences as any)
     }
 
     // Admin redirect: admins always go to /admin, never to the regular app.

@@ -2,22 +2,27 @@
 import { computed, onMounted, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useCardsStore } from '@/stores/cards.store'
+import { useAuthStore } from '@/stores/auth.store'
 import { notesService } from '@/services/notes.service'
 import type { CardAttribute, Note } from '@/types'
 
-const route = useRoute()
+const route  = useRoute()
 const router = useRouter()
-const cards = useCardsStore()
+const cards  = useCardsStore()
+const auth   = useAuthStore()
 
 const projectId = route.params.projectId as string
 
+// ── Affichage liste ────────────────────────────────────────
+const cardDisplay = computed(() => auth.preferences.cardDisplay ?? 'dot')
+
 // ── Types ─────────────────────────────────────────────────
-const TYPES: { key: string; label: string; color: string; dot: string }[] = [
-  { key: 'personnage', label: 'Personnages', color: 'bg-brand-50 text-brand-600 dark:bg-brand-800/30 dark:text-brand-300 border border-brand-200 dark:border-brand-700', dot: 'bg-brand-500' },
-  { key: 'lieu',       label: 'Lieux',       color: 'bg-emerald-50 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-700', dot: 'bg-emerald-500' },
-  { key: 'evenement',  label: 'Événements',  color: 'bg-amber-50 text-amber-700 dark:bg-amber-900/30 dark:text-amber-300 border border-amber-200 dark:border-amber-700', dot: 'bg-amber-500' },
-  { key: 'objet',      label: 'Objets',      color: 'bg-red-50 text-red-700 dark:bg-red-900/30 dark:text-red-300 border border-red-200 dark:border-red-700', dot: 'bg-red-400' },
-  { key: 'theme',      label: 'Thèmes',      color: 'bg-violet-50 text-violet-700 dark:bg-violet-900/30 dark:text-violet-300 border border-violet-200 dark:border-violet-700', dot: 'bg-violet-400' },
+const TYPES: { key: string; label: string; color: string; dot: string; hex: string; bg: string }[] = [
+  { key: 'personnage', label: 'Personnages', color: 'bg-brand-50 text-brand-600 dark:bg-brand-800/30 dark:text-brand-300 border border-brand-200 dark:border-brand-700', dot: 'bg-brand-500',   hex: '#6D5FE6', bg: 'bg-brand-500'   },
+  { key: 'lieu',       label: 'Lieux',       color: 'bg-emerald-50 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-700', dot: 'bg-emerald-500', hex: '#10b981', bg: 'bg-emerald-500' },
+  { key: 'evenement',  label: 'Événements',  color: 'bg-amber-50 text-amber-700 dark:bg-amber-900/30 dark:text-amber-300 border border-amber-200 dark:border-amber-700', dot: 'bg-amber-500',   hex: '#f59e0b', bg: 'bg-amber-500'   },
+  { key: 'objet',      label: 'Objets',      color: 'bg-red-50 text-red-700 dark:bg-red-900/30 dark:text-red-300 border border-red-200 dark:border-red-700', dot: 'bg-red-400',     hex: '#ef4444', bg: 'bg-red-400'     },
+  { key: 'theme',      label: 'Thèmes',      color: 'bg-violet-50 text-violet-700 dark:bg-violet-900/30 dark:text-violet-300 border border-violet-200 dark:border-violet-700', dot: 'bg-violet-400',  hex: '#8b5cf6', bg: 'bg-violet-400'  },
 ]
 
 function typeConfig(key: string) {
@@ -132,7 +137,13 @@ async function createCard() {
   if (!newTitle.value.trim()) return
   creating.value = true
   try {
-    await cards.createCard(projectId, { title: newTitle.value.trim(), type: newType.value })
+    const defaults = (auth.preferences.defaultAttributes?.[newType.value] ?? [])
+      .map((k: string) => ({ key: k, value: '' }))
+    await cards.createCard(projectId, {
+      title: newTitle.value.trim(),
+      type: newType.value,
+      ...(defaults.length ? { attributes: defaults } : {}),
+    })
     showCreateModal.value = false
     newTitle.value = ''
   } finally {
@@ -218,10 +229,32 @@ onMounted(() => cards.fetchForProject(projectId))
             : 'hover:bg-gray-100 dark:hover:bg-gray-800'"
           @click="selectCard(card)"
         >
+          <!-- Mode pastille -->
           <span
+            v-if="cardDisplay === 'dot'"
             class="w-2 h-2 rounded-full shrink-0"
             :class="typeConfig(card.type).dot"
           />
+          <!-- Mode avatar -->
+          <template v-else>
+            <div
+              v-if="card.images?.find(i => i.is_avatar)"
+              class="w-7 h-7 rounded-full overflow-hidden shrink-0"
+              :style="{ outline: '2px solid ' + typeConfig(card.type).hex, outlineOffset: '1px' }"
+            >
+              <img
+                :src="card.images.find(i => i.is_avatar)!.url"
+                class="w-full h-full object-cover"
+              />
+            </div>
+            <div
+              v-else
+              class="w-7 h-7 rounded-full flex items-center justify-center text-white text-[10px] font-semibold shrink-0"
+              :class="typeConfig(card.type).bg"
+              :style="{ outline: '2px solid ' + typeConfig(card.type).hex, outlineOffset: '1px' }"
+            >{{ initials(card.title) }}</div>
+          </template>
+
           <div class="min-w-0">
             <p class="text-sm text-gray-800 dark:text-gray-100 truncate leading-tight">
               {{ card.title }}

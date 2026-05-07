@@ -498,16 +498,37 @@ const rightPanelPt = { root: { class: 'flex flex-col overflow-hidden h-full bord
           </button>
         </div>
 
-        <!-- Zone centrale -->
-        <div v-if="!editor.activeScene" class="flex-1 flex items-center justify-center">
-          <p class="text-sm text-gray-400">
-            {{ editor.arcs.length ? 'Sélectionne une scène pour commencer.' : 'Crée ton premier arc.' }}
-          </p>
+        <!-- Zone centrale — état vide -->
+        <div
+          v-if="!editor.activeScene"
+          class="flex-1 relative flex items-center justify-center overflow-hidden"
+          style="background: var(--editor-bg)"
+        >
+          <!-- Filigrane : titre du projet -->
+          <div
+            class="absolute inset-0 flex items-center justify-center pointer-events-none select-none overflow-hidden"
+            aria-hidden="true"
+          >
+            <span
+              class="font-bold tracking-tighter leading-none text-center px-8
+                     text-gray-200 dark:text-white/[0.035]"
+              style="font-size: clamp(2.5rem, 11vw, 8rem)"
+            >{{ editor.currentProject?.title ?? 'Papyrus' }}</span>
+          </div>
+          <!-- Message central -->
+          <div class="relative z-10 text-center space-y-1.5">
+            <p class="text-sm text-gray-400 dark:text-gray-500">
+              {{ editor.arcs.length ? 'Sélectionne une scène pour commencer.' : 'Crée ton premier arc.' }}
+            </p>
+          </div>
         </div>
 
         <template v-else>
           <!-- Éditeur TipTap -->
-          <div class="flex-1 overflow-y-auto px-4 md:px-8 py-6">
+          <div
+            class="flex-1 overflow-y-auto px-4 md:px-8 py-6 editor-viewport"
+            style="background: var(--editor-bg)"
+          >
             <h1
               :key="editor.activeScene.id"
               class="text-xl font-semibold text-gray-900 dark:text-gray-100 mb-6 outline-none empty:before:content-[attr(data-placeholder)] empty:before:text-gray-400"

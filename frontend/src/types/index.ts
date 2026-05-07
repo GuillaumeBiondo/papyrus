@@ -1,9 +1,25 @@
+export interface AppearancePrefs {
+  fontFamily: string
+  fontSize: number
+  editorBg: string
+  accentColor: string
+}
+
+export interface UserPreferences {
+  light: Partial<AppearancePrefs>
+  dark: Partial<AppearancePrefs>
+  cardDisplay: 'dot' | 'avatar'
+  defaultAttributes: Record<string, string[]>
+}
+
 export interface User {
   id: string
   name: string
   email: string
   role: 'user' | 'admin'
-  preferences: Record<string, unknown>
+  bio: string | null
+  avatar_url: string | null
+  preferences: Partial<UserPreferences>
   last_login_at: string | null
   currentRole?: 'owner' | 'co_author' | 'beta_reader'
 }
