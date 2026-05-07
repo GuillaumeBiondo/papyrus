@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { useChangelogStore } from '@/stores/changelog.store'
+import MarkdownContent from './MarkdownContent.vue'
 
 const changelog = useChangelogStore()
 
@@ -22,6 +23,7 @@ function formatDate(iso: string | null) {
         <div class="flex items-center justify-between px-5 py-4 border-b border-gray-100 dark:border-gray-800">
           <h2 class="text-base font-semibold text-gray-900 dark:text-gray-100">Nouveautés</h2>
           <button
+            v-if="changelog.unreadCount > 0"
             class="text-sm text-brand-600 dark:text-brand-400 hover:underline"
             @click="changelog.markAllRead()"
           >
@@ -31,30 +33,36 @@ function formatDate(iso: string | null) {
 
         <!-- Body -->
         <div class="flex-1 overflow-y-auto divide-y divide-gray-100 dark:divide-gray-800">
-          <div v-if="changelog.unread.length === 0" class="py-10 text-center text-gray-400 text-sm">
-            Tout est à jour !
+          <div v-if="changelog.all.length === 0" class="py-10 text-center text-gray-400 text-sm">
+            Aucune nouveauté pour le moment.
           </div>
           <div
-            v-for="entry in changelog.unread"
+            v-for="entry in changelog.all"
             :key="entry.id"
-            class="px-5 py-4"
+            class="px-5 py-4 transition-colors"
+            :class="entry.read ? 'opacity-60' : 'bg-brand-50/40 dark:bg-brand-950/20'"
           >
             <div class="flex items-start justify-between gap-4 mb-2">
-              <div>
-                <span v-if="entry.version" class="inline-block mr-2 px-1.5 py-0.5 rounded bg-brand-100 dark:bg-brand-950 text-brand-700 dark:text-brand-300 text-xs font-mono">
+              <div class="flex items-center flex-wrap gap-1.5">
+                <span
+                  v-if="!entry.read"
+                  class="w-2 h-2 rounded-full bg-red-500 shrink-0 mt-0.5"
+                />
+                <span v-if="entry.version" class="px-1.5 py-0.5 rounded bg-brand-100 dark:bg-brand-950 text-brand-700 dark:text-brand-300 text-xs font-mono">
                   v{{ entry.version }}
                 </span>
                 <span class="text-sm font-semibold text-gray-900 dark:text-gray-100">{{ entry.title }}</span>
-                <span class="ml-2 text-xs text-gray-400">{{ formatDate(entry.published_at) }}</span>
+                <span class="text-xs text-gray-400">{{ formatDate(entry.published_at) }}</span>
               </div>
               <button
-                class="shrink-0 text-xs text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
+                v-if="!entry.read"
+                class="shrink-0 text-xs text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 mt-0.5"
                 @click="changelog.markRead(entry.id)"
               >
                 ✓ Lu
               </button>
             </div>
-            <div class="text-sm text-gray-600 dark:text-gray-400 whitespace-pre-wrap leading-relaxed">{{ entry.body }}</div>
+            <MarkdownContent :content="entry.body" class="text-sm text-gray-600 dark:text-gray-400" />
           </div>
         </div>
 

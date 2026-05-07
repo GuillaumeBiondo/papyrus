@@ -10,6 +10,20 @@ use Illuminate\Http\Request;
 
 class ChangelogController extends Controller
 {
+    public function index(Request $request): JsonResponse
+    {
+        $user = $request->user();
+        $readIds = $user->changelogReads()->pluck('changelog_id')->flip();
+
+        $changelogs = Changelog::whereNotNull('published_at')
+            ->where('published_at', '<=', now())
+            ->orderByDesc('published_at')
+            ->get(['id', 'version', 'title', 'body', 'published_at'])
+            ->map(fn($c) => array_merge($c->toArray(), ['read' => $readIds->has($c->id)]));
+
+        return response()->json(['changelogs' => $changelogs]);
+    }
+
     public function unread(Request $request): JsonResponse
     {
         $user = $request->user();

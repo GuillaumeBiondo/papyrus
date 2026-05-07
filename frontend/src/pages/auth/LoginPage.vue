@@ -16,7 +16,7 @@ async function submit() {
   loading.value = true
   try {
     await auth.login(email.value, password.value)
-    router.push({ name: 'dashboard' })
+    router.push({ name: auth.isAdmin ? 'admin-dashboard' : 'dashboard' })
   } catch {
     error.value = 'Identifiants incorrects.'
   } finally {

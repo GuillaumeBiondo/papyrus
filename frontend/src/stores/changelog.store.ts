@@ -1,35 +1,46 @@
 import { defineStore } from 'pinia'
-import { ref } from 'vue'
+import { ref, computed } from 'vue'
 import { changelogService } from '@/services/changelog.service'
 import type { Changelog } from '@/types'
 
-export const useChangelogStore = defineStore('changelog', () => {
-  const unread = ref<Changelog[]>([])
-  const open = ref(false)
+type ChangelogEntry = Changelog & { read: boolean }
 
+export const useChangelogStore = defineStore('changelog', () => {
+  const all = ref<ChangelogEntry[]>([])
+  const open = ref(false)
+  const loaded = ref(false)
+
+  const unreadCount = computed(() => all.value.filter(c => !c.read).length)
+  const hasAny = computed(() => loaded.value)
+
+  async function fetchAll() {
+    const data = await changelogService.getAll()
+    all.value = data.changelogs
+    loaded.value = true
+  }
+
+  // Keep backward compat — fetches all and populates unread count
   async function fetchUnread() {
-    const data = await changelogService.getUnread()
-    unread.value = data.changelogs
+    await fetchAll()
   }
 
   async function markAllRead() {
     await changelogService.markAllRead()
-    unread.value = []
+    all.value = all.value.map(c => ({ ...c, read: true }))
     open.value = false
   }
 
   async function markRead(id: string) {
     await changelogService.markRead(id)
-    unread.value = unread.value.filter(c => c.id !== id)
+    const entry = all.value.find(c => c.id === id)
+    if (entry) entry.read = true
   }
 
-  function openModal() {
-    open.value = true
-  }
+  function openModal() { open.value = true }
+  function closeModal() { open.value = false }
 
-  function closeModal() {
-    open.value = false
-  }
+  // Legacy compat
+  const unread = computed(() => all.value.filter(c => !c.read))
 
-  return { unread, open, fetchUnread, markAllRead, markRead, openModal, closeModal }
+  return { all, unread, unreadCount, hasAny, open, loaded, fetchAll, fetchUnread, markAllRead, markRead, openModal, closeModal }
 })

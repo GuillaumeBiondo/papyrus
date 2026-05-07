@@ -64,17 +64,25 @@ function closeOnOutside(e: MouseEvent) {
 
       <!-- Changelog badge -->
       <button
-        v-if="changelog.unread.length > 0"
-        class="relative btn-ghost text-gray-600 dark:text-gray-300"
+        v-if="changelog.loaded"
+        class="relative btn-ghost transition-colors"
+        :class="changelog.unreadCount > 0 ? 'text-gray-600 dark:text-gray-300' : 'text-gray-400 dark:text-gray-600'"
         title="Nouveautés"
         @click="changelog.openModal()"
       >
-        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <svg
+          class="w-4 h-4"
+          :class="changelog.unreadCount > 0 ? 'bell-ring' : ''"
+          fill="none" stroke="currentColor" viewBox="0 0 24 24"
+        >
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                 d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
         </svg>
-        <span class="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-red-500 text-white text-[10px] font-bold flex items-center justify-center leading-none">
-          {{ changelog.unread.length > 9 ? '9+' : changelog.unread.length }}
+        <span
+          v-if="changelog.unreadCount > 0"
+          class="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-red-500 text-white text-[10px] font-bold flex items-center justify-center leading-none"
+        >
+          {{ changelog.unreadCount > 9 ? '9+' : changelog.unreadCount }}
         </span>
       </button>
 
@@ -183,5 +191,22 @@ function closeOnOutside(e: MouseEvent) {
 .dropdown-leave-to {
   opacity: 0;
   transform: translateY(-4px);
+}
+
+@keyframes bell-ring {
+  0%, 100% { transform: rotate(0deg); }
+  10%       { transform: rotate(14deg); }
+  20%       { transform: rotate(-10deg); }
+  30%       { transform: rotate(12deg); }
+  40%       { transform: rotate(-8deg); }
+  50%       { transform: rotate(8deg); }
+  60%       { transform: rotate(-4deg); }
+  70%       { transform: rotate(4deg); }
+  80%       { transform: rotate(-2deg); }
+}
+
+.bell-ring {
+  animation: bell-ring 2.5s ease-in-out infinite;
+  transform-origin: top center;
 }
 </style>

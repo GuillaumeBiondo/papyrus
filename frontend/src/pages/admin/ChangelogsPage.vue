@@ -2,6 +2,7 @@
 import { onMounted, reactive, ref } from 'vue'
 import { adminService } from '@/services/admin.service'
 import type { Changelog } from '@/types'
+import MarkdownContent from '@/components/shared/MarkdownContent.vue'
 
 const changelogs = ref<Changelog[]>([])
 const loading = ref(true)
@@ -201,8 +202,9 @@ function formatDate(iso: string | null) {
 
             <div>
               <label class="admin-label">Contenu (Markdown)</label>
-              <div v-if="preview" class="admin-input min-h-40 prose prose-sm dark:prose-invert max-w-none whitespace-pre-wrap text-sm">
-                {{ form.body || '(vide)' }}
+              <div v-if="preview" class="admin-input min-h-40 text-sm">
+                <MarkdownContent v-if="form.body" :content="form.body" />
+                <span v-else class="text-gray-400">(vide)</span>
               </div>
               <textarea
                 v-else

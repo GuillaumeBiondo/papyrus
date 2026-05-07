@@ -141,6 +141,7 @@ Route::prefix('v1')->middleware(['auth:sanctum', 'throttle:60,1'])->group(functi
     Route::post('notebook/{notebookEntry}/transfer', [NotebookController::class, 'transfer']);
 
     // Changelogs (user-facing)
+    Route::get('changelogs', [ChangelogController::class, 'index']);
     Route::get('changelogs/unread', [ChangelogController::class, 'unread']);
     Route::post('changelogs/mark-all-read', [ChangelogController::class, 'markAllRead']);
     Route::post('changelogs/{changelog}/read', [ChangelogController::class, 'markRead']);
