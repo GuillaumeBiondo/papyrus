@@ -34,6 +34,21 @@ function isBoolean(s: Setting) {
   return typeof s.value === 'boolean'
 }
 
+function isDatetime(s: Setting) {
+  return s.key.endsWith('_at')
+}
+
+function toDatetimeLocal(iso: string | null): string {
+  if (!iso) return ''
+  // datetime-local exige le format YYYY-MM-DDTHH:mm
+  return iso.slice(0, 16)
+}
+
+function onDatetime(s: Setting, e: Event) {
+  const raw = (e.target as HTMLInputElement).value
+  save(s, raw === '' ? null : new Date(raw).toISOString())
+}
+
 async function save(s: Setting, value: unknown) {
   saving.value[s.key] = true
   try {
@@ -92,6 +107,17 @@ function onInput(s: Setting, e: Event) {
                   :class="s.value ? 'translate-x-4' : 'translate-x-0'"
                 />
               </button>
+              <!-- Datetime input -->
+              <input
+                v-else-if="isDatetime(s)"
+                type="datetime-local"
+                class="rounded-md border border-gray-300 dark:border-gray-700
+                       bg-white dark:bg-gray-800 px-2 py-1 text-sm
+                       text-gray-900 dark:text-gray-100 outline-none
+                       focus:ring-2 focus:ring-brand-500"
+                :value="toDatetimeLocal(s.value as string | null)"
+                @change="onDatetime(s, $event)"
+              />
               <!-- Text/number input -->
               <input
                 v-else

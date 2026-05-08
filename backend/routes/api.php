@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\Api\Admin\ChangelogController as AdminChangelogController;
+use App\Http\Controllers\Api\MaintenanceController;
 use App\Http\Controllers\Api\Admin\ContentTypeController as AdminContentTypeController;
 use App\Http\Controllers\Api\Admin\DashboardController as AdminDashboardController;
 use App\Http\Controllers\Api\Admin\SettingController as AdminSettingController;
@@ -44,10 +45,17 @@ Route::prefix('auth')->group(function () {
 
 /*
 |--------------------------------------------------------------------------
+| Statut de maintenance (public, auth optionnelle via session stateful)
+|--------------------------------------------------------------------------
+*/
+Route::get('v1/maintenance-status', [MaintenanceController::class, 'status']);
+
+/*
+|--------------------------------------------------------------------------
 | API v1 — routes protégées
 |--------------------------------------------------------------------------
 */
-Route::prefix('v1')->middleware(['auth:sanctum', 'throttle:60,1'])->group(function () {
+Route::prefix('v1')->middleware(['auth:sanctum', 'throttle:60,1', 'maintenance'])->group(function () {
 
     // Config publique (seuil snapshot, etc.)
     Route::get('config', [AppConfigController::class, 'index']);
@@ -191,6 +199,7 @@ Route::prefix('v1')->middleware(['auth:sanctum', 'throttle:60,1'])->group(functi
 
         Route::get('users', [AdminUserController::class, 'index']);
         Route::post('users', [AdminUserController::class, 'store']);
+        Route::put('users/{user}/maintenance-bypass', [AdminUserController::class, 'updateMaintenanceBypass']);
 
         Route::get('content-types', [AdminContentTypeController::class, 'index']);
         Route::post('content-types', [AdminContentTypeController::class, 'store']);

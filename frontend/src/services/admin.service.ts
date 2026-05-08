@@ -19,6 +19,11 @@ export const adminService = {
     return data
   },
 
+  async updateMaintenanceBypass(userId: string, bypass: boolean): Promise<{ maintenance_bypass: boolean }> {
+    const { data } = await api.put(`/admin/users/${userId}/maintenance-bypass`, { maintenance_bypass: bypass })
+    return data
+  },
+
   // Content types
   async getContentTypes(): Promise<{ content_types: ContentType[] }> {
     const { data } = await api.get('/admin/content-types')

@@ -62,8 +62,9 @@ class UserController extends Controller
                     'id'            => $user->id,
                     'name'          => $user->name,
                     'email'         => $user->email,
-                    'role'          => $user->role,
-                    'last_login_at' => $user->last_login_at?->toISOString(),
+                    'role'               => $user->role,
+                    'maintenance_bypass' => (bool) $user->maintenance_bypass,
+                    'last_login_at'      => $user->last_login_at?->toISOString(),
                     'created_at'    => $user->created_at->toISOString(),
                     'preferences'   => $user->preferences ?? [],
                     'projects_count' => (int) $user->projects_count,
@@ -102,5 +103,16 @@ class UserController extends Controller
                 'role'  => $user->role,
             ],
         ], 201);
+    }
+
+    public function updateMaintenanceBypass(Request $request, User $user): JsonResponse
+    {
+        $data = $request->validate([
+            'maintenance_bypass' => ['required', 'boolean'],
+        ]);
+
+        $user->update(['maintenance_bypass' => $data['maintenance_bypass']]);
+
+        return response()->json(['maintenance_bypass' => (bool) $user->maintenance_bypass]);
     }
 }
