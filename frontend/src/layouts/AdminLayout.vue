@@ -32,7 +32,7 @@ async function logout() {
   <div class="flex h-screen bg-[#f5f4f1] dark:bg-[#0c0b18]">
     <!-- Sidebar -->
     <aside class="w-56 shrink-0 flex flex-col border-r border-gray-200 dark:border-gray-800
-                  bg-white dark:bg-gray-950">
+                  bg-white dark:bg-[var(--ui-sidebar-bg)]">
       <!-- Logo -->
       <div class="h-12 flex items-center px-4 border-b border-gray-200 dark:border-gray-800">
         <span class="font-semibold text-brand-600 dark:text-brand-400">Papyrus</span>

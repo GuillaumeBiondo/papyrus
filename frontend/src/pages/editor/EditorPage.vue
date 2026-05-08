@@ -356,7 +356,7 @@ const rightPanelPt = { root: { class: 'flex flex-col overflow-hidden h-full bord
     ═══════════════════════════════════════ -->
     <aside
       :class="[
-        'flex flex-col border-r border-gray-300 dark:border-gray-700 bg-[#f0efe9] dark:bg-gray-900 overflow-hidden',
+        'flex flex-col border-r border-gray-300 dark:border-gray-700 bg-[#f0efe9] dark:bg-[var(--ui-sidebar-bg)] overflow-hidden',
         'fixed inset-y-0 left-0 z-40 w-64 transition-transform duration-300',
         'md:relative md:z-auto md:w-56 md:shrink-0 md:transition-none',
         leftSidebarOpen ? 'translate-x-0' : '-translate-x-full md:hidden',
@@ -397,9 +397,9 @@ const rightPanelPt = { root: { class: 'flex flex-col overflow-hidden h-full bord
                 />
                 <span v-else class="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide truncate flex-1">{{ arc.title }}</span>
                 <div class="flex items-center gap-0.5 md:opacity-0 group-hover:opacity-100 transition-opacity shrink-0">
-                  <button class="px-1.5 py-0.5 text-sm text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-100" @click="addingChapter = arc.id; newChapterTitle = ''">+</button>
-                  <button class="px-1.5 py-0.5 text-xs text-gray-500 dark:text-gray-400 hover:text-brand-600 dark:hover:text-brand-400 transition-colors" @click.stop="startRename(arc.id, arc.title)">✎</button>
-                  <button class="px-1.5 py-0.5 text-xs text-gray-500 dark:text-gray-400 hover:text-red-500 dark:hover:text-red-400 transition-colors" @click="askDeleteArc(arc)">✕</button>
+                  <button class="px-1.5 py-0.5 text-sm text-brand-600/70 dark:text-brand-400/70 hover:text-brand-700 dark:hover:text-brand-300 transition-colors" @click="addingChapter = arc.id; newChapterTitle = ''">+</button>
+                  <button class="px-1.5 py-0.5 text-xs text-brand-600/70 dark:text-brand-400/70 hover:text-brand-700 dark:hover:text-brand-300 transition-colors" @click.stop="startRename(arc.id, arc.title)">✎</button>
+                  <button class="px-1.5 py-0.5 text-xs text-gray-400 dark:text-gray-500 hover:text-red-500 dark:hover:text-red-400 transition-colors" @click="askDeleteArc(arc)">✕</button>
                 </div>
               </div>
 
@@ -421,9 +421,9 @@ const rightPanelPt = { root: { class: 'flex flex-col overflow-hidden h-full bord
                       />
                       <span v-else class="text-xs text-gray-500 dark:text-gray-400 italic truncate flex-1">{{ chapter.title }}</span>
                       <div class="flex items-center gap-0.5 md:opacity-0 group-hover:opacity-100 transition-opacity shrink-0">
-                        <button class="px-1.5 py-0.5 text-sm text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-100" @click="addingScene = chapter.id; newSceneTitle = ''">+</button>
-                        <button class="px-1.5 py-0.5 text-xs text-gray-500 dark:text-gray-400 hover:text-brand-600 dark:hover:text-brand-400 transition-colors" @click.stop="startRename(chapter.id, chapter.title)">✎</button>
-                        <button class="px-1.5 py-0.5 text-xs text-gray-500 dark:text-gray-400 hover:text-red-500 dark:hover:text-red-400 transition-colors" @click="askDeleteChapter(chapter)">✕</button>
+                        <button class="px-1.5 py-0.5 text-sm text-brand-600/70 dark:text-brand-400/70 hover:text-brand-700 dark:hover:text-brand-300 transition-colors" @click="addingScene = chapter.id; newSceneTitle = ''">+</button>
+                        <button class="px-1.5 py-0.5 text-xs text-brand-600/70 dark:text-brand-400/70 hover:text-brand-700 dark:hover:text-brand-300 transition-colors" @click.stop="startRename(chapter.id, chapter.title)">✎</button>
+                        <button class="px-1.5 py-0.5 text-xs text-gray-400 dark:text-gray-500 hover:text-red-500 dark:hover:text-red-400 transition-colors" @click="askDeleteChapter(chapter)">✕</button>
                       </div>
                     </div>
 
@@ -457,8 +457,8 @@ const rightPanelPt = { root: { class: 'flex flex-col overflow-hidden h-full bord
                             <span class="text-xs truncate flex-1">{{ scene.title }}</span>
                             <span class="text-xs text-gray-400 shrink-0">{{ scene.word_count }}</span>
                           </button>
-                          <button class="shrink-0 px-1.5 py-0.5 text-xs text-gray-500 dark:text-gray-400 hover:text-brand-600 dark:hover:text-brand-400 md:opacity-0 group-hover/scene:opacity-100 transition-all" @click.stop="startRename(scene.id, scene.title)">✎</button>
-                          <button class="shrink-0 px-1.5 py-0.5 text-xs text-gray-500 dark:text-gray-400 hover:text-red-500 dark:hover:text-red-400 md:opacity-0 group-hover/scene:opacity-100 transition-all" @click="askDeleteScene(scene)">✕</button>
+                          <button class="shrink-0 px-1.5 py-0.5 text-xs text-brand-600/70 dark:text-brand-400/70 hover:text-brand-700 dark:hover:text-brand-300 md:opacity-0 group-hover/scene:opacity-100 transition-all" @click.stop="startRename(scene.id, scene.title)">✎</button>
+                          <button class="shrink-0 px-1.5 py-0.5 text-xs text-gray-400 dark:text-gray-500 hover:text-red-500 dark:hover:text-red-400 md:opacity-0 group-hover/scene:opacity-100 transition-all" @click="askDeleteScene(scene)">✕</button>
                         </div>
                       </template>
                     </draggable>
@@ -512,7 +512,7 @@ const rightPanelPt = { root: { class: 'flex flex-col overflow-hidden h-full bord
     <!-- Bandeau expansion sidebar (desktop uniquement) -->
     <div
       v-if="!leftSidebarOpen"
-      class="hidden md:flex shrink-0 w-8 flex-col items-center border-r border-gray-300 dark:border-gray-700 bg-[#f0efe9] dark:bg-gray-900 py-3"
+      class="hidden md:flex shrink-0 w-8 flex-col items-center border-r border-gray-300 dark:border-gray-700 bg-[#f0efe9] dark:bg-[var(--ui-sidebar-bg)] py-3"
     >
       <button class="p-1 rounded text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-800 transition-colors" @click="leftSidebarOpen = true">
         <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">

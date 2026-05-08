@@ -3,7 +3,7 @@ import { ref, computed, watch } from 'vue'
 import { useAuthStore } from '@/stores/auth.store'
 import { useThemeStore } from '@/stores/theme.store'
 import { useFontsStore } from '@/stores/fonts.store'
-import { ACCENT_PALETTES, FONT_SIZES } from '@/utils/accentColors'
+import { ACCENT_PALETTES, FONT_SIZES, UI_SURFACE_PRESETS } from '@/utils/accentColors'
 import type { UserPreferences } from '@/types'
 
 const auth  = useAuthStore()
@@ -40,6 +40,9 @@ function fontSizeFor(mode: 'light' | 'dark') {
 }
 function editorBgFor(mode: 'light' | 'dark') {
   return getAppearance(mode).editorBg ?? (mode === 'dark' ? '#0c0b18' : '#f5f4f1')
+}
+function uiSurfaceFor(mode: 'light' | 'dark') {
+  return getAppearance(mode).uiSurface ?? 'deep'
 }
 
 const saving = ref(false)
@@ -203,10 +206,13 @@ watch(() => theme.applied, (t) => { appearanceMode.value = t }, { immediate: tru
 
         <div class="space-y-6">
 
-          <!-- Couleur d'accent -->
+          <!-- Couleur de l'interface -->
           <div>
-            <p class="text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400 mb-3">
-              Couleur d'accentuation
+            <p class="text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400 mb-1">
+              Couleur de l'interface
+            </p>
+            <p class="text-xs text-gray-400 dark:text-gray-500 mb-3">
+              Boutons, en-têtes de cartes, éléments actifs et icônes d'action.
             </p>
             <div class="flex flex-wrap gap-2">
               <button
@@ -320,6 +326,38 @@ watch(() => theme.applied, (t) => { appearanceMode.value = t }, { immediate: tru
                 @change="e => saveAppearance(appearanceMode, { editorBg: (e.target as HTMLInputElement).value })"
               />
               <span class="text-sm text-gray-500 font-mono">{{ editorBgFor(appearanceMode) }}</span>
+            </div>
+          </div>
+
+          <!-- Fond des panneaux (mode sombre uniquement) -->
+          <div v-if="appearanceMode === 'dark'">
+            <p class="text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400 mb-1">
+              Fond des panneaux (mode sombre)
+            </p>
+            <p class="text-xs text-gray-400 dark:text-gray-500 mb-3">
+              Ajuste la profondeur du fond des barres latérales. Utile si le thème sombre vous semble trop peu contrasté.
+            </p>
+            <div class="flex gap-2">
+              <button
+                v-for="preset in UI_SURFACE_PRESETS"
+                :key="preset.key"
+                class="flex-1 flex flex-col items-center gap-1.5 py-2.5 rounded-xl border-2 transition-all"
+                :class="uiSurfaceFor('dark') === preset.key
+                  ? 'border-brand-400 bg-brand-50 dark:bg-brand-900/20'
+                  : 'border-gray-200 dark:border-gray-700 hover:border-gray-300 dark:hover:border-gray-600'"
+                @click="saveAppearance('dark', { uiSurface: preset.key })"
+              >
+                <span
+                  class="w-6 h-6 rounded-full border border-gray-400/30 shrink-0"
+                  :style="{ background: preset.sidebarBg }"
+                />
+                <span
+                  class="text-xs font-medium"
+                  :class="uiSurfaceFor('dark') === preset.key
+                    ? 'text-brand-700 dark:text-brand-300'
+                    : 'text-gray-500 dark:text-gray-400'"
+                >{{ preset.label }}</span>
+              </button>
             </div>
           </div>
 
