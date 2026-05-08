@@ -40,6 +40,7 @@ export interface AppearancePrefs {
   fontSize: number
   editorBg: string
   accentColor: string
+  uiSurface: string           // preset key for dark-mode surface intensity
 }
 
 export interface UserPreferences {

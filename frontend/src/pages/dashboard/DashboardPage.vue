@@ -2,11 +2,16 @@
 import { computed, onMounted, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { useProjectsStore } from '@/stores/projects.store'
+import { useAuthStore } from '@/stores/auth.store'
+import { useThemeStore } from '@/stores/theme.store'
+import { ACCENT_PALETTES } from '@/utils/accentColors'
 import ProjectSettingsDialog from '@/components/dashboard/ProjectSettingsDialog.vue'
 import type { Project } from '@/types'
 
 const router = useRouter()
 const projects = useProjectsStore()
+const auth = useAuthStore()
+const theme = useThemeStore()
 
 // ── Création ──────────────────────────────────────────────
 const showNewForm = ref(false)
@@ -66,7 +71,15 @@ function scenePct(p: Project) {
   return p.target_scenes ? Math.round((p.scene_count / p.target_scenes) * 100) : 0
 }
 
-function cardColor(p: Project) { return p.color ?? '#534AB7' }
+const brandFallbackColor = computed(() => {
+  const mode = theme.applied
+  const accent = (auth.preferences as any)?.[mode]?.accentColor ?? 'indigo'
+  const palette = ACCENT_PALETTES.find(p => p.key === accent)
+  if (!palette) return mode === 'dark' ? '#8578EC' : '#5446CC'
+  return mode === 'dark' ? palette.dark[600] : palette.light[600]
+})
+
+function cardColor(p: Project) { return p.color ?? brandFallbackColor.value }
 
 function hexRgba(hex: string, alpha: number) {
   const r = parseInt(hex.slice(1, 3), 16)

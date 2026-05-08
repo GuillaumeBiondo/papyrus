@@ -38,6 +38,14 @@
   --color-brand-700: #7264DC;
 }
 
+/* Variables UI (surchargées dynamiquement via JS pour le fond des panneaux) */
+:root {
+  --ui-sidebar-bg: #f0efe9;
+}
+:root.dark {
+  --ui-sidebar-bg: #111827;
+}
+
 /* Variables éditeur (surchargées dynamiquement via JS) */
 :root {
   --editor-font-family: system-ui, sans-serif;

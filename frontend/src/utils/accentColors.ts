@@ -94,6 +94,38 @@ export function applyAccent(key: string): void {
   el.textContent = `:root {\n${lightVars}\n}\n:root.dark {\n${darkVars}\n}`
 }
 
+export interface UiSurfacePreset {
+  key: string
+  label: string
+  sidebarBg: string
+}
+
+export const UI_SURFACE_PRESETS: UiSurfacePreset[] = [
+  { key: 'deep',    label: 'Profond',  sidebarBg: '#111827' },
+  { key: 'medium',  label: 'Moyen',    sidebarBg: '#1a1a2e' },
+  { key: 'neutral', label: 'Neutre',   sidebarBg: '#1f2937' },
+  { key: 'soft',    label: 'Doux',     sidebarBg: '#2d2d3f' },
+]
+
+export const DEFAULT_UI_SURFACE = 'deep'
+
+export function applyUiSurface(isDark: boolean, surfaceKey?: string): void {
+  let el = document.getElementById('ui-surface-override') as HTMLStyleElement | null
+  if (!el) {
+    el = document.createElement('style')
+    el.id = 'ui-surface-override'
+    document.head.appendChild(el)
+  }
+
+  if (!isDark) {
+    el.textContent = ''
+    return
+  }
+
+  const preset = UI_SURFACE_PRESETS.find(p => p.key === surfaceKey) ?? UI_SURFACE_PRESETS[0]
+  el.textContent = `:root.dark {\n  --ui-sidebar-bg: ${preset.sidebarBg};\n}`
+}
+
 export const FONT_SIZES = [
   { value: 15, label: 'Petit' },
   { value: 17, label: 'Normal' },
