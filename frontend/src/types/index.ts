@@ -47,6 +47,7 @@ export interface UserPreferences {
   dark: Partial<AppearancePrefs>
   cardDisplay: 'dot' | 'avatar'
   defaultAttributes: Record<string, string[]>
+  mantra?: string
 }
 
 export interface User {
