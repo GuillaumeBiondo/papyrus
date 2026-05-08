@@ -109,6 +109,8 @@ export interface AdminUser {
   email: string
   role: 'user' | 'admin'
   maintenance_bypass: boolean
+  is_blocked: boolean
+  block_reason: string | null
   last_login_at: string | null
   created_at: string
   preferences: Record<string, unknown>

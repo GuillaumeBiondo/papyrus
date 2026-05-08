@@ -30,6 +30,38 @@ async function toggleBypass(u: AdminUser) {
   }
 }
 
+// Block user
+const togglingBlock = ref<string | null>(null)
+const blockReasonInput = ref<string>('')
+const showBlockReason = ref<string | null>(null)
+
+async function toggleBlock(u: AdminUser) {
+  if (!u.is_blocked && showBlockReason.value !== u.id) {
+    showBlockReason.value = u.id
+    blockReasonInput.value = ''
+    return
+  }
+  togglingBlock.value = u.id
+  try {
+    const { is_blocked, block_reason } = await adminService.updateBlockedStatus(
+      u.id,
+      !u.is_blocked,
+      !u.is_blocked ? blockReasonInput.value || null : null,
+    )
+    const idx = users.value.findIndex(x => x.id === u.id)
+    if (idx !== -1) users.value[idx] = { ...users.value[idx], is_blocked, block_reason }
+  } finally {
+    togglingBlock.value = null
+    showBlockReason.value = null
+    blockReasonInput.value = ''
+  }
+}
+
+function cancelBlock() {
+  showBlockReason.value = null
+  blockReasonInput.value = ''
+}
+
 onMounted(fetchUsers)
 
 async function fetchUsers() {
@@ -104,6 +136,7 @@ function hasPreferences(u: AdminUser) {
               <th class="th text-right">Mots</th>
               <th class="th text-right">Moy./projet</th>
               <th class="th">Maint.</th>
+              <th class="th">Bloqué</th>
               <th class="th">Prefs</th>
             </tr>
           </thead>
@@ -148,6 +181,24 @@ function hasPreferences(u: AdminUser) {
                 </td>
                 <td class="td">
                   <button
+                    v-if="u.role !== 'admin'"
+                    class="relative inline-flex h-5 w-9 rounded-full transition-colors"
+                    :class="[
+                      u.is_blocked ? 'bg-red-500' : 'bg-gray-300 dark:bg-gray-700',
+                      togglingBlock === u.id ? 'opacity-50 pointer-events-none' : '',
+                    ]"
+                    :title="u.is_blocked ? `Compte bloqué${u.block_reason ? ' : ' + u.block_reason : ''}` : 'Compte actif'"
+                    @click="toggleBlock(u)"
+                  >
+                    <span
+                      class="absolute top-0.5 left-0.5 h-4 w-4 rounded-full bg-white shadow transition-transform"
+                      :class="u.is_blocked ? 'translate-x-4' : 'translate-x-0'"
+                    />
+                  </button>
+                  <span v-else class="text-xs text-gray-300 dark:text-gray-700">—</span>
+                </td>
+                <td class="td">
+                  <button
                     v-if="hasPreferences(u)"
                     class="text-xs text-brand-600 dark:text-brand-400 hover:underline"
                     @click="expanded = expanded === u.id ? null : u.id"
@@ -157,8 +208,32 @@ function hasPreferences(u: AdminUser) {
                   <span v-else class="text-gray-300 dark:text-gray-700 text-xs">—</span>
                 </td>
               </tr>
+              <tr v-if="showBlockReason === u.id" :key="`${u.id}-block-reason`">
+                <td colspan="13" class="px-4 py-3 bg-red-50 dark:bg-red-950/30 border-b border-red-100 dark:border-red-900/30">
+                  <div class="flex items-center gap-3">
+                    <span class="text-xs font-medium text-red-700 dark:text-red-300 whitespace-nowrap">Raison du blocage (optionnelle) :</span>
+                    <input
+                      v-model="blockReasonInput"
+                      type="text"
+                      maxlength="255"
+                      placeholder="Ex : litige, compte piraté…"
+                      class="flex-1 rounded border border-red-200 dark:border-red-800 bg-white dark:bg-gray-900 px-2 py-1 text-xs text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-1 focus:ring-red-400"
+                    />
+                    <button
+                      class="px-2.5 py-1 text-xs rounded bg-red-600 text-white hover:bg-red-700 transition-colors"
+                      :disabled="togglingBlock === u.id"
+                      @click="toggleBlock(u)"
+                    >
+                      Confirmer le blocage
+                    </button>
+                    <button class="px-2.5 py-1 text-xs rounded text-gray-500 hover:text-gray-700 dark:hover:text-gray-300" @click="cancelBlock">
+                      Annuler
+                    </button>
+                  </div>
+                </td>
+              </tr>
               <tr v-if="expanded === u.id" :key="`${u.id}-prefs`">
-                <td colspan="12" class="px-4 py-3 bg-gray-50 dark:bg-gray-800/30">
+                <td colspan="13" class="px-4 py-3 bg-gray-50 dark:bg-gray-800/30">
                   <pre class="text-xs text-gray-600 dark:text-gray-400 whitespace-pre-wrap font-mono">{{ JSON.stringify(u.preferences, null, 2) }}</pre>
                 </td>
               </tr>

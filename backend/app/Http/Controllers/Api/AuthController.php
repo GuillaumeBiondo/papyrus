@@ -22,6 +22,17 @@ class AuthController extends Controller
             ], 401);
         }
 
+        if (Auth::user()->is_blocked) {
+            Auth::guard('web')->logout();
+            $request->session()->invalidate();
+            $request->session()->regenerateToken();
+
+            return response()->json([
+                'message' => 'Votre compte est suspendu. Contactez l\'administrateur.',
+                'blocked' => true,
+            ], 403);
+        }
+
         $request->session()->regenerate();
 
         Auth::user()->update(['last_login_at' => now()]);

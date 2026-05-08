@@ -64,6 +64,8 @@ class UserController extends Controller
                     'email'         => $user->email,
                     'role'               => $user->role,
                     'maintenance_bypass' => (bool) $user->maintenance_bypass,
+                    'is_blocked'         => (bool) $user->is_blocked,
+                    'block_reason'       => $user->block_reason,
                     'last_login_at'      => $user->last_login_at?->toISOString(),
                     'created_at'    => $user->created_at->toISOString(),
                     'preferences'   => $user->preferences ?? [],
@@ -114,5 +116,23 @@ class UserController extends Controller
         $user->update(['maintenance_bypass' => $data['maintenance_bypass']]);
 
         return response()->json(['maintenance_bypass' => (bool) $user->maintenance_bypass]);
+    }
+
+    public function updateBlockedStatus(Request $request, User $user): JsonResponse
+    {
+        $data = $request->validate([
+            'is_blocked'   => ['required', 'boolean'],
+            'block_reason' => ['nullable', 'string', 'max:255'],
+        ]);
+
+        $user->update([
+            'is_blocked'   => $data['is_blocked'],
+            'block_reason' => $data['is_blocked'] ? ($data['block_reason'] ?? null) : null,
+        ]);
+
+        return response()->json([
+            'is_blocked'   => (bool) $user->is_blocked,
+            'block_reason' => $user->block_reason,
+        ]);
     }
 }

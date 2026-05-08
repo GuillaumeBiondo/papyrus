@@ -17,8 +17,12 @@ async function submit() {
   try {
     await auth.login(email.value, password.value)
     router.push({ name: auth.isAdmin ? 'admin-dashboard' : 'dashboard' })
-  } catch {
-    error.value = 'Identifiants incorrects.'
+  } catch (e: any) {
+    if (e?.response?.status === 403 && e?.response?.data?.blocked) {
+      error.value = 'Votre compte est suspendu. Contactez l\'administrateur.'
+    } else {
+      error.value = 'Identifiants incorrects.'
+    }
   } finally {
     loading.value = false
   }
