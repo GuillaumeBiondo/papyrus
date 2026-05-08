@@ -2,6 +2,7 @@
 import { onMounted, onUnmounted, ref, watch } from 'vue'
 import { useRoute } from 'vue-router'
 import { useEditorStore } from '@/stores/editor.store'
+import { useAuthStore } from '@/stores/auth.store'
 import SceneEditor from '@/components/editor/SceneEditor.vue'
 import EditorRightPanel from '@/components/editor/EditorRightPanel.vue'
 import ConfirmDeleteDialog from '@/components/editor/ConfirmDeleteDialog.vue'
@@ -17,6 +18,7 @@ import type { Arc, Chapter, Scene } from '@/types'
 
 const route = useRoute()
 const editor = useEditorStore()
+const auth   = useAuthStore()
 
 const vFocus = { mounted: (el: HTMLElement) => el.focus() }
 
@@ -575,25 +577,31 @@ const rightPanelPt = { root: { class: 'flex flex-col overflow-hidden h-full bord
         <!-- Zone centrale — état vide -->
         <div
           v-if="!editor.activeScene"
-          class="flex-1 relative flex items-center justify-center overflow-hidden"
+          class="flex-1 relative flex flex-col overflow-hidden"
           style="background: var(--editor-bg)"
         >
-          <!-- Filigrane : titre du projet -->
+          <!-- Titre du projet en haut -->
           <div
-            class="absolute inset-0 flex items-center justify-center pointer-events-none select-none overflow-hidden"
+            class="absolute top-0 left-0 right-0 flex justify-center pt-10 pointer-events-none select-none overflow-hidden"
             aria-hidden="true"
           >
             <span
               class="font-bold tracking-tighter leading-none text-center px-8
-                     text-gray-200 dark:text-white/[0.035]"
-              style="font-size: clamp(2.5rem, 11vw, 8rem)"
+                     text-gray-200 dark:text-white/[0.04]"
+              style="font-size: clamp(2rem, 8vw, 5.5rem)"
             >{{ editor.currentProject?.title ?? 'Papyrus' }}</span>
           </div>
-          <!-- Message central -->
-          <div class="relative z-10 text-center space-y-1.5">
-            <p class="text-sm text-gray-400 dark:text-gray-500">
-              {{ editor.arcs.length ? 'Sélectionne une scène pour commencer.' : 'Crée ton premier arc.' }}
-            </p>
+          <!-- Mantra ou hint premier arc, centré -->
+          <div class="flex-1 flex items-center justify-center pointer-events-none select-none">
+            <p
+              v-if="auth.preferences.mantra"
+              class="text-center italic px-12 text-gray-300 dark:text-white/[0.10]"
+              style="font-size: clamp(1rem, 2.2vw, 1.4rem); letter-spacing: 0.01em"
+            >{{ auth.preferences.mantra }}</p>
+            <p
+              v-else-if="!editor.arcs.length"
+              class="text-sm text-gray-300 dark:text-white/[0.08]"
+            >Crée ton premier arc pour commencer.</p>
           </div>
         </div>
 

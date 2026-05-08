@@ -11,7 +11,7 @@ const theme = useThemeStore()
 const fonts = useFontsStore()
 
 // ── Section active ────────────────────────────────────────────
-const activeSection = ref<'theme' | 'appearance' | 'cards' | 'attributes'>('theme')
+const activeSection = ref<'theme' | 'appearance' | 'cards' | 'attributes' | 'writing'>('theme')
 
 // ── Thème ─────────────────────────────────────────────────────
 const themeOptions = [
@@ -105,6 +105,25 @@ async function removeAttrKey(type: string, key: string) {
   })
 }
 
+// ── Mantra ────────────────────────────────────────────────────
+const mantraText  = ref(prefs.value.mantra ?? '')
+const mantraSaving = ref(false)
+const mantraSaved  = ref(false)
+
+watch(() => prefs.value.mantra, (v) => { mantraText.value = v ?? '' })
+
+async function saveMantra() {
+  mantraSaving.value = true
+  mantraSaved.value  = false
+  try {
+    await auth.updatePreferences({ mantra: mantraText.value.trim() || undefined })
+    mantraSaved.value = true
+    setTimeout(() => { mantraSaved.value = false }, 2000)
+  } finally {
+    mantraSaving.value = false
+  }
+}
+
 // Sync appearanceMode with current theme
 watch(() => theme.applied, (t) => { appearanceMode.value = t }, { immediate: true })
 </script>
@@ -121,6 +140,7 @@ watch(() => theme.applied, (t) => { appearanceMode.value = t }, { immediate: tru
           { key: 'appearance', label: 'Apparence',       icon: '🎨' },
           { key: 'cards',      label: 'Fiches',          icon: '🃏' },
           { key: 'attributes', label: 'Attrs par défaut', icon: '📋' },
+          { key: 'writing',    label: 'Écriture',         icon: '✍️' },
         ]"
         :key="key"
         class="w-full text-left text-sm px-3 py-2 rounded-lg transition-colors flex items-center gap-2"
@@ -428,6 +448,42 @@ watch(() => theme.applied, (t) => { appearanceMode.value = t }, { immediate: tru
             class="px-4 py-2 text-sm bg-brand-600 hover:bg-brand-700 text-white rounded-lg transition-colors"
             @click="addAttrKey"
           >Ajouter</button>
+        </div>
+      </section>
+
+      <!-- ── ÉCRITURE ── -->
+      <section v-else-if="activeSection === 'writing'">
+        <h2 class="text-base font-semibold text-gray-900 dark:text-gray-100 mb-1">Écriture</h2>
+        <p class="text-sm text-gray-500 dark:text-gray-400 mb-5">
+          Personnalisez votre espace d'écriture.
+        </p>
+
+        <div class="space-y-2">
+          <label class="text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400 block">
+            Mantra
+          </label>
+          <p class="text-xs text-gray-400 dark:text-gray-500">
+            Une phrase courte affichée en filigrane quand aucune scène n'est ouverte.
+          </p>
+          <textarea
+            v-model="mantraText"
+            rows="2"
+            maxlength="120"
+            placeholder="Ex : Chaque mot compte. Écris sans peur."
+            class="w-full text-sm rounded-lg border border-gray-300 dark:border-gray-600
+                   bg-white dark:bg-gray-800 text-gray-800 dark:text-gray-200
+                   px-3 py-2 focus:outline-none focus:ring-1 focus:ring-brand-500 resize-none"
+          />
+          <div class="flex items-center justify-between">
+            <span class="text-xs text-gray-400">{{ mantraText.length }}&thinsp;/&thinsp;120</span>
+            <button
+              class="px-4 py-2 text-sm bg-brand-600 hover:bg-brand-700 text-white rounded-lg transition-colors disabled:opacity-50"
+              :disabled="mantraSaving"
+              @click="saveMantra"
+            >
+              {{ mantraSaved ? 'Enregistré ✓' : 'Enregistrer' }}
+            </button>
+          </div>
         </div>
       </section>
 
