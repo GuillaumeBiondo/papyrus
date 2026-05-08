@@ -1,9 +1,62 @@
+export interface SceneSnapshot {
+  id: number
+  trigger: 'auto' | 'manual' | 'restore'
+  label: string | null
+  word_count: number
+  word_delta: number
+  created_at: string
+  content?: string  // chargé à la demande
+}
+
+export interface ActivityDay {
+  date: string
+  logins: number
+  words: number
+}
+
+export interface ActivityHour {
+  day: number    // 0 = dimanche, 1 = lundi … 6 = samedi
+  hour: number   // 0-23
+  logins: number
+  words: number
+}
+
+export interface AppConfig {
+  snapshot_interval_words: number
+}
+
+export interface AvailableFont {
+  id: number
+  name: string
+  google_font_slug: string
+  css_family: string
+  category: 'serif' | 'sans-serif' | 'monospace'
+  enabled: boolean
+  sort_order: number
+}
+
+export interface AppearancePrefs {
+  fontFamily: number | null   // null = système, number = id dans available_fonts
+  fontSize: number
+  editorBg: string
+  accentColor: string
+}
+
+export interface UserPreferences {
+  light: Partial<AppearancePrefs>
+  dark: Partial<AppearancePrefs>
+  cardDisplay: 'dot' | 'avatar'
+  defaultAttributes: Record<string, string[]>
+}
+
 export interface User {
   id: string
   name: string
   email: string
   role: 'user' | 'admin'
-  preferences: Record<string, unknown>
+  bio: string | null
+  avatar_url: string | null
+  preferences: Partial<UserPreferences>
   last_login_at: string | null
   currentRole?: 'owner' | 'co_author' | 'beta_reader'
 }
@@ -118,6 +171,17 @@ export interface Scene {
   updated_at: string
 }
 
+export interface CardImage {
+  id: string
+  card_id: string
+  original_name: string
+  mime_type: string
+  size: number
+  is_avatar: boolean
+  url: string
+  created_at: string
+}
+
 export interface Card {
   id: string
   project_id: string
@@ -127,6 +191,7 @@ export interface Card {
   links?: CardLink[]
   keywords?: CardKeyword[]
   notes?: Note[]
+  images?: CardImage[]
   updated_at: string
 }
 

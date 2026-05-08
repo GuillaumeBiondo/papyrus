@@ -9,7 +9,14 @@ use App\Http\Controllers\Api\AnnotationController;
 use App\Http\Controllers\Api\ArcController;
 use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\Api\BugReportController;
+use App\Http\Controllers\Api\ActivityController;
+use App\Http\Controllers\Api\AppConfigController;
 use App\Http\Controllers\Api\CardController;
+use App\Http\Controllers\Api\CardImageController;
+use App\Http\Controllers\Api\FontController;
+use App\Http\Controllers\Api\ProfileController;
+use App\Http\Controllers\Api\SceneSnapshotController;
+use App\Http\Controllers\Api\Admin\AvailableFontController;
 use App\Http\Controllers\Api\ChangelogController;
 use App\Http\Controllers\Api\ProjectExportController;
 use App\Http\Controllers\Api\ChapterController;
@@ -41,6 +48,29 @@ Route::prefix('auth')->group(function () {
 |--------------------------------------------------------------------------
 */
 Route::prefix('v1')->middleware(['auth:sanctum', 'throttle:60,1'])->group(function () {
+
+    // Config publique (seuil snapshot, etc.)
+    Route::get('config', [AppConfigController::class, 'index']);
+
+    // Polices disponibles (liste publique des polices actives)
+    Route::get('fonts', [FontController::class, 'index']);
+
+    // Snapshots de scènes
+    Route::get('scenes/{scene}/snapshots',                    [SceneSnapshotController::class, 'index']);
+    Route::post('scenes/{scene}/snapshots',                   [SceneSnapshotController::class, 'store']);
+    Route::get('scenes/{scene}/snapshots/{snapshot}',         [SceneSnapshotController::class, 'show'])->name('snapshots.show');
+    Route::post('scenes/{scene}/snapshots/{snapshot}/restore',[SceneSnapshotController::class, 'restore']);
+
+    // Activité (grilles)
+    Route::get('activity',                      [ActivityController::class, 'global']);
+    Route::get('projects/{project}/activity',   [ActivityController::class, 'forProject']);
+
+    // Profile
+    Route::put('profile', [ProfileController::class, 'update']);
+    Route::post('profile/avatar', [ProfileController::class, 'uploadAvatar'])->middleware('throttle:10,1');
+    Route::delete('profile/avatar', [ProfileController::class, 'destroyAvatar']);
+    Route::get('profile/avatar', [ProfileController::class, 'serveAvatar'])->name('profile.avatar');
+    Route::put('profile/preferences', [ProfileController::class, 'updatePreferences']);
 
     // Bug report
     Route::post('bug-report', [BugReportController::class, 'store']);
@@ -96,6 +126,15 @@ Route::prefix('v1')->middleware(['auth:sanctum', 'throttle:60,1'])->group(functi
     Route::get('cards/{card}/links', [CardController::class, 'links']);
     Route::post('cards/{card}/links', [CardController::class, 'storeLink']);
     Route::delete('cards/{card}/links/{link}', [CardController::class, 'destroyLink']);
+
+    // Card images
+    Route::get('cards/{card}/images', [CardImageController::class, 'index']);
+    Route::post('cards/{card}/images', [CardImageController::class, 'store'])
+        ->middleware('throttle:20,1');
+    Route::delete('cards/{card}/images/{image}', [CardImageController::class, 'destroy']);
+    Route::put('cards/{card}/images/{image}/avatar', [CardImageController::class, 'setAvatar']);
+    Route::get('cards/{card}/images/{image}/file', [CardImageController::class, 'serve'])
+        ->name('cards.images.serve');
 
     Route::get('scenes/{scene}/cards', [CardController::class, 'sceneCards']);
     Route::get('scenes/{scene}/cards-by-keywords', [CardController::class, 'byKeywordsInScene']);
@@ -164,5 +203,11 @@ Route::prefix('v1')->middleware(['auth:sanctum', 'throttle:60,1'])->group(functi
 
         Route::get('settings', [AdminSettingController::class, 'index']);
         Route::put('settings/{key}', [AdminSettingController::class, 'update']);
+
+        Route::get('fonts', [AvailableFontController::class, 'index']);
+        Route::post('fonts', [AvailableFontController::class, 'store']);
+        Route::put('fonts/reorder', [AvailableFontController::class, 'reorder']);
+        Route::put('fonts/{font}', [AvailableFontController::class, 'update']);
+        Route::delete('fonts/{font}', [AvailableFontController::class, 'destroy']);
     });
 });

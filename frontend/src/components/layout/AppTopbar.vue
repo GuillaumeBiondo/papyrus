@@ -2,34 +2,25 @@
 import { ref, computed } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { useAuthStore } from '@/stores/auth.store'
-import { useThemeStore } from '@/stores/theme.store'
 import { useEditorStore } from '@/stores/editor.store'
 import { useNotebookStore } from '@/stores/notebook.store'
 import BugReportButton from '@/components/layout/BugReportButton.vue'
 import { useChangelogStore } from '@/stores/changelog.store'
 
-const router = useRouter()
-const route = useRoute()
-const auth = useAuthStore()
-const theme = useThemeStore()
-const editor = useEditorStore()
+const router   = useRouter()
+const route    = useRoute()
+const auth     = useAuthStore()
+const editor   = useEditorStore()
 const notebook = useNotebookStore()
-
 const changelog = useChangelogStore()
 
 const latestChangelog = computed(() => changelog.all[0] ?? null)
-const latestIsUnread = computed(() => latestChangelog.value ? !latestChangelog.value.read : false)
+const latestIsUnread  = computed(() => latestChangelog.value ? !latestChangelog.value.read : false)
 
 const dropdownOpen = ref(false)
 
-const themeLabel = computed(() => {
-  if (theme.theme === 'light') return 'Clair'
-  if (theme.theme === 'dark') return 'Sombre'
-  return 'Système'
-})
-
 const initials = computed(() =>
-  auth.user?.name.slice(0, 2).toUpperCase() ?? '??',
+  auth.user?.name.split(' ').slice(0, 2).map(n => n[0]).join('').toUpperCase() ?? '??',
 )
 
 async function logout() {
@@ -106,12 +97,18 @@ function closeOnOutside(e: MouseEvent) {
           class="flex items-center gap-2 rounded-full focus:outline-none"
           @click="dropdownOpen = !dropdownOpen"
         >
-          <span
-            class="w-8 h-8 rounded-full bg-brand-600 text-white text-xs font-medium
-                   flex items-center justify-center"
-          >
-            {{ initials }}
-          </span>
+          <div class="w-8 h-8 rounded-full overflow-hidden shrink-0">
+            <img
+              v-if="auth.user?.avatar_url"
+              :src="auth.user.avatar_url"
+              :alt="auth.user?.name"
+              class="w-full h-full object-cover"
+            />
+            <span
+              v-else
+              class="w-full h-full flex items-center justify-center bg-brand-600 text-white text-xs font-medium"
+            >{{ initials }}</span>
+          </div>
         </button>
 
         <Transition name="dropdown">
@@ -121,62 +118,44 @@ function closeOnOutside(e: MouseEvent) {
                    border border-gray-300 dark:border-gray-700
                    rounded-lg shadow-lg z-50 py-1"
           >
-            <div class="px-3 py-2 border-b border-gray-200 dark:border-gray-800">
-              <p class="text-sm font-medium text-gray-900 dark:text-gray-100">
-                {{ auth.user?.name }}
-              </p>
-              <p class="text-xs text-gray-500">{{ auth.user?.email }}</p>
+            <div class="px-3 py-2 border-b border-gray-200 dark:border-gray-800 flex items-center gap-2.5">
+              <div class="w-8 h-8 rounded-full overflow-hidden shrink-0">
+                <img
+                  v-if="auth.user?.avatar_url"
+                  :src="auth.user.avatar_url"
+                  class="w-full h-full object-cover"
+                />
+                <span
+                  v-else
+                  class="w-full h-full flex items-center justify-center bg-brand-600 text-white text-xs font-medium"
+                >{{ initials }}</span>
+              </div>
+              <div class="min-w-0">
+                <p class="text-sm font-medium text-gray-900 dark:text-gray-100 truncate">
+                  {{ auth.user?.name }}
+                </p>
+                <p class="text-xs text-gray-500 truncate">{{ auth.user?.email }}</p>
+              </div>
             </div>
 
             <RouterLink
               to="/profile"
               class="dropdown-item text-gray-700 dark:text-gray-300"
               @click="dropdownOpen = false"
-            >
-              Profil
-            </RouterLink>
+            >Profil</RouterLink>
+
             <RouterLink
               to="/settings"
               class="dropdown-item text-gray-700 dark:text-gray-300"
               @click="dropdownOpen = false"
-            >
-              Paramètres
-            </RouterLink>
-
-            <div class="border-t border-gray-200 dark:border-gray-800 my-1" />
-
-            <button
-              class="dropdown-item w-full text-left flex items-center gap-2
-                     text-gray-700 dark:text-gray-300"
-              @click="theme.cycleTheme()"
-            >
-              <svg v-if="theme.theme === 'light'" class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                      d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364-6.364l-.707.707
-                         M6.343 17.657l-.707.707m12.728 0l-.707-.707M6.343 6.343l-.707-.707
-                         M12 7a5 5 0 100 10A5 5 0 0012 7z" />
-              </svg>
-              <svg v-else-if="theme.theme === 'dark'" class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                      d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003
-                         9.003 0 008.354-5.646z" />
-              </svg>
-              <svg v-else class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                      d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17H3a2 2 0 01-2-2V5
-                         a2 2 0 012-2h14a2 2 0 012 2v10a2 2 0 01-2 2h-2" />
-              </svg>
-              {{ themeLabel }}
-            </button>
+            >Paramètres</RouterLink>
 
             <div class="border-t border-gray-200 dark:border-gray-800 my-1" />
 
             <button
               class="dropdown-item w-full text-left text-red-600 dark:text-red-400"
               @click="logout"
-            >
-              Déconnexion
-            </button>
+            >Déconnexion</button>
           </div>
         </Transition>
       </div>

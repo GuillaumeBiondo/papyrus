@@ -1,5 +1,5 @@
 import api from './api'
-import type { AdminStats, AdminUser, Changelog, ContentType, Setting } from '@/types'
+import type { AdminStats, AdminUser, AvailableFont, Changelog, ContentType, Setting } from '@/types'
 
 export const adminService = {
   // Dashboard
@@ -64,5 +64,29 @@ export const adminService = {
   async updateSetting(key: string, value: unknown): Promise<{ setting: Setting }> {
     const { data } = await api.put(`/admin/settings/${key}`, { value })
     return data
+  },
+
+  // Fonts
+  async getFonts(): Promise<{ fonts: AvailableFont[] }> {
+    const { data } = await api.get('/admin/fonts')
+    return data
+  },
+
+  async createFont(payload: Pick<AvailableFont, 'name' | 'google_font_slug' | 'css_family' | 'category'>): Promise<{ font: AvailableFont }> {
+    const { data } = await api.post('/admin/fonts', payload)
+    return data
+  },
+
+  async updateFont(id: number, payload: Partial<AvailableFont>): Promise<{ font: AvailableFont }> {
+    const { data } = await api.put(`/admin/fonts/${id}`, payload)
+    return data
+  },
+
+  async deleteFont(id: number): Promise<void> {
+    await api.delete(`/admin/fonts/${id}`)
+  },
+
+  async reorderFonts(order: number[]): Promise<void> {
+    await api.put('/admin/fonts/reorder', { order })
   },
 }

@@ -22,4 +22,21 @@ export const authService = {
 
   updatePassword: (payload: { current_password: string; password: string; password_confirmation: string }) =>
     api.put(`${baseURL}/auth/password`, payload),
+
+  updateProfile: (payload: { name?: string; bio?: string | null }): Promise<{ user: User }> =>
+    api.put(`${apiUrl}/profile`, payload).then((r) => r.data),
+
+  uploadAvatar: (file: File): Promise<{ user: User }> => {
+    const form = new FormData()
+    form.append('avatar', file)
+    return api.post(`${apiUrl}/profile/avatar`, form, {
+      headers: { 'Content-Type': 'multipart/form-data' },
+    }).then((r) => r.data)
+  },
+
+  destroyAvatar: (): Promise<{ user: User }> =>
+    api.delete(`${apiUrl}/profile/avatar`).then((r) => r.data),
+
+  updatePreferences: (preferences: Record<string, unknown>): Promise<{ user: User }> =>
+    api.put(`${apiUrl}/profile/preferences`, { preferences }).then((r) => r.data),
 }

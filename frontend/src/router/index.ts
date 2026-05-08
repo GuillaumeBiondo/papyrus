@@ -68,6 +68,7 @@ const router = createRouter({
         { path: 'content-types', name: 'admin-content-types', component: () => import('@/pages/admin/ContentTypesPage.vue') },
         { path: 'changelogs', name: 'admin-changelogs', component: () => import('@/pages/admin/ChangelogsPage.vue') },
         { path: 'settings', name: 'admin-settings', component: () => import('@/pages/admin/SettingsPage.vue') },
+        { path: 'fonts',    name: 'admin-fonts',    component: () => import('@/pages/admin/AdminFontsPage.vue') },
       ],
     },
     {

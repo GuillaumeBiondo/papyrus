@@ -55,4 +55,9 @@ class Card extends Model
     {
         return $this->morphMany(Note::class, 'noteable');
     }
+
+    public function images(): HasMany
+    {
+        return $this->hasMany(CardImage::class);
+    }
 }

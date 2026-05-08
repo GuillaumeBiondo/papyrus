@@ -38,8 +38,23 @@
   --color-brand-700: #7264DC;
 }
 
+/* Variables éditeur (surchargées dynamiquement via JS) */
+:root {
+  --editor-font-family: system-ui, sans-serif;
+  --editor-font-size: 17px;
+  --editor-bg: #f5f4f1;
+}
+:root.dark {
+  --editor-bg: #0c0b18;
+}
+
 /* Classes utilitaires custom */
 @layer components {
+  .editor-viewport {
+    font-family: var(--editor-font-family, system-ui);
+    font-size: var(--editor-font-size, 17px);
+  }
+
   .btn-ghost {
     @apply flex items-center rounded-md px-2 py-1.5 text-sm
            hover:bg-gray-100 dark:hover:bg-white/10

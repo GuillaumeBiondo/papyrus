@@ -1,14 +1,21 @@
 import type { Router } from 'vue-router'
 import { useAuthStore } from '@/stores/auth.store'
 import { useProjectsStore } from '@/stores/projects.store'
+import { useThemeStore } from '@/stores/theme.store'
+import { useFontsStore } from '@/stores/fonts.store'
 
 export function setupGuards(router: Router) {
   router.beforeEach(async (to) => {
-    const auth = useAuthStore()
+    const auth  = useAuthStore()
+    const theme = useThemeStore()
+    const fonts = useFontsStore()
 
     if (to.meta.requiresAuth && !auth.isAuthenticated) {
       await auth.tryRestoreSession()
       if (!auth.isAuthenticated) return { name: 'login' }
+      // Charger les polices puis appliquer les préférences d'apparence
+      await fonts.loadFonts()
+      theme.applyPreferences(auth.preferences as any)
     }
 
     // Admin redirect: admins always go to /admin, never to the regular app.

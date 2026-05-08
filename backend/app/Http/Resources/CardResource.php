@@ -18,6 +18,7 @@ class CardResource extends JsonResource
             'links'      => CardLinkResource::collection($this->whenLoaded('links')),
             'keywords'   => CardKeywordResource::collection($this->whenLoaded('keywords')),
             'notes'      => NoteResource::collection($this->whenLoaded('notes')),
+            'images'     => CardImageResource::collection($this->whenLoaded('images')),
             'updated_at' => $this->updated_at,
         ];
     }
