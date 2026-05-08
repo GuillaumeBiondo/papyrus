@@ -16,6 +16,20 @@ const createError = ref('')
 // Preferences detail
 const expanded = ref<string | null>(null)
 
+// Maintenance bypass
+const togglingBypass = ref<string | null>(null)
+
+async function toggleBypass(u: AdminUser) {
+  togglingBypass.value = u.id
+  try {
+    const { maintenance_bypass } = await adminService.updateMaintenanceBypass(u.id, !u.maintenance_bypass)
+    const idx = users.value.findIndex(x => x.id === u.id)
+    if (idx !== -1) users.value[idx] = { ...users.value[idx], maintenance_bypass }
+  } finally {
+    togglingBypass.value = null
+  }
+}
+
 onMounted(fetchUsers)
 
 async function fetchUsers() {
@@ -89,6 +103,7 @@ function hasPreferences(u: AdminUser) {
               <th class="th text-right">Scènes</th>
               <th class="th text-right">Mots</th>
               <th class="th text-right">Moy./projet</th>
+              <th class="th">Maint.</th>
               <th class="th">Prefs</th>
             </tr>
           </thead>
@@ -113,6 +128,25 @@ function hasPreferences(u: AdminUser) {
                 <td class="td text-right text-gray-700 dark:text-gray-300">{{ formatNumber(u.total_words) }}</td>
                 <td class="td text-right text-gray-500">{{ formatNumber(u.avg_words_per_project) }}</td>
                 <td class="td">
+                  <!-- Bypass maintenance (désactivé pour les admins) -->
+                  <button
+                    v-if="u.role !== 'admin'"
+                    class="relative inline-flex h-5 w-9 rounded-full transition-colors"
+                    :class="[
+                      u.maintenance_bypass ? 'bg-brand-600' : 'bg-gray-300 dark:bg-gray-700',
+                      togglingBypass === u.id ? 'opacity-50 pointer-events-none' : '',
+                    ]"
+                    :title="u.maintenance_bypass ? 'Accès autorisé pendant la maintenance' : 'Bloqué pendant la maintenance'"
+                    @click="toggleBypass(u)"
+                  >
+                    <span
+                      class="absolute top-0.5 left-0.5 h-4 w-4 rounded-full bg-white shadow transition-transform"
+                      :class="u.maintenance_bypass ? 'translate-x-4' : 'translate-x-0'"
+                    />
+                  </button>
+                  <span v-else class="text-xs text-gray-300 dark:text-gray-700">—</span>
+                </td>
+                <td class="td">
                   <button
                     v-if="hasPreferences(u)"
                     class="text-xs text-brand-600 dark:text-brand-400 hover:underline"
@@ -124,7 +158,7 @@ function hasPreferences(u: AdminUser) {
                 </td>
               </tr>
               <tr v-if="expanded === u.id" :key="`${u.id}-prefs`">
-                <td colspan="11" class="px-4 py-3 bg-gray-50 dark:bg-gray-800/30">
+                <td colspan="12" class="px-4 py-3 bg-gray-50 dark:bg-gray-800/30">
                   <pre class="text-xs text-gray-600 dark:text-gray-400 whitespace-pre-wrap font-mono">{{ JSON.stringify(u.preferences, null, 2) }}</pre>
                 </td>
               </tr>

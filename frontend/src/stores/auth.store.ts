@@ -1,6 +1,7 @@
 import { defineStore } from 'pinia'
 import { computed, ref } from 'vue'
 import { authService } from '@/services/auth.service'
+import { useMaintenanceStore } from '@/stores/maintenance.store'
 import type { User, UserPreferences } from '@/types'
 
 export const useAuthStore = defineStore('auth', () => {
@@ -15,6 +16,7 @@ export const useAuthStore = defineStore('auth', () => {
     await authService.csrfCookie()
     const data = await authService.login(email, password)
     user.value = data.user
+    useMaintenanceStore().fetch()
   }
 
   async function logout() {
@@ -25,6 +27,7 @@ export const useAuthStore = defineStore('auth', () => {
   async function tryRestoreSession() {
     try {
       user.value = await authService.me()
+      useMaintenanceStore().fetch()
     } catch {
       user.value = null
     }

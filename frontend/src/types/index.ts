@@ -108,6 +108,7 @@ export interface AdminUser {
   name: string
   email: string
   role: 'user' | 'admin'
+  maintenance_bypass: boolean
   last_login_at: string | null
   created_at: string
   preferences: Record<string, unknown>
@@ -117,6 +118,16 @@ export interface AdminUser {
   scenes_count: number
   total_words: number
   avg_words_per_project: number
+}
+
+export interface MaintenanceStatus {
+  active: boolean
+  warning: boolean
+  start_at: string | null
+  end_at: string | null
+  message: string
+  warning_message: string
+  user_exempt: boolean
 }
 
 export interface Project {
