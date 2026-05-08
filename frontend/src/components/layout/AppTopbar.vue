@@ -5,6 +5,7 @@ import { useAuthStore } from '@/stores/auth.store'
 import { useEditorStore } from '@/stores/editor.store'
 import { useNotebookStore } from '@/stores/notebook.store'
 import BugReportButton from '@/components/layout/BugReportButton.vue'
+import SupportDialog from '@/components/shared/SupportDialog.vue'
 import { useChangelogStore } from '@/stores/changelog.store'
 
 const router   = useRouter()
@@ -18,6 +19,7 @@ const latestChangelog = computed(() => changelog.all[0] ?? null)
 const latestIsUnread  = computed(() => latestChangelog.value ? !latestChangelog.value.read : false)
 
 const dropdownOpen = ref(false)
+const showSupport  = ref(false)
 
 const initials = computed(() =>
   auth.user?.name.split(' ').slice(0, 2).map(n => n[0]).join('').toUpperCase() ?? '??',
@@ -27,6 +29,11 @@ async function logout() {
   dropdownOpen.value = false
   await auth.logout()
   router.push({ name: 'login' })
+}
+
+function openSupport() {
+  dropdownOpen.value = false
+  showSupport.value = true
 }
 
 function closeOnOutside(e: MouseEvent) {
@@ -150,6 +157,11 @@ function closeOnOutside(e: MouseEvent) {
               @click="dropdownOpen = false"
             >Paramètres</RouterLink>
 
+            <button
+              class="dropdown-item w-full text-left text-gray-700 dark:text-gray-300"
+              @click="openSupport"
+            >Contacter le support</button>
+
             <div class="border-t border-gray-200 dark:border-gray-800 my-1" />
 
             <button
@@ -161,6 +173,8 @@ function closeOnOutside(e: MouseEvent) {
       </div>
     </div>
   </header>
+
+  <SupportDialog v-if="showSupport" @close="showSupport = false" />
 </template>
 
 <style scoped>

@@ -30,4 +30,5 @@ const html = computed(() => marked(props.content || '', { breaks: true }) as str
 .dark .markdown-body blockquote { border-color: #4b5563; color: #9ca3af; }
 .markdown-body a { color: #7c3aed; text-decoration: underline; }
 .dark .markdown-body a { color: #a78bfa; }
+.markdown-body img { max-width: 100%; border-radius: 6px; margin: 0.5em 0; display: block; }
 </style>

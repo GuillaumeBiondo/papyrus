@@ -65,6 +65,15 @@ export const adminService = {
     await api.delete(`/admin/changelogs/${id}`)
   },
 
+  async uploadChangelogImage(file: File): Promise<{ url: string }> {
+    const form = new FormData()
+    form.append('image', file)
+    const { data } = await api.post('/admin/changelog-images', form, {
+      headers: { 'Content-Type': 'multipart/form-data' },
+    })
+    return data
+  },
+
   // Settings
   async getSettings(): Promise<{ settings: Setting[] }> {
     const { data } = await api.get('/admin/settings')

@@ -19,7 +19,9 @@ use App\Http\Controllers\Api\ProfileController;
 use App\Http\Controllers\Api\SceneSnapshotController;
 use App\Http\Controllers\Api\Admin\AvailableFontController;
 use App\Http\Controllers\Api\ChangelogController;
+use App\Http\Controllers\Api\ChangelogImageController;
 use App\Http\Controllers\Api\ProjectExportController;
+use App\Http\Controllers\Api\SupportController;
 use App\Http\Controllers\Api\ChapterController;
 use App\Http\Controllers\Api\KeywordController;
 use App\Http\Controllers\Api\NotebookController;
@@ -82,6 +84,12 @@ Route::prefix('v1')->middleware(['auth:sanctum', 'throttle:60,1', 'user_blocked'
 
     // Bug report
     Route::post('bug-report', [BugReportController::class, 'store']);
+
+    // Support
+    Route::post('support', [SupportController::class, 'send'])->middleware('throttle:3,1');
+
+    // Changelog images (serve — accessible à tous les utilisateurs connectés)
+    Route::get('changelog-images/{filename}', [ChangelogImageController::class, 'serve'])->name('changelog-image.serve');
 
     // Projects
     Route::get('projects', [ProjectController::class, 'index']);
@@ -210,6 +218,7 @@ Route::prefix('v1')->middleware(['auth:sanctum', 'throttle:60,1', 'user_blocked'
         Route::post('changelogs', [AdminChangelogController::class, 'store']);
         Route::put('changelogs/{changelog}', [AdminChangelogController::class, 'update']);
         Route::delete('changelogs/{changelog}', [AdminChangelogController::class, 'destroy']);
+        Route::post('changelog-images', [AdminChangelogController::class, 'uploadImage'])->middleware('throttle:20,1');
 
         Route::get('settings', [AdminSettingController::class, 'index']);
         Route::put('settings/{key}', [AdminSettingController::class, 'update']);
