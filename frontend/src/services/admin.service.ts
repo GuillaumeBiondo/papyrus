@@ -24,6 +24,11 @@ export const adminService = {
     return data
   },
 
+  async updateBlockedStatus(userId: string, isBlocked: boolean, blockReason?: string | null): Promise<{ is_blocked: boolean; block_reason: string | null }> {
+    const { data } = await api.put(`/admin/users/${userId}/block`, { is_blocked: isBlocked, block_reason: blockReason ?? null })
+    return data
+  },
+
   // Content types
   async getContentTypes(): Promise<{ content_types: ContentType[] }> {
     const { data } = await api.get('/admin/content-types')
