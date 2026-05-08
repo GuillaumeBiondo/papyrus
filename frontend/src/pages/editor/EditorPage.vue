@@ -305,14 +305,28 @@ function onSceneTitleBlur(event: FocusEvent) {
 }
 
 // ── Helpers statut ────────────────────────────────────────────
+const statusDropdownOpen = ref(false)
+
 const STATUS_LABEL: Record<Scene['status'], string> = {
-  idea: 'idée', draft: 'brouillon', revised: 'révisé', final: 'final',
+  idea: 'Idée', draft: 'Brouillon', revised: 'Révisé', final: 'Final',
 }
-const STATUS_DOT: Record<Scene['status'], string> = {
-  idea: 'bg-gray-300 dark:bg-gray-600',
-  draft: 'bg-amber-400',
-  revised: 'bg-blue-400',
-  final: 'bg-green-400',
+const STATUS_DESCRIPTION: Record<Scene['status'], string> = {
+  idea: 'Idée à développer',
+  draft: 'En cours d\'écriture',
+  revised: 'En cours de révision',
+  final: 'Version finalisée',
+}
+const STATUS_COLOR: Record<Scene['status'], string> = {
+  idea: 'text-gray-400 dark:text-gray-500',
+  draft: 'text-amber-500',
+  revised: 'text-blue-400',
+  final: 'text-green-500',
+}
+const STATUS_ICON: Record<Scene['status'], string> = {
+  idea: 'M12 18v-5.25m0 0a6.01 6.01 0 001.5-.189m-1.5.189a6.01 6.01 0 01-1.5-.189m3.75 7.478a12.06 12.06 0 01-4.5 0m3.75 2.383a14.406 14.406 0 01-3 0M14.25 18v-.192c0-.983.658-1.823 1.508-2.316a7.5 7.5 0 10-7.517 0c.85.493 1.509 1.333 1.509 2.316V18',
+  draft: 'm16.862 4.487 1.687-1.688a1.875 1.875 0 1 1 2.652 2.652L10.582 16.07a4.5 4.5 0 0 1-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 0 1 1.13-1.897l8.932-8.931Zm0 0L19.5 7.125M18 14v4.75A2.25 2.25 0 0 1 15.75 21H5.25A2.25 2.25 0 0 1 3 18.75V8.25A2.25 2.25 0 0 1 5.25 6H10',
+  revised: 'M16.023 9.348h4.992v-.001M2.985 19.644v-4.992m0 0h4.992m-4.993 0 3.181 3.183a8.25 8.25 0 0 0 13.803-3.7M4.031 9.865a8.25 8.25 0 0 1 13.803-3.7l3.181 3.182m0-4.991v4.99',
+  final: 'M9 12.75 11.25 15 15 9.75M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0z',
 }
 
 // ── Passthrough Splitter ──────────────────────────────────────
@@ -437,7 +451,9 @@ const rightPanelPt = { root: { class: 'flex flex-col overflow-hidden h-full bord
                             :class="editor.activeScene?.id === scene.id ? 'text-brand-700 dark:text-brand-300' : 'text-gray-600 dark:text-gray-400'"
                             @click="editor.setActiveScene(scene); if (isMobile) leftSidebarOpen = false"
                           >
-                            <span class="w-1.5 h-1.5 rounded-full shrink-0" :class="STATUS_DOT[scene.status as Scene['status']]" />
+                            <svg class="w-3 h-3 shrink-0" :class="STATUS_COLOR[scene.status as Scene['status']]" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24">
+                              <path stroke-linecap="round" stroke-linejoin="round" :d="STATUS_ICON[scene.status as Scene['status']]" />
+                            </svg>
                             <span class="text-xs truncate flex-1">{{ scene.title }}</span>
                             <span class="text-xs text-gray-400 shrink-0">{{ scene.word_count }}</span>
                           </button>
@@ -533,15 +549,42 @@ const rightPanelPt = { root: { class: 'flex flex-col overflow-hidden h-full bord
 
           <template v-if="editor.activeScene">
             <!-- Statut scène -->
-            <div class="flex items-center gap-1">
+            <div class="relative">
               <button
-                v-for="(label, val) in ({ idea: 'I', draft: 'B', revised: 'R', final: 'F' } as Record<Scene['status'], string>)"
-                :key="val"
-                class="w-6 h-6 text-xs rounded font-medium transition-colors"
-                :class="editor.activeScene.status === val ? 'bg-brand-600 text-white' : 'text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800'"
-                :title="STATUS_LABEL[val as Scene['status']]"
-                @click="editor.setActiveSceneStatus(val as Scene['status'])"
-              >{{ label }}</button>
+                class="flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-medium transition-colors hover:bg-gray-100 dark:hover:bg-gray-800"
+                :class="STATUS_COLOR[editor.activeScene.status as Scene['status']]"
+                :title="STATUS_DESCRIPTION[editor.activeScene.status as Scene['status']]"
+                @click.stop="statusDropdownOpen = !statusDropdownOpen"
+              >
+                <svg class="w-3.5 h-3.5 shrink-0" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" :d="STATUS_ICON[editor.activeScene.status as Scene['status']]" />
+                </svg>
+                <span>{{ STATUS_LABEL[editor.activeScene.status as Scene['status']] }}</span>
+                <svg class="w-2.5 h-2.5 opacity-50" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7" />
+                </svg>
+              </button>
+
+              <div v-if="statusDropdownOpen" class="fixed inset-0 z-10" @click="statusDropdownOpen = false" />
+              <div v-if="statusDropdownOpen" class="absolute top-full left-0 mt-1 z-20 bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-xl shadow-lg overflow-hidden w-52">
+                <button
+                  v-for="(label, val) in STATUS_LABEL"
+                  :key="val"
+                  class="w-full flex items-start gap-2.5 px-3 py-2.5 text-left transition-colors"
+                  :class="editor.activeScene.status === val
+                    ? 'bg-brand-50 dark:bg-brand-900/20'
+                    : 'hover:bg-gray-50 dark:hover:bg-gray-800'"
+                  @click="editor.setActiveSceneStatus(val as Scene['status']); statusDropdownOpen = false"
+                >
+                  <svg class="w-4 h-4 mt-0.5 shrink-0" :class="STATUS_COLOR[val as Scene['status']]" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" :d="STATUS_ICON[val as Scene['status']]" />
+                  </svg>
+                  <div>
+                    <p class="text-xs font-medium text-gray-900 dark:text-gray-100">{{ label }}</p>
+                    <p class="text-xs text-gray-400 dark:text-gray-500 mt-0.5">{{ STATUS_DESCRIPTION[val as Scene['status']] }}</p>
+                  </div>
+                </button>
+              </div>
             </div>
 
             <span class="ml-auto text-xs text-gray-400 hidden md:inline">
