@@ -14,7 +14,7 @@ return new class extends Migration
             $table->foreign('chapter_id')->references('id')->on('chapters')->cascadeOnDelete();
             $table->string('title', 200);
             $table->longText('content')->nullable();
-            $table->enum('status', ['idea', 'draft', 'revised', 'final'])->default('idea');
+            $table->enum('status', ['idea', 'draft', 'revised', 'final'])->default('draft');
             $table->integer('order')->default(0);
             $table->integer('word_count')->default(0);
             $table->softDeletes();
