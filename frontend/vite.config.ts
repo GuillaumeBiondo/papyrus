@@ -13,6 +13,7 @@ export default defineConfig({
     tailwindcss(),
     VitePWA({
       registerType: 'autoUpdate',
+      periodicSWUpdates: true,
       includeAssets: ['favicon.ico', 'papyrus.png', 'papyrus_192.png', 'papyrus_512.png'],
       manifest: {
         name: 'Papyrus',

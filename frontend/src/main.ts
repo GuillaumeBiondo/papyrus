@@ -2,14 +2,6 @@ import './assets/main.css'
 import { installConsoleInterceptor } from '@/composables/bugBuffer'
 installConsoleInterceptor()
 
-import { registerSW } from 'virtual:pwa-register'
-registerSW({
-  immediate: true,
-  onRegisteredSW(_, registration) {
-    // Vérifie les mises à jour toutes les heures
-    setInterval(() => registration?.update(), 60 * 60 * 1000)
-  },
-})
 
 import { createApp } from 'vue'
 import { createPinia } from 'pinia'
