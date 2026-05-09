@@ -187,16 +187,10 @@ watch(() => editor.activeScene?.id, () => {
   wordsAtLastSnap.value = countWords(editor.activeScene?.content)
 })
 
-function countWords(json: string | null | undefined): number {
-  if (!json) return 0
-  try {
-    const extract = (n: any): string => {
-      if (n?.type === 'text') return n.text ?? ''
-      if (n?.content) return n.content.map(extract).join(' ')
-      return ''
-    }
-    return extract(JSON.parse(json)).trim().split(/\s+/).filter(Boolean).length
-  } catch { return 0 }
+function countWords(html: string | null | undefined): number {
+  if (!html) return 0
+  const text = html.replace(/<[^>]*>/g, ' ').replace(/&[a-z]+;/gi, ' ')
+  return text.trim().split(/\s+/).filter(Boolean).length
 }
 
 async function triggerAutoSnapshot(content: string) {
@@ -590,6 +584,29 @@ const rightPanelPt = { root: { class: 'flex flex-col overflow-hidden h-full bord
             <span class="ml-auto text-xs text-gray-400 hidden md:inline">
               {{ editor.saving ? 'Enregistrement…' : `${editor.activeScene.word_count ?? 0} mots` }}
             </span>
+
+            <!-- Boutons snapshot + timeline -->
+            <div class="hidden md:flex items-center gap-0.5">
+              <button
+                class="flex items-center gap-1 text-xs text-gray-400 hover:text-gray-600 dark:hover:text-gray-300
+                       px-2 py-1 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
+                :disabled="snapshotSaving"
+                title="Snapshot manuel"
+                @click="snapshotModal = true"
+              >
+                <span>📷</span>
+                <span>{{ snapshotSaving ? '…' : 'Snapshot' }}</span>
+              </button>
+              <button
+                class="flex items-center gap-1 text-xs text-gray-400 hover:text-gray-600 dark:hover:text-gray-300
+                       px-2 py-1 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
+                title="Timeline"
+                @click="timelineOpen = true"
+              >
+                <span>🎞️</span>
+                <span>Timeline</span>
+              </button>
+            </div>
           </template>
 
           <span v-else class="flex-1" />
@@ -661,29 +678,6 @@ const rightPanelPt = { root: { class: 'flex flex-col overflow-hidden h-full bord
               data-placeholder="Titre de la scène…"
               @blur="onSceneTitleBlur"
             >{{ editor.activeScene.title }}</h1>
-            <!-- Boutons snapshot (header éditeur) -->
-            <div class="flex items-center gap-1 mb-4">
-              <button
-                class="flex items-center gap-1 text-xs text-gray-400 hover:text-gray-600 dark:hover:text-gray-300
-                       px-2 py-1 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
-                :disabled="snapshotSaving"
-                title="Snapshot manuel"
-                @click="snapshotModal = true"
-              >
-                <span>📷</span>
-                <span class="hidden sm:inline">{{ snapshotSaving ? 'Sauvegarde…' : 'Snapshot' }}</span>
-              </button>
-              <button
-                class="flex items-center gap-1 text-xs text-gray-400 hover:text-gray-600 dark:hover:text-gray-300
-                       px-2 py-1 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
-                title="Timeline"
-                @click="timelineOpen = true"
-              >
-                <span>🎞️</span>
-                <span class="hidden sm:inline">Timeline</span>
-              </button>
-            </div>
-
             <SceneEditor
               ref="sceneEditorRef"
               :content="editor.activeScene.content ?? ''"

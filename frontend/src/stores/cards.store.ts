@@ -36,6 +36,12 @@ export const useCardsStore = defineStore('cards', () => {
     return card
   }
 
+  async function deleteCard(cardId: string): Promise<void> {
+    await cardsService.destroy(cardId)
+    cards.value = cards.value.filter(c => c.id !== cardId)
+    if (activeCard.value?.id === cardId) activeCard.value = null
+  }
+
   async function updateCard(payload: Partial<Card>) {
     if (!activeCard.value) return
     const updated = await cardsService.update(activeCard.value.id, payload)
@@ -143,7 +149,7 @@ export const useCardsStore = defineStore('cards', () => {
 
   return {
     cards, activeCard, occurrences, rebuildStatus, loading, showKeywordForm,
-    fetchForProject, loadCard, createCard, updateCard, updateAttributes,
+    fetchForProject, loadCard, createCard, updateCard, deleteCard, updateAttributes,
     addKeyword, removeKeyword, openKeywordForm,
     rebuildIndex, loadOccurrences,
     addLink, removeLink,

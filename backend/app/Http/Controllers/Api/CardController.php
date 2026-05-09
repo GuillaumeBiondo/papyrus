@@ -46,7 +46,7 @@ class CardController extends Controller
         $card = $project->cards()->create($request->safe()->only('type', 'title'));
 
         if ($request->has('attributes')) {
-            $card->attributes()->createMany($request->attributes);
+            $card->attributes()->createMany($request->input('attributes'));
         }
 
         return (new CardResource($card->load('attributes')))

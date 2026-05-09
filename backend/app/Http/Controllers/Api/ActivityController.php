@@ -43,7 +43,7 @@ class ActivityController extends Controller
 
     // ── Grille 365 jours ──────────────────────────────────────
 
-    private function dailyGrid(int $userId, array $sceneIds = []): array
+    private function dailyGrid(string $userId, array $sceneIds = []): array
     {
         $from = now()->subDays(self::GRID_DAYS)->startOfDay();
 
@@ -79,10 +79,10 @@ class ActivityController extends Controller
 
     // ── Heatmap 7j × 24h ─────────────────────────────────────
 
-    private function hourlyGrid(int $userId, array $sceneIds = []): array
+    private function hourlyGrid(string $userId, array $sceneIds = []): array
     {
         $loginsMap = LoginEvent::where('user_id', $userId)
-            ->selectRaw('DAYOFWEEK(created_at) - 1 as day, HOUR(created_at) as hour, COUNT(*) as logins')
+            ->selectRaw('EXTRACT(DOW FROM created_at)::int as day, EXTRACT(HOUR FROM created_at)::int as hour, COUNT(*) as logins')
             ->groupBy('day', 'hour')
             ->get()
             ->mapWithKeys(fn($r) => ["{$r->day}:{$r->hour}" => (int) $r->logins]);
@@ -91,7 +91,7 @@ class ActivityController extends Controller
         if ($sceneIds) $wordsQuery->whereIn('scene_id', $sceneIds);
 
         $wordsMap = $wordsQuery
-            ->selectRaw('DAYOFWEEK(created_at) - 1 as day, HOUR(created_at) as hour, SUM(word_delta) as words')
+            ->selectRaw('EXTRACT(DOW FROM created_at)::int as day, EXTRACT(HOUR FROM created_at)::int as hour, SUM(word_delta) as words')
             ->groupBy('day', 'hour')
             ->get()
             ->mapWithKeys(fn($r) => ["{$r->day}:{$r->hour}" => (int) $r->words]);

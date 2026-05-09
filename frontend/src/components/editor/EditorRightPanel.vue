@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue'
 import { useEditorStore } from '@/stores/editor.store'
+import { useAuthStore } from '@/stores/auth.store'
 import type { Annotation } from '@/types'
 
 const props = defineProps<{
@@ -20,6 +21,7 @@ const emit = defineEmits<{
 
 const vFocus = { mounted: (el: HTMLElement) => el.focus() }
 const editor = useEditorStore()
+const auth   = useAuthStore()
 
 // ── Couleurs annotations ───────────────────────────────────────
 const ANNOTATION_COLORS = [
@@ -156,7 +158,13 @@ const filteredProjectCards = computed(() => {
 
 async function submitCreateCard() {
   if (!newCardTitle.value.trim()) return
-  await editor.createProjectCard({ type: newCardType.value, title: newCardTitle.value.trim() })
+  const defaultAttrs = (auth.preferences.defaultAttributes?.[newCardType.value] ?? [])
+    .map((k: string) => ({ key: k, value: '' }))
+  await editor.createProjectCard({
+    type: newCardType.value,
+    title: newCardTitle.value.trim(),
+    ...(defaultAttrs.length ? { attributes: defaultAttrs } : {}),
+  })
   newCardTitle.value = ''
   showCreateCardForm.value = false
 }

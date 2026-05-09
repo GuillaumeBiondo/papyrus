@@ -2,6 +2,7 @@
 import { computed, ref, watch } from 'vue'
 import Dialog from 'primevue/dialog'
 import { useCardsStore } from '@/stores/cards.store'
+import { useEditorStore } from '@/stores/editor.store'
 import { notesService } from '@/services/notes.service'
 import CardImagesTab from '@/components/editor/CardImagesTab.vue'
 import type { Note } from '@/types'
@@ -21,6 +22,7 @@ watch(() => props.cardId, (id) => { visible.value = id !== null })
 watch(visible, (v) => { if (!v) emit('close') })
 
 const cards = useCardsStore()
+const editor = useEditorStore()
 const loading = ref(false)
 
 // ── Tabs ──────────────────────────────────────────────────────
@@ -219,6 +221,24 @@ function relativeTime(dateStr: string) {
   return `il y a ${Math.floor(h / 24)}j`
 }
 
+// ── Suppression ───────────────────────────────────────────────
+const confirmDelete = ref(false)
+const deleting = ref(false)
+
+async function deleteCard() {
+  if (!cards.activeCard) return
+  const cardId = cards.activeCard.id
+  deleting.value = true
+  try {
+    await cards.deleteCard(cardId)
+    editor.removeProjectCard(cardId)
+    emit('close')
+  } finally {
+    deleting.value = false
+    confirmDelete.value = false
+  }
+}
+
 // ── Passthrough Dialog ────────────────────────────────────────
 const isMaximized = ref(false)
 
@@ -335,13 +355,39 @@ const dialogPt = computed(() => ({
 
         <div class="flex-1" />
 
-        <button
-          v-if="activeTab === 'attributs' && !editMode"
-          class="text-xs px-3 py-1.5 my-2 border border-gray-300 dark:border-gray-600
-                 text-gray-600 dark:text-gray-300 rounded-lg hover:bg-gray-50
-                 dark:hover:bg-gray-800 transition-colors"
-          @click="startEdit"
-        >Modifier</button>
+        <!-- Confirmation suppression -->
+        <template v-if="confirmDelete">
+          <span class="text-xs text-gray-500 dark:text-gray-400 mr-1">Supprimer définitivement ?</span>
+          <button
+            class="text-xs px-2.5 py-1.5 my-2 rounded-lg bg-red-500 hover:bg-red-600 text-white transition-colors disabled:opacity-50"
+            :disabled="deleting"
+            @click="deleteCard"
+          >{{ deleting ? '…' : 'Confirmer' }}</button>
+          <button
+            class="text-xs px-2.5 py-1.5 my-2 ml-1 rounded-lg text-gray-500 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
+            @click="confirmDelete = false"
+          >Annuler</button>
+        </template>
+
+        <template v-else>
+          <button
+            class="text-xs px-2 py-1.5 my-2 mr-1 rounded-lg text-red-400 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors"
+            title="Supprimer cette fiche"
+            @click="confirmDelete = true"
+          >
+            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                    d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/>
+            </svg>
+          </button>
+          <button
+            v-if="activeTab === 'attributs' && !editMode"
+            class="text-xs px-3 py-1.5 my-2 border border-gray-300 dark:border-gray-600
+                   text-gray-600 dark:text-gray-300 rounded-lg hover:bg-gray-50
+                   dark:hover:bg-gray-800 transition-colors"
+            @click="startEdit"
+          >Modifier</button>
+        </template>
       </div>
 
       <!-- Contenu scrollable -->

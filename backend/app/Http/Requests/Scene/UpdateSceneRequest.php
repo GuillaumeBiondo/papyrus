@@ -14,10 +14,11 @@ class UpdateSceneRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'title'   => ['sometimes', 'string', 'max:200'],
-            'content' => ['sometimes', 'nullable', 'string'],
-            'status'  => ['sometimes', 'nullable', Rule::in(['idea', 'draft', 'revised', 'final'])],
-            'order'   => ['sometimes', 'integer', 'min:0'],
+            'title'      => ['sometimes', 'string', 'max:200'],
+            'content'    => ['sometimes', 'nullable', 'string'],
+            'word_count' => ['sometimes', 'integer', 'min:0'],
+            'status'     => ['sometimes', 'nullable', Rule::in(['idea', 'draft', 'revised', 'final'])],
+            'order'      => ['sometimes', 'integer', 'min:0'],
         ];
     }
 

@@ -54,7 +54,23 @@ const activeTab = ref<'attributs' | 'liaisons' | 'referentiel'>('attributs')
 async function selectCard(card: typeof cards.cards[0]) {
   activeTab.value = 'attributs'
   editMode.value = false
+  confirmDelete.value = false
   await cards.loadCard(card.id)
+}
+
+// ── Suppression ───────────────────────────────────────────
+const confirmDelete = ref(false)
+const deleting = ref(false)
+
+async function deleteActiveCard() {
+  if (!cards.activeCard) return
+  deleting.value = true
+  try {
+    await cards.deleteCard(cards.activeCard.id)
+    confirmDelete.value = false
+  } finally {
+    deleting.value = false
+  }
 }
 
 // ── Édition attributs ─────────────────────────────────────
@@ -320,13 +336,39 @@ onMounted(() => cards.fetchForProject(projectId))
               </template>
             </p>
           </div>
-          <button
-            v-if="activeTab === 'attributs' && !editMode"
-            class="text-sm px-3 py-1.5 border border-gray-300 dark:border-gray-600
-                   text-gray-600 dark:text-gray-300 rounded-lg hover:bg-gray-50
-                   dark:hover:bg-gray-800 transition-colors"
-            @click="startEdit"
-          >Modifier</button>
+          <div class="flex items-center gap-2 shrink-0">
+            <template v-if="confirmDelete">
+              <span class="text-xs text-gray-500">Supprimer définitivement ?</span>
+              <button
+                class="text-xs px-2.5 py-1.5 rounded-lg bg-red-500 hover:bg-red-600 text-white transition-colors disabled:opacity-50"
+                :disabled="deleting"
+                @click="deleteActiveCard"
+              >{{ deleting ? '…' : 'Confirmer' }}</button>
+              <button
+                class="text-xs px-2.5 py-1.5 rounded-lg text-gray-500 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
+                @click="confirmDelete = false"
+              >Annuler</button>
+            </template>
+            <template v-else>
+              <button
+                class="p-1.5 rounded-lg text-red-400 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors"
+                title="Supprimer cette fiche"
+                @click="confirmDelete = true"
+              >
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                        d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/>
+                </svg>
+              </button>
+              <button
+                v-if="activeTab === 'attributs' && !editMode"
+                class="text-sm px-3 py-1.5 border border-gray-300 dark:border-gray-600
+                       text-gray-600 dark:text-gray-300 rounded-lg hover:bg-gray-50
+                       dark:hover:bg-gray-800 transition-colors"
+                @click="startEdit"
+              >Modifier</button>
+            </template>
+          </div>
         </div>
 
         <!-- Tabs -->

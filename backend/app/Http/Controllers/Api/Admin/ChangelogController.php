@@ -6,6 +6,8 @@ use App\Http\Controllers\Controller;
 use App\Models\Changelog;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Str;
 
 class ChangelogController extends Controller
 {
@@ -51,5 +53,18 @@ class ChangelogController extends Controller
         $changelog->delete();
 
         return response()->json(null, 204);
+    }
+
+    public function uploadImage(Request $request): JsonResponse
+    {
+        $request->validate([
+            'image' => ['required', 'file', 'mimes:jpg,jpeg,png,gif,webp', 'max:5120'],
+        ]);
+
+        $file = $request->file('image');
+        $name = Str::uuid() . '.' . $file->extension();
+        $path = Storage::disk('public')->putFileAs('changelog-images', $file, $name);
+
+        return response()->json(['url' => Storage::disk('public')->url($path)], 201);
     }
 }

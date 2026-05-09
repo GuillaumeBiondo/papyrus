@@ -1,8 +1,14 @@
 <script setup lang="ts">
-import { computed } from 'vue'
+import { computed, onMounted, ref } from 'vue'
 import type { ActivityDay } from '@/types'
 
 const props = defineProps<{ days: ActivityDay[] }>()
+
+const scrollEl = ref<HTMLElement | null>(null)
+
+onMounted(() => {
+  if (scrollEl.value) scrollEl.value.scrollLeft = scrollEl.value.scrollWidth
+})
 
 const maxWords = computed(() => Math.max(1, ...props.days.map(d => d.words)))
 
@@ -65,7 +71,7 @@ const monthLabels = computed(() => {
 </script>
 
 <template>
-  <div class="overflow-x-auto">
+  <div ref="scrollEl" class="overflow-x-auto">
     <!-- Labels mois -->
     <div class="flex gap-[3px] mb-1 ml-6">
       <template v-for="(month, i) in monthLabels" :key="i">

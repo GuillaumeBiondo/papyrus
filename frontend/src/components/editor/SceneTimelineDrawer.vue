@@ -60,18 +60,8 @@ async function restore() {
 }
 
 // ── Helpers ───────────────────────────────────────────────────
-function extractText(json: string | undefined): string {
-  if (!json) return ''
-  try {
-    const extract = (n: any): string => {
-      if (n?.type === 'text') return n.text ?? ''
-      if (n?.content) return n.content.map(extract).join(' ')
-      return ''
-    }
-    return extract(JSON.parse(json)).trim()
-  } catch {
-    return json
-  }
+function extractText(content: string | undefined): string {
+  return content ?? ''
 }
 
 function triggerIcon(t: SceneSnapshot['trigger']) {
@@ -118,7 +108,7 @@ const groupedSnapshots = computed(() => {
 
       <!-- Panneau -->
       <aside
-        class="relative ml-auto w-[680px] max-w-[95vw] h-full flex bg-white dark:bg-gray-950
+        class="relative ml-auto w-[min(1050px,92vw)] h-full flex bg-white dark:bg-gray-950
                border-l border-gray-200 dark:border-gray-800 shadow-2xl overflow-hidden"
       >
         <!-- Header -->
@@ -231,11 +221,12 @@ const groupedSnapshots = computed(() => {
               <!-- Texte -->
               <div class="flex-1 overflow-y-auto px-6 py-5">
                 <div v-if="previewLoading" class="text-xs text-gray-400">Chargement…</div>
-                <p
+                <div
                   v-else-if="previewText"
-                  class="text-sm text-gray-700 dark:text-gray-300 leading-relaxed whitespace-pre-wrap"
+                  class="markdown-body text-sm text-gray-700 dark:text-gray-300"
                   style="font-family: var(--editor-font-family, system-ui)"
-                >{{ previewText }}</p>
+                  v-html="previewText"
+                />
                 <p v-else class="text-xs text-gray-400">Aucun contenu.</p>
               </div>
             </template>

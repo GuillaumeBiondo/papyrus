@@ -32,9 +32,15 @@ export const useEditorStore = defineStore('editor', () => {
 
   // ─── Éditeur ──────────────────────────────────────────────────────────────
 
+  function countWordsFromHtml(html: string): number {
+    const text = html.replace(/<[^>]*>/g, ' ').replace(/&[a-z]+;/gi, ' ')
+    return text.trim().split(/\s+/).filter(Boolean).length
+  }
+
   function onContentChange(content: string) {
     if (!activeScene.value) return
     activeScene.value.content = content
+    activeScene.value.word_count = countWordsFromHtml(content)
     if (saveTimeout.value) clearTimeout(saveTimeout.value)
     saveTimeout.value = setTimeout(() => saveScene(), 1500)
   }
@@ -46,6 +52,7 @@ export const useEditorStore = defineStore('editor', () => {
       await scenesService.update(activeScene.value.id, {
         content: activeScene.value.content,
         title: activeScene.value.title,
+        word_count: activeScene.value.word_count,
       })
       if (activeScene.value) loadSceneCards(activeScene.value.id)
     } catch (err: any) {
@@ -93,7 +100,7 @@ export const useEditorStore = defineStore('editor', () => {
     }
   }
 
-  async function createProjectCard(payload: { type: string; title: string }): Promise<Card> {
+  async function createProjectCard(payload: { type: string; title: string; attributes?: { key: string; value: string }[] }): Promise<Card> {
     if (!currentProject.value) throw new Error('No project loaded')
     const card = await cardsService.store(currentProject.value.id, payload)
     projectCards.value.push(card)
@@ -347,6 +354,9 @@ export const useEditorStore = defineStore('editor', () => {
     addNote, updateNote, removeNote,
     searchAnnotations,
     createProjectCard,
+    removeProjectCard: (cardId: string) => {
+      projectCards.value = projectCards.value.filter(c => c.id !== cardId)
+    },
     createArc, createChapter, createScene,
     deleteArc, deleteChapter, deleteScene,
     reorderArcs, reorderChapters, reorderScenes,

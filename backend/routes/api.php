@@ -208,6 +208,7 @@ Route::prefix('v1')->middleware(['auth:sanctum', 'throttle:60,1', 'user_blocked'
 
         Route::get('changelogs', [AdminChangelogController::class, 'index']);
         Route::post('changelogs', [AdminChangelogController::class, 'store']);
+        Route::post('changelogs/images', [AdminChangelogController::class, 'uploadImage']);
         Route::put('changelogs/{changelog}', [AdminChangelogController::class, 'update']);
         Route::delete('changelogs/{changelog}', [AdminChangelogController::class, 'destroy']);
 

@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { onMounted, reactive, ref } from 'vue'
+import { nextTick, onMounted, reactive, ref } from 'vue'
 import { adminService } from '@/services/admin.service'
 import type { Changelog } from '@/types'
 import MarkdownContent from '@/components/shared/MarkdownContent.vue'
@@ -13,6 +13,9 @@ const editTarget = ref<Changelog | null>(null)
 const saving = ref(false)
 const formError = ref('')
 const preview = ref(false)
+const uploadingImage = ref(false)
+const bodyTextarea = ref<HTMLTextAreaElement | null>(null)
+const imageInput = ref<HTMLInputElement | null>(null)
 
 const form = reactive({
   version: '',
@@ -103,6 +106,32 @@ function formatDate(iso: string | null) {
   if (!iso) return '—'
   return new Intl.DateTimeFormat('fr-FR', { dateStyle: 'medium' }).format(new Date(iso))
 }
+
+async function onImageSelected(e: Event) {
+  const file = (e.target as HTMLInputElement).files?.[0]
+  if (!file) return
+  uploadingImage.value = true
+  try {
+    const { url } = await adminService.uploadChangelogImage(file)
+    const md = `![image](${url})`
+    const el = bodyTextarea.value
+    if (el) {
+      const start = el.selectionStart ?? form.body.length
+      const end = el.selectionEnd ?? start
+      form.body = form.body.slice(0, start) + md + form.body.slice(end)
+      await nextTick()
+      el.selectionStart = el.selectionEnd = start + md.length
+      el.focus()
+    } else {
+      form.body += '\n' + md
+    }
+  } catch {
+    formError.value = "Erreur lors de l'upload de l'image."
+  } finally {
+    uploadingImage.value = false
+    if (imageInput.value) imageInput.value.value = ''
+  }
+}
 </script>
 
 <template>
@@ -173,13 +202,24 @@ function formatDate(iso: string | null) {
             <h2 class="text-base font-semibold text-gray-900 dark:text-gray-100">
               {{ editTarget ? 'Modifier' : 'Nouveau journal' }}
             </h2>
-            <button
-              type="button"
-              class="text-xs px-2 py-1 rounded border text-gray-500 border-gray-300 dark:border-gray-700 hover:bg-gray-100 dark:hover:bg-gray-800"
-              @click="preview = !preview"
-            >
-              {{ preview ? 'Éditer' : 'Aperçu' }}
-            </button>
+            <div class="flex items-center gap-2">
+              <input ref="imageInput" type="file" accept="image/*" class="hidden" @change="onImageSelected" />
+              <button
+                type="button"
+                :disabled="uploadingImage"
+                class="text-xs px-2 py-1 rounded border text-gray-500 border-gray-300 dark:border-gray-700 hover:bg-gray-100 dark:hover:bg-gray-800 disabled:opacity-50"
+                @click="imageInput?.click()"
+              >
+                {{ uploadingImage ? '…' : 'Image' }}
+              </button>
+              <button
+                type="button"
+                class="text-xs px-2 py-1 rounded border text-gray-500 border-gray-300 dark:border-gray-700 hover:bg-gray-100 dark:hover:bg-gray-800"
+                @click="preview = !preview"
+              >
+                {{ preview ? 'Éditer' : 'Aperçu' }}
+              </button>
+            </div>
           </div>
 
           <form class="space-y-4" @submit.prevent="save">
@@ -208,6 +248,7 @@ function formatDate(iso: string | null) {
               </div>
               <textarea
                 v-else
+                ref="bodyTextarea"
                 v-model="form.body"
                 class="admin-input font-mono text-sm"
                 rows="12"
