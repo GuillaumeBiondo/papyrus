@@ -42,7 +42,7 @@ async function toggle(font: AvailableFont) {
 async function moveUp(font: AvailableFont) {
   const idx = enabledFonts.value.findIndex(f => f.id === font.id)
   if (idx <= 0) return
-  const prev = enabledFonts.value[idx - 1]
+  const prev = enabledFonts.value[idx - 1]!
   ;[prev.sort_order, font.sort_order] = [font.sort_order, prev.sort_order]
   fonts.value = [...fonts.value].sort((a, b) => a.sort_order - b.sort_order || a.name.localeCompare(b.name))
   await adminService.reorderFonts(enabledFonts.value.map(f => f.id))
@@ -51,7 +51,7 @@ async function moveUp(font: AvailableFont) {
 async function moveDown(font: AvailableFont) {
   const idx = enabledFonts.value.findIndex(f => f.id === font.id)
   if (idx >= enabledFonts.value.length - 1) return
-  const next = enabledFonts.value[idx + 1]
+  const next = enabledFonts.value[idx + 1]!
   ;[next.sort_order, font.sort_order] = [font.sort_order, next.sort_order]
   fonts.value = [...fonts.value].sort((a, b) => a.sort_order - b.sort_order || a.name.localeCompare(b.name))
   await adminService.reorderFonts(enabledFonts.value.map(f => f.id))

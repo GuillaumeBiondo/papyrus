@@ -131,7 +131,7 @@ export const useCardsStore = defineStore('cards', () => {
       activeCard.value.images = activeCard.value.images.filter((i) => i.id !== imageId)
       const hasAvatar = activeCard.value.images.some((i) => i.is_avatar)
       if (!hasAvatar && activeCard.value.images.length > 0) {
-        activeCard.value.images[0].is_avatar = true
+        activeCard.value.images[0]!.is_avatar = true
       }
     }
   }

@@ -79,7 +79,7 @@ const brandFallbackColor = computed(() => {
   return mode === 'dark' ? palette.dark[600] : palette.light[600]
 })
 
-function cardColor(p: Project) { return p.color ?? brandFallbackColor.value }
+function cardColor(p: Project): string { return p.color ?? brandFallbackColor.value ?? '#6D5FE6' }
 
 function hexRgba(hex: string, alpha: number) {
   const r = parseInt(hex.slice(1, 3), 16)

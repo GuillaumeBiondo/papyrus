@@ -26,7 +26,7 @@ async function handleFiles(files: FileList | null) {
   if (!files?.length) return
   error.value = null
 
-  const file = files[0]
+  const file = files[0]!
   const msg  = validateFile(file)
   if (msg) { error.value = msg; return }
 

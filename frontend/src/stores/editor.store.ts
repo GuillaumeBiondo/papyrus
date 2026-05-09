@@ -102,7 +102,7 @@ export const useEditorStore = defineStore('editor', () => {
 
   async function createProjectCard(payload: { type: string; title: string; attributes?: { key: string; value: string }[] }): Promise<Card> {
     if (!currentProject.value) throw new Error('No project loaded')
-    const card = await cardsService.store(currentProject.value.id, payload)
+    const card = await cardsService.store(currentProject.value.id, payload as any)
     projectCards.value.push(card)
     projectCards.value.sort((a, b) => a.title.localeCompare(b.title))
     return card

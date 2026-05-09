@@ -26,11 +26,11 @@ function validateAvatar(file: File): string | null {
 async function handleAvatarFiles(files: FileList | null) {
   if (!files?.length) return
   avatarError.value = null
-  const msg = validateAvatar(files[0])
+  const msg = validateAvatar(files[0]!)
   if (msg) { avatarError.value = msg; return }
   avatarUploading.value = true
   try {
-    await auth.uploadAvatar(files[0])
+    await auth.uploadAvatar(files[0]!)
   } catch {
     avatarError.value = 'Erreur lors de l\'upload.'
   } finally {

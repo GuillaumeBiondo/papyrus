@@ -24,7 +24,7 @@ async function toggleBypass(u: AdminUser) {
   try {
     const { maintenance_bypass } = await adminService.updateMaintenanceBypass(u.id, !u.maintenance_bypass)
     const idx = users.value.findIndex(x => x.id === u.id)
-    if (idx !== -1) users.value[idx] = { ...users.value[idx], maintenance_bypass }
+    if (idx !== -1) users.value[idx] = { ...users.value[idx]!, maintenance_bypass }
   } finally {
     togglingBypass.value = null
   }
@@ -49,7 +49,7 @@ async function toggleBlock(u: AdminUser) {
       !u.is_blocked ? blockReasonInput.value || null : null,
     )
     const idx = users.value.findIndex(x => x.id === u.id)
-    if (idx !== -1) users.value[idx] = { ...users.value[idx], is_blocked, block_reason }
+    if (idx !== -1) users.value[idx] = { ...users.value[idx]!, is_blocked, block_reason }
   } finally {
     togglingBlock.value = null
     showBlockReason.value = null

@@ -15,7 +15,7 @@ const maxWords = computed(() => Math.max(1, ...props.days.map(d => d.words)))
 // Découpe les jours en semaines (colonnes)
 const weeks = computed(() => {
   if (!props.days.length) return []
-  const first     = new Date(props.days[0].date)
+  const first     = new Date(props.days[0]!.date)
   const startPad  = first.getDay() // 0=dim → on décale pour commencer lundi
   const padded    = Array.from({ length: (startPad + 6) % 7 }, () => null)
   const all       = [...padded, ...props.days]

@@ -26,7 +26,7 @@ const TYPES: { key: string; label: string; color: string; dot: string; hex: stri
 ]
 
 function typeConfig(key: string) {
-  return TYPES.find(t => t.key === key) ?? { key, label: key, color: 'bg-gray-100 text-gray-600 border border-gray-200', dot: 'bg-gray-400' }
+  return TYPES.find(t => t.key === key) ?? { key, label: key, color: 'bg-gray-100 text-gray-600 border border-gray-200', dot: 'bg-gray-400', hex: '#9ca3af', bg: 'bg-gray-400' }
 }
 
 // ── Filtres ───────────────────────────────────────────────
@@ -158,7 +158,7 @@ async function createCard() {
     await cards.createCard(projectId, {
       title: newTitle.value.trim(),
       type: newType.value,
-      ...(defaults.length ? { attributes: defaults } : {}),
+      ...(defaults.length ? { attributes: defaults as any } : {}),
     })
     showCreateModal.value = false
     newTitle.value = ''

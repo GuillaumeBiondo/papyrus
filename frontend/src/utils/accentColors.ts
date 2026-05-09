@@ -122,7 +122,7 @@ export function applyUiSurface(isDark: boolean, surfaceKey?: string): void {
     return
   }
 
-  const preset = UI_SURFACE_PRESETS.find(p => p.key === surfaceKey) ?? UI_SURFACE_PRESETS[0]
+  const preset = UI_SURFACE_PRESETS.find(p => p.key === surfaceKey) ?? UI_SURFACE_PRESETS[0]!
   el.textContent = `:root.dark {\n  --ui-sidebar-bg: ${preset.sidebarBg};\n}`
 }
 
