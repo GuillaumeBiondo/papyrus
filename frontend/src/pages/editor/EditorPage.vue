@@ -616,7 +616,7 @@ const rightPanelPt = { root: { class: 'flex flex-col overflow-hidden h-full bord
               <button
                 class="flex items-center gap-1.5 text-xs px-2 py-1 rounded-lg transition-colors"
                 :class="spellcheck
-                  ? 'text-brand-600 dark:text-brand-400 bg-brand-50 dark:bg-brand-900/20 hover:bg-brand-100 dark:hover:bg-brand-900/30'
+                  ? 'text-white bg-brand-500 hover:bg-brand-600 dark:bg-brand-600 dark:hover:bg-brand-500'
                   : 'text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800'"
                 :title="spellcheck ? 'Désactiver le correcteur' : 'Activer le correcteur orthographique'"
                 @click="toggleSpellcheck"
