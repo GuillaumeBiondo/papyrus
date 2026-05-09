@@ -8,6 +8,8 @@ import { Extension } from '@tiptap/core'
 import { Plugin, PluginKey } from '@tiptap/pm/state'
 import { Decoration, DecorationSet } from '@tiptap/pm/view'
 import type { Annotation } from '@/types'
+import { createSuggestionExtension, suggestionPluginKey } from '@/extensions/SuggestionDecorations'
+import { useSuggestionsStore } from '@/stores/suggestions.store'
 
 const props = defineProps<{
   content: string
@@ -83,6 +85,10 @@ const AnnotationDecorations = Extension.create({
   },
 })
 
+// ── Suggestions ───────────────────────────────────────────────
+const suggestionsStore = useSuggestionsStore()
+const SuggestionDecorations = createSuggestionExtension(() => suggestionsStore.batches)
+
 // ── Éditeur ──────────────────────────────────────────────────────
 // TipTap v3 fires onUpdate via domObserver during mount — skip until ready
 let editorReady = false
@@ -93,6 +99,7 @@ const editor = useEditor({
     StarterKit.configure({ heading: { levels: [1, 2, 3] } }),
     Placeholder.configure({ placeholder: 'Commence à écrire…' }),
     AnnotationDecorations,
+    SuggestionDecorations,
   ],
   editorProps: {
     attributes: {
@@ -131,9 +138,20 @@ watch(() => props.annotations, () => {
   refreshDecorations()
 }, { deep: true })
 
+// Rafraîchir quand les suggestions changent
+watch(() => suggestionsStore.batches, () => {
+  refreshSuggestionDecorations()
+}, { deep: true })
+
 function refreshDecorations() {
   if (!editor.value) return
   const tr = editor.value.state.tr.setMeta(annotationPluginKey, true)
+  editor.value.view.dispatch(tr)
+}
+
+function refreshSuggestionDecorations() {
+  if (!editor.value) return
+  const tr = editor.value.state.tr.setMeta(suggestionPluginKey, true)
   editor.value.view.dispatch(tr)
 }
 
@@ -192,4 +210,29 @@ defineExpose({ editor, focusAnnotation })
 .dark .prose blockquote { border-color: #4b5563; color: #9ca3af; }
 .prose hr { border-color: #e5e7eb; margin: 2em 0; }
 .dark .prose hr { border-color: #374151; }
+
+/* Suggestion decorations */
+.suggestion-delete {
+  background-color: rgba(239, 68, 68, 0.12);
+  color: #dc2626;
+  text-decoration: line-through;
+  text-decoration-color: #dc2626;
+  border-radius: 2px;
+}
+.dark .suggestion-delete {
+  background-color: rgba(239, 68, 68, 0.18);
+  color: #f87171;
+  text-decoration-color: #f87171;
+}
+.suggestion-insert {
+  display: inline;
+  background-color: rgba(16, 185, 129, 0.12);
+  color: #059669;
+  border-radius: 2px;
+  padding: 0 1px;
+}
+.dark .suggestion-insert {
+  background-color: rgba(16, 185, 129, 0.18);
+  color: #34d399;
+}
 </style>

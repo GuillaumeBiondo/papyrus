@@ -3,8 +3,10 @@ import { onMounted, onUnmounted, ref, watch } from 'vue'
 import { useRoute } from 'vue-router'
 import { useEditorStore } from '@/stores/editor.store'
 import { useAuthStore } from '@/stores/auth.store'
+import { useSuggestionsStore } from '@/stores/suggestions.store'
 import SceneEditor from '@/components/editor/SceneEditor.vue'
 import EditorRightPanel from '@/components/editor/EditorRightPanel.vue'
+import SuggestionPanel from '@/components/editor/SuggestionPanel.vue'
 import ConfirmDeleteDialog from '@/components/editor/ConfirmDeleteDialog.vue'
 import CardEditDialog from '@/components/editor/CardEditDialog.vue'
 import SceneTimelineDrawer from '@/components/editor/SceneTimelineDrawer.vue'
@@ -19,6 +21,7 @@ import type { Arc, Chapter, Scene } from '@/types'
 const route = useRoute()
 const editor = useEditorStore()
 const auth   = useAuthStore()
+const suggestions = useSuggestionsStore()
 
 const vFocus = { mounted: (el: HTMLElement) => el.focus() }
 
@@ -192,6 +195,7 @@ const wordsAtLastSnap = ref(0)
 
 watch(() => editor.activeScene?.id, () => {
   wordsAtLastSnap.value = countWords(editor.activeScene?.content)
+  suggestions.clearAll()
 })
 
 function countWords(html: string | null | undefined): number {
@@ -687,11 +691,12 @@ const rightPanelPt = { root: { class: 'flex flex-col overflow-hidden h-full bord
         </div>
 
         <template v-else>
-          <!-- Éditeur TipTap -->
-          <div
-            class="flex-1 overflow-y-auto px-4 md:px-8 py-6 editor-viewport"
-            style="background: var(--editor-bg)"
-          >
+          <div class="flex-1 flex flex-col overflow-hidden">
+            <!-- Éditeur TipTap -->
+            <div
+              class="flex-1 overflow-y-auto px-4 md:px-8 py-6 editor-viewport"
+              style="background: var(--editor-bg)"
+            >
             <h1
               :key="editor.activeScene.id"
               class="text-xl font-semibold text-gray-900 dark:text-gray-100 mb-6 outline-none empty:before:content-[attr(data-placeholder)] empty:before:text-gray-400"
@@ -699,15 +704,18 @@ const rightPanelPt = { root: { class: 'flex flex-col overflow-hidden h-full bord
               data-placeholder="Titre de la scène…"
               @blur="onSceneTitleBlur"
             >{{ editor.activeScene.title }}</h1>
-            <SceneEditor
-              ref="sceneEditorRef"
-              :content="editor.activeScene.content ?? ''"
-              :annotations="editor.annotations"
-              :spellcheck="spellcheck"
-              @change="onContentChange"
-              @annotate="onAnnotate"
-              @annotation-click="onAnnotationClick"
-            />
+              <SceneEditor
+                ref="sceneEditorRef"
+                :content="editor.activeScene.content ?? ''"
+                :annotations="editor.annotations"
+                :spellcheck="spellcheck"
+                @change="onContentChange"
+                @annotate="onAnnotate"
+                @annotation-click="onAnnotationClick"
+              />
+            </div>
+            <!-- Panneau suggestions (s'affiche quand des suggestions sont en attente) -->
+            <SuggestionPanel :editor="tiptap()" />
           </div>
         </template>
       </SplitterPanel>
