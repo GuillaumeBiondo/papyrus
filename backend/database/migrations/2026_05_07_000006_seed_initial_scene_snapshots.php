@@ -16,11 +16,14 @@ return new class extends Migration
             ->each(function (Scene $scene) {
                 if ($scene->snapshots()->exists()) return; // safety guard
 
+                $userId = $scene->chapter?->arc?->project?->user_id;
+                if (!$userId) return;
+
                 $wordCount = $this->countWords($scene->content);
 
                 SceneSnapshot::create([
                     'scene_id'   => $scene->id,
-                    'user_id'    => $scene->chapter->arc->project->user_id,
+                    'user_id'    => $userId,
                     'content'    => $scene->content,
                     'word_count' => $wordCount,
                     'word_delta' => $wordCount,
