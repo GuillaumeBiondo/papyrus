@@ -171,6 +171,13 @@ function navigateToSceneById(sceneId: string) {
   }
 }
 
+// ── Correcteur orthographique ─────────────────────────────────
+const spellcheck = ref(localStorage.getItem('editor-spellcheck') === 'true')
+function toggleSpellcheck() {
+  spellcheck.value = !spellcheck.value
+  localStorage.setItem('editor-spellcheck', String(spellcheck.value))
+}
+
 // ── Snapshots ─────────────────────────────────────────────────
 const timelineOpen    = ref(false)
 const snapshotModal   = ref(false)
@@ -585,7 +592,7 @@ const rightPanelPt = { root: { class: 'flex flex-col overflow-hidden h-full bord
               {{ editor.saving ? 'Enregistrement…' : `${editor.activeScene.word_count ?? 0} mots` }}
             </span>
 
-            <!-- Boutons snapshot + timeline -->
+            <!-- Boutons snapshot + timeline + correcteur -->
             <div class="hidden md:flex items-center gap-0.5">
               <button
                 class="flex items-center gap-1 text-xs text-gray-400 hover:text-gray-600 dark:hover:text-gray-300
@@ -605,6 +612,20 @@ const rightPanelPt = { root: { class: 'flex flex-col overflow-hidden h-full bord
               >
                 <span>🎞️</span>
                 <span>Timeline</span>
+              </button>
+              <button
+                class="flex items-center gap-1.5 text-xs px-2 py-1 rounded-lg transition-colors"
+                :class="spellcheck
+                  ? 'text-brand-600 dark:text-brand-400 bg-brand-50 dark:bg-brand-900/20 hover:bg-brand-100 dark:hover:bg-brand-900/30'
+                  : 'text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800'"
+                :title="spellcheck ? 'Désactiver le correcteur' : 'Activer le correcteur orthographique'"
+                @click="toggleSpellcheck"
+              >
+                <svg class="w-3.5 h-3.5 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M4 6h4m0 0h4M8 6v12m0 0H6m2 0h2M14 6h6M14 11h4a2 2 0 010 4h-4v3" />
+                  <path v-if="spellcheck" stroke-linecap="round" stroke-linejoin="round" d="M16 20l1.5 1.5L21 18" />
+                </svg>
+                <span>Ortho</span>
               </button>
             </div>
           </template>
@@ -682,6 +703,7 @@ const rightPanelPt = { root: { class: 'flex flex-col overflow-hidden h-full bord
               ref="sceneEditorRef"
               :content="editor.activeScene.content ?? ''"
               :annotations="editor.annotations"
+              :spellcheck="spellcheck"
               @change="onContentChange"
               @annotate="onAnnotate"
               @annotation-click="onAnnotationClick"

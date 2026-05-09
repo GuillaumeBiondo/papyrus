@@ -12,6 +12,7 @@ import type { Annotation } from '@/types'
 const props = defineProps<{
   content: string
   annotations?: Annotation[]
+  spellcheck?: boolean
 }>()
 
 const emit = defineEmits<{
@@ -96,7 +97,7 @@ const editor = useEditor({
   editorProps: {
     attributes: {
       class: 'prose prose-gray dark:prose-invert max-w-none focus:outline-none',
-      spellcheck: 'false',
+      spellcheck: props.spellcheck ? 'true' : 'false',
     },
   },
   onCreate() {
@@ -107,6 +108,12 @@ const editor = useEditor({
     if (!editorReady) return
     emit('change', editor.getHTML())
   },
+})
+
+// Sync spellcheck
+watch(() => props.spellcheck, (val) => {
+  const el = editor.value?.view?.dom as HTMLElement | undefined
+  if (el) el.setAttribute('spellcheck', val ? 'true' : 'false')
 })
 
 // Sync quand on change de scène
