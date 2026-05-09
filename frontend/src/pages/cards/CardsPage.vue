@@ -14,7 +14,7 @@ const auth   = useAuthStore()
 const projectId = route.params.projectId as string
 
 // ── Affichage liste ────────────────────────────────────────
-const cardDisplay = computed(() => auth.preferences.cardDisplay ?? 'dot')
+const cardDisplay = computed(() => auth.user?.preferences?.cardDisplay ?? 'dot')
 
 // ── Types ─────────────────────────────────────────────────
 const TYPES: { key: string; label: string; color: string; dot: string; hex: string; bg: string }[] = [

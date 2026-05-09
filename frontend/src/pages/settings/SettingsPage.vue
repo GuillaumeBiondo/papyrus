@@ -63,7 +63,7 @@ async function saveAppearance(mode: 'light' | 'dark', patch: Partial<UserPrefere
 }
 
 // ── Affichage des fiches ──────────────────────────────────────
-const cardDisplay = computed(() => prefs.value.cardDisplay ?? 'dot')
+const cardDisplay = computed(() => auth.user?.preferences?.cardDisplay ?? 'dot')
 
 async function setCardDisplay(v: 'dot' | 'avatar') {
   await auth.updatePreferences({ cardDisplay: v })

@@ -168,9 +168,10 @@ defineExpose({ editor, focusAnnotation })
 
 /* Styles prose de base sans dépendance @tailwindcss/typography */
 .prose {
+  font-family: var(--editor-font-family, system-ui, sans-serif);
+  font-size: var(--editor-font-size, 1rem);
   color: #111827;
   line-height: 1.75;
-  font-size: 1rem;
 }
 .dark .prose {
   color: #f3f4f6;
