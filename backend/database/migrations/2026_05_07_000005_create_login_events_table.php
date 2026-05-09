@@ -10,7 +10,7 @@ return new class extends Migration
     {
         Schema::create('login_events', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('user_id')->constrained()->cascadeOnDelete();
+            $table->foreignUuid('user_id')->constrained()->cascadeOnDelete();
             $table->timestamp('created_at')->useCurrent();
 
             $table->index(['user_id', 'created_at']);

@@ -11,7 +11,7 @@ return new class extends Migration
         Schema::create('scene_snapshots', function (Blueprint $table) {
             $table->id();
             $table->foreignUuid('scene_id')->constrained()->cascadeOnDelete();
-            $table->foreignId('user_id')->constrained()->nullOnDelete();
+            $table->foreignUuid('user_id')->nullable()->constrained()->nullOnDelete();
             $table->longText('content');
             $table->unsignedInteger('word_count')->default(0);
             $table->integer('word_delta')->default(0);
