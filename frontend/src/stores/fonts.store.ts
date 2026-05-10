@@ -30,18 +30,21 @@ export const useFontsStore = defineStore('fonts', () => {
 })
 
 function injectGoogleFonts(fonts: AvailableFont[]) {
-  document.getElementById('google-fonts-papyrus')?.remove()
+  // Supprimer les anciens tags
+  document.querySelectorAll('[data-gf-papyrus]').forEach(el => el.remove())
 
-  const googleFonts = fonts.filter(f => f.google_font_slug)
+  const googleFonts = fonts.filter(f => f.google_font_slug && f.enabled)
   if (!googleFonts.length) return
 
-  const families = googleFonts
-    .map(f => `${f.google_font_slug}:ital,wght@0,400;0,600;1,400;1,600`)
-    .join('&family=')
-
-  const link = document.createElement('link')
-  link.id       = 'google-fonts-papyrus'
-  link.rel      = 'stylesheet'
-  link.href     = `https://fonts.googleapis.com/css2?family=${families}&display=swap`
-  document.head.appendChild(link)
+  // Un <link> par police pour qu'une URL invalide n'en bloque pas d'autres
+  for (const font of googleFonts) {
+    const slug = encodeURIComponent(font.google_font_slug)
+    const link = document.createElement('link')
+    link.setAttribute('data-gf-papyrus', font.id.toString())
+    link.rel         = 'stylesheet'
+    link.crossOrigin = 'anonymous'
+    link.href        = `https://fonts.googleapis.com/css2?family=${slug}:ital,wght@0,400;0,600;1,400;1,600&display=swap`
+    link.onerror     = () => console.warn(`[fonts] Impossible de charger "${font.name}" (slug: ${font.google_font_slug})`)
+    document.head.appendChild(link)
+  }
 }

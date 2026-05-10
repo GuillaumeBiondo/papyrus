@@ -181,12 +181,12 @@ const previewText = 'La nuit était noire et silencieuse.'
           <div>
             <label class="block text-xs text-gray-500 mb-1">
               Slug Google Fonts
-              <span class="text-gray-400 font-normal">(espaces → +)</span>
+              <span class="text-gray-400 font-normal">(nom exact, espaces → +)</span>
             </label>
             <input
               v-model="formSlug"
               type="text"
-              placeholder="ex : Crimson+Text"
+              placeholder="ex : Crimson+Text  ou  Noto+Serif"
               class="w-full text-sm rounded-lg border border-gray-300 dark:border-gray-600
                      bg-white dark:bg-gray-800 text-gray-800 dark:text-gray-200
                      px-3 py-2 focus:outline-none focus:ring-1 focus:ring-brand-500"
