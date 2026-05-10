@@ -10,7 +10,7 @@ return new class extends Migration
     {
         Schema::create('ai_usage_logs', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('user_id')->constrained()->cascadeOnDelete();
+            $table->foreignUuid('user_id')->constrained()->cascadeOnDelete();
             $table->foreignId('ai_verification_id')->nullable()->nullOnDelete();
             $table->string('verification_label', 100);
             $table->string('model', 50)->default('gpt-4o-mini');
