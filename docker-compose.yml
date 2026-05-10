@@ -65,6 +65,7 @@ services:
       WHISPER_URL: ${WHISPER_URL:-http://stt-whisper:8000}
       WHISPER_TOKEN: ${WHISPER_TOKEN}
       WHISPER_MODEL: ${WHISPER_MODEL:-Systran/faster-whisper-medium}
+      OPENAI_API_KEY: ${OPENAI_API_KEY}
     volumes:
       - storage:/var/www/html/storage/app
     depends_on:
