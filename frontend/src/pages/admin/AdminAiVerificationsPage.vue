@@ -3,6 +3,14 @@ import { computed, onMounted, ref } from 'vue'
 import { adminService } from '@/services/admin.service'
 import type { AiStats, AiVerification } from '@/types'
 
+const CARD_TYPES = [
+  { key: 'personnage', label: 'Personnages' },
+  { key: 'lieu',       label: 'Lieux' },
+  { key: 'evenement',  label: 'Événements' },
+  { key: 'objet',      label: 'Objets' },
+  { key: 'theme',      label: 'Thèmes' },
+]
+
 // ── Tab ───────────────────────────────────────────────────────
 const activeTab = ref<'config' | 'stats'>('config')
 
@@ -19,6 +27,7 @@ const form = ref<Partial<AiVerification>>({
   label: '', is_active: true, target: 'all',
   has_extra_input: false, extra_input_label: '',
   extra_input_placeholder: '', pre_prompt: '',
+  allowed_card_types: null, allow_multiple_cards: false,
 })
 
 function resetForm() {
@@ -27,6 +36,7 @@ function resetForm() {
     label: '', is_active: true, target: 'all',
     has_extra_input: false, extra_input_label: '',
     extra_input_placeholder: '', pre_prompt: '',
+    allowed_card_types: null, allow_multiple_cards: false,
   }
 }
 
@@ -147,6 +157,14 @@ const sparkline = computed(() => {
   return `M ${points.join(' L ')}`
 })
 
+// ── Types de fiches ───────────────────────────────────────────
+function toggleCardType(key: string) {
+  const current = form.value.allowed_card_types ?? []
+  const idx = current.indexOf(key)
+  if (idx === -1) form.value.allowed_card_types = [...current, key]
+  else form.value.allowed_card_types = current.filter(s => s !== key)
+}
+
 // ── Chargement initial ────────────────────────────────────────
 onMounted(async () => {
   try {
@@ -235,6 +253,9 @@ onMounted(async () => {
               <span v-if="v.has_extra_input" class="text-xs px-1.5 py-0.5 rounded bg-blue-50 dark:bg-blue-950 text-blue-600 dark:text-blue-400">
                 Saisie supplémentaire
               </span>
+              <span v-if="v.allowed_card_types?.length" class="text-xs px-1.5 py-0.5 rounded bg-purple-50 dark:bg-purple-950 text-purple-600 dark:text-purple-400">
+                Fiches : {{ v.allowed_card_types.join(', ') }}{{ v.allow_multiple_cards ? ' (multi)' : '' }}
+              </span>
             </div>
             <p class="text-xs text-gray-400 dark:text-gray-500 line-clamp-2">{{ v.pre_prompt }}</p>
           </div>
@@ -245,7 +266,7 @@ onMounted(async () => {
               :class="['w-9 h-5 rounded-full transition-colors relative', v.is_active ? 'bg-brand-500' : 'bg-gray-300 dark:bg-gray-700']"
               @click="toggleActive(v)"
             >
-              <span :class="['absolute top-0.5 w-4 h-4 rounded-full bg-white shadow transition-transform', v.is_active ? 'translate-x-4' : 'translate-x-0.5']"/>
+              <span :class="['absolute left-0 top-0.5 w-4 h-4 rounded-full bg-white shadow transition-transform', v.is_active ? 'translate-x-4' : 'translate-x-0.5']"/>
             </button>
             <button
               class="p-1.5 rounded text-gray-400 hover:text-brand-600 dark:hover:text-brand-400 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
@@ -465,6 +486,38 @@ onMounted(async () => {
                 class="w-full text-sm rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-brand-500"
               />
             </div>
+          </div>
+
+          <!-- Sélection de types de fiches -->
+          <div class="space-y-2">
+            <label class="block text-xs font-medium text-gray-700 dark:text-gray-300">
+              Proposer une sélection de fiches
+            </label>
+            <div class="flex flex-wrap gap-2">
+              <label
+                v-for="ct in CARD_TYPES"
+                :key="ct.key"
+                class="flex items-center gap-1.5 text-sm cursor-pointer px-2.5 py-1 rounded-lg border transition-colors"
+                :class="(form.allowed_card_types ?? []).includes(ct.key)
+                  ? 'border-brand-400 bg-brand-50 dark:bg-brand-950 text-brand-700 dark:text-brand-300'
+                  : 'border-gray-200 dark:border-gray-700 text-gray-700 dark:text-gray-300 hover:border-gray-300 dark:hover:border-gray-600'"
+              >
+                <input
+                  type="checkbox"
+                  class="accent-brand-500"
+                  :checked="(form.allowed_card_types ?? []).includes(ct.key)"
+                  @change="toggleCardType(ct.key)"
+                />
+                {{ ct.label }}
+              </label>
+            </div>
+            <label
+              v-if="(form.allowed_card_types ?? []).length > 0"
+              class="flex items-center gap-2 text-sm text-gray-700 dark:text-gray-300 cursor-pointer"
+            >
+              <input type="checkbox" v-model="form.allow_multiple_cards" class="accent-brand-500" />
+              Autoriser la sélection de plusieurs fiches
+            </label>
           </div>
 
           <div>

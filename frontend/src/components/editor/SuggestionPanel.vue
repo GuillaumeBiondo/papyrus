@@ -8,7 +8,7 @@ const props = defineProps<{
   editor: MaybeRef<Editor | undefined>
 }>()
 
-const resolvedEditor = computed(() => unref(resolvedEditor.value))
+const resolvedEditor = computed(() => unref(props.editor))
 
 const store = useSuggestionsStore()
 
@@ -64,7 +64,7 @@ function acceptChange(changeIdx: number) {
   resolvedEditor.value.view.dispatch(tr)
 
   // Adjust positions of remaining changes after the accepted one
-  const offset = change.suggestedText.length - (change.to - change.from)
+  const offset = (change.suggestedText?.length ?? 0) - (change.to - change.from)
   currentBatch.changes.splice(changeIdx, 1)
   for (let i = changeIdx; i < currentBatch.changes.length; i++) {
     const remaining = currentBatch.changes[i]

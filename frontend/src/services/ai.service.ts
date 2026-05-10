@@ -11,11 +11,13 @@ export const aiService = {
     verificationId: number,
     text: string,
     extraInput?: string,
+    cardIds?: string[],
   ): Promise<{ changes: AiChange[] }> {
     const { data } = await api.post('/ai/verify', {
       verification_id: verificationId,
       text,
       extra_input: extraInput ?? null,
+      card_ids: cardIds?.length ? cardIds : null,
     })
     return data
   },

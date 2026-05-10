@@ -192,7 +192,12 @@ const {
   submitExtraInput,
   running: aiRunning,
   runError: aiRunError,
-} = useAiVerification(() => tiptap())
+  availableCards,
+  selectedCardIds,
+  cardsFetching,
+  setCardIds,
+  toggleCard,
+} = useAiVerification(() => tiptap(), () => route.params.projectId as string)
 
 function toggleSpellcheck() {
   spellcheck.value = !spellcheck.value
@@ -898,7 +903,57 @@ const rightPanelPt = { root: { class: 'flex flex-col overflow-hidden h-full bord
         <h3 class="text-base font-semibold text-gray-900 dark:text-gray-100">
           {{ pendingVerification.label }}
         </h3>
-        <div>
+
+        <!-- Sélecteur de fiches -->
+        <div v-if="pendingVerification.allowed_card_types?.length" class="space-y-3">
+          <div
+            v-for="type in pendingVerification.allowed_card_types"
+            :key="type"
+          >
+            <label class="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1 capitalize">
+              Fiche — {{ type }}
+            </label>
+            <div v-if="cardsFetching" class="text-xs text-gray-400 py-2">Chargement des fiches…</div>
+            <div v-else-if="!availableCards[type]?.length" class="text-xs text-gray-400 py-2">Aucune fiche de ce type dans ce projet.</div>
+            <div
+              v-else-if="pendingVerification.allow_multiple_cards"
+              class="max-h-36 overflow-y-auto space-y-1 border border-gray-200 dark:border-gray-700 rounded-lg p-2"
+            >
+              <label
+                v-for="card in availableCards[type]"
+                :key="card.id"
+                class="flex items-center gap-2 text-sm text-gray-700 dark:text-gray-300 cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-800 px-1.5 py-1 rounded"
+              >
+                <input
+                  type="checkbox"
+                  :value="card.id"
+                  :checked="selectedCardIds.includes(card.id)"
+                  class="accent-brand-500"
+                  @change="toggleCard(card.id, true)"
+                />
+                {{ card.title }}
+              </label>
+            </div>
+            <select
+              v-else
+              :value="selectedCardIds[0] ?? ''"
+              class="w-full text-sm rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-brand-500"
+              @change="(e) => setCardIds((e.target as HTMLSelectElement).value ? [(e.target as HTMLSelectElement).value] : [])"
+            >
+              <option value="">— Aucune fiche —</option>
+              <option
+                v-for="card in availableCards[type]"
+                :key="card.id"
+                :value="card.id"
+              >
+                {{ card.title }}
+              </option>
+            </select>
+          </div>
+        </div>
+
+        <!-- Saisie supplémentaire -->
+        <div v-if="pendingVerification.has_extra_input">
           <label
             v-if="pendingVerification.extra_input_label"
             class="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1"

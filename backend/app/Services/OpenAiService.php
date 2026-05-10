@@ -22,7 +22,8 @@ class OpenAiService
         string $prePrompt,
         string $responseFormat,
         ?string $extraInput = null,
-        string $model = 'gpt-4o-mini'
+        string $model = 'gpt-4o-mini',
+        string $cardContext = ''
     ): array {
         if (empty($this->apiKey)) {
             throw new \RuntimeException('OpenAI API key is not configured (OPENAI_API_KEY missing).');
@@ -34,6 +35,11 @@ class OpenAiService
         }
         $systemContent .= "\n\n" . $responseFormat;
 
+        $userContent = $text;
+        if (!empty($cardContext)) {
+            $userContent = "=== Contexte des fiches ===\n" . $cardContext . "\n=== Texte à analyser ===\n" . $text;
+        }
+
         $response = Http::withHeaders([
             'Authorization' => 'Bearer ' . $this->apiKey,
             'Content-Type'  => 'application/json',
@@ -41,7 +47,7 @@ class OpenAiService
             'model'           => $model,
             'messages'        => [
                 ['role' => 'system', 'content' => $systemContent],
-                ['role' => 'user',   'content' => $text],
+                ['role' => 'user',   'content' => $userContent],
             ],
             'response_format' => ['type' => 'json_object'],
             'temperature'     => 0.3,

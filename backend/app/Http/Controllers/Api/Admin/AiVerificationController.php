@@ -27,6 +27,9 @@ class AiVerificationController extends Controller
             'extra_input_label'       => ['nullable', 'string', 'max:200'],
             'extra_input_placeholder' => ['nullable', 'string', 'max:500'],
             'pre_prompt'              => ['required', 'string'],
+            'allowed_card_types'      => ['nullable', 'array'],
+            'allowed_card_types.*'    => ['string', 'max:50'],
+            'allow_multiple_cards'    => ['sometimes', 'boolean'],
         ]);
 
         $data['sort_order'] = AiVerification::max('sort_order') + 1;
@@ -47,6 +50,9 @@ class AiVerificationController extends Controller
             'extra_input_placeholder' => ['nullable', 'string', 'max:500'],
             'pre_prompt'              => ['sometimes', 'string'],
             'sort_order'              => ['sometimes', 'integer', 'min:0'],
+            'allowed_card_types'      => ['nullable', 'array'],
+            'allowed_card_types.*'    => ['string', 'max:50'],
+            'allow_multiple_cards'    => ['sometimes', 'boolean'],
         ]);
 
         $aiVerification->update($data);

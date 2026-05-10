@@ -282,6 +282,8 @@ export interface AiVerification {
   extra_input_placeholder: string | null
   pre_prompt: string
   sort_order: number
+  allowed_card_types: string[] | null
+  allow_multiple_cards: boolean
   created_at?: string
   updated_at?: string
 }
