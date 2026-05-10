@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
+use App\Models\AiUsageLog;
 use App\Models\AiVerification;
 use App\Models\Setting;
 use App\Services\OpenAiService;
@@ -47,6 +48,15 @@ class AiController extends Controller
             $data['extra_input'] ?? null,
             $model
         );
+
+        AiUsageLog::create([
+            'user_id'             => $request->user()->id,
+            'ai_verification_id'  => $verification->id,
+            'verification_label'  => $verification->label,
+            'model'               => $model,
+            'input_chars'         => mb_strlen($data['text']),
+            'changes_count'       => count($changes),
+        ]);
 
         return response()->json(['changes' => $changes]);
     }

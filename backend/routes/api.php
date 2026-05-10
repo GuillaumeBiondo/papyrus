@@ -29,6 +29,7 @@ use App\Http\Controllers\Api\ProjectController;
 use App\Http\Controllers\Api\SceneController;
 use App\Http\Controllers\Api\AiController;
 use App\Http\Controllers\Api\Admin\AiVerificationController as AdminAiVerificationController;
+use App\Http\Controllers\Api\Admin\AiStatsController as AdminAiStatsController;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -226,6 +227,8 @@ Route::prefix('v1')->middleware(['auth:sanctum', 'throttle:60,1', 'user_blocked'
         Route::put('fonts/reorder', [AvailableFontController::class, 'reorder']);
         Route::put('fonts/{font}', [AvailableFontController::class, 'update']);
         Route::delete('fonts/{font}', [AvailableFontController::class, 'destroy']);
+
+        Route::get('ai-stats', [AdminAiStatsController::class, 'index']);
 
         Route::get('ai-verifications', [AdminAiVerificationController::class, 'index']);
         Route::post('ai-verifications', [AdminAiVerificationController::class, 'store']);
