@@ -2,6 +2,16 @@ import './assets/main.css'
 import { installConsoleInterceptor } from '@/composables/bugBuffer'
 installConsoleInterceptor()
 
+if ('serviceWorker' in navigator) {
+  let reloading = false
+  navigator.serviceWorker.addEventListener('controllerchange', () => {
+    if (!reloading) {
+      reloading = true
+      window.location.reload()
+    }
+  })
+}
+
 
 import { createApp } from 'vue'
 import { createPinia } from 'pinia'
