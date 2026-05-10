@@ -272,6 +272,26 @@ export interface NotebookEntry {
   created_at: string
 }
 
+export interface AiVerification {
+  id: number
+  label: string
+  is_active: boolean
+  target: 'selection' | 'all' | 'both'
+  has_extra_input: boolean
+  extra_input_label: string | null
+  extra_input_placeholder: string | null
+  pre_prompt: string
+  sort_order: number
+  created_at?: string
+  updated_at?: string
+}
+
+export interface AiChange {
+  originalText: string
+  suggestedText: string
+  explanation?: string
+}
+
 export interface PaginatedResponse<T> {
   data: T[]
   meta: {
