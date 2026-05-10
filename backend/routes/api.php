@@ -27,6 +27,8 @@ use App\Http\Controllers\Api\NoteController;
 use App\Http\Controllers\Api\TranscriptionController;
 use App\Http\Controllers\Api\ProjectController;
 use App\Http\Controllers\Api\SceneController;
+use App\Http\Controllers\Api\AiController;
+use App\Http\Controllers\Api\Admin\AiVerificationController as AdminAiVerificationController;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -193,6 +195,10 @@ Route::prefix('v1')->middleware(['auth:sanctum', 'throttle:60,1', 'user_blocked'
     Route::post('changelogs/mark-all-read', [ChangelogController::class, 'markAllRead']);
     Route::post('changelogs/{changelog}/read', [ChangelogController::class, 'markRead']);
 
+    // AI verification
+    Route::get('ai/verifications', [AiController::class, 'verifications']);
+    Route::post('ai/verify', [AiController::class, 'verify']);
+
     // Admin
     Route::prefix('admin')->middleware('admin')->group(function () {
         Route::get('dashboard', [AdminDashboardController::class, 'index']);
@@ -220,5 +226,11 @@ Route::prefix('v1')->middleware(['auth:sanctum', 'throttle:60,1', 'user_blocked'
         Route::put('fonts/reorder', [AvailableFontController::class, 'reorder']);
         Route::put('fonts/{font}', [AvailableFontController::class, 'update']);
         Route::delete('fonts/{font}', [AvailableFontController::class, 'destroy']);
+
+        Route::get('ai-verifications', [AdminAiVerificationController::class, 'index']);
+        Route::post('ai-verifications', [AdminAiVerificationController::class, 'store']);
+        Route::put('ai-verifications/reorder', [AdminAiVerificationController::class, 'reorder']);
+        Route::put('ai-verifications/{aiVerification}', [AdminAiVerificationController::class, 'update']);
+        Route::delete('ai-verifications/{aiVerification}', [AdminAiVerificationController::class, 'destroy']);
     });
 });

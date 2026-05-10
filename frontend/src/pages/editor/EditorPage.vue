@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { onMounted, onUnmounted, ref, watch } from 'vue'
+import { useAiVerification } from '@/composables/useAiVerification'
 import { useRoute } from 'vue-router'
 import { useEditorStore } from '@/stores/editor.store'
 import { useAuthStore } from '@/stores/auth.store'
@@ -176,6 +177,23 @@ function navigateToSceneById(sceneId: string) {
 
 // ── Correcteur orthographique ─────────────────────────────────
 const spellcheck = ref(localStorage.getItem('editor-spellcheck') === 'true')
+
+// ── Vérifications IA ──────────────────────────────────────────
+const {
+  verifications: aiVerifications,
+  verifyOpen,
+  toggleVerifyOpen,
+  closeVerifyOpen,
+  startVerification,
+  pendingVerification,
+  extraInput,
+  extraInputOpen,
+  cancelExtraInput,
+  submitExtraInput,
+  running: aiRunning,
+  runError: aiRunError,
+} = useAiVerification(() => tiptap())
+
 function toggleSpellcheck() {
   spellcheck.value = !spellcheck.value
   localStorage.setItem('editor-spellcheck', String(spellcheck.value))
@@ -631,6 +649,52 @@ const rightPanelPt = { root: { class: 'flex flex-col overflow-hidden h-full bord
                 </svg>
                 <span>Ortho</span>
               </button>
+
+              <!-- Bouton Vérifier IA -->
+              <div v-if="aiVerifications.length" class="relative">
+                <button
+                  class="flex items-center gap-1.5 text-xs px-2 py-1 rounded-lg transition-colors"
+                  :class="verifyOpen
+                    ? 'text-white bg-brand-500 hover:bg-brand-600 dark:bg-brand-600 dark:hover:bg-brand-500'
+                    : 'text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800'"
+                  :disabled="aiRunning"
+                  title="Vérifications IA"
+                  @click.stop="toggleVerifyOpen"
+                >
+                  <svg v-if="aiRunning" class="w-3.5 h-3.5 shrink-0 animate-spin" fill="none" viewBox="0 0 24 24">
+                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="3"/>
+                    <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"/>
+                  </svg>
+                  <svg v-else class="w-3.5 h-3.5 shrink-0" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M9.75 3.104v5.714a2.25 2.25 0 01-.659 1.591L5 14.5M9.75 3.104c-.251.023-.501.05-.75.082m.75-.082a24.301 24.301 0 014.5 0m0 0v5.714c0 .597.237 1.17.659 1.591L19.8 15.3M14.25 3.104c.251.023.501.05.75.082M19.8 15.3l-1.57.393A9.065 9.065 0 0112 15a9.065 9.065 0 00-6.23-.693L5 14.5m14.8.8l1.402 1.402c1 1 .03 2.798-1.345 2.798H4.543c-1.376 0-2.345-1.798-1.345-2.798L4.2 15.3" />
+                  </svg>
+                  <span>{{ aiRunning ? 'Analyse…' : 'Vérifier' }}</span>
+                  <svg class="w-2.5 h-2.5 opacity-50 transition-transform" :class="verifyOpen ? 'rotate-180' : ''" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7"/>
+                  </svg>
+                </button>
+
+                <!-- Backdrop -->
+                <div v-if="verifyOpen" class="fixed inset-0 z-10" @click="closeVerifyOpen" />
+
+                <!-- Sous-menu -->
+                <div
+                  v-if="verifyOpen"
+                  class="absolute top-full right-0 mt-1 z-20 bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-xl shadow-lg overflow-hidden min-w-40"
+                >
+                  <button
+                    v-for="v in aiVerifications"
+                    :key="v.id"
+                    class="w-full flex items-center gap-2 px-3 py-2 text-left text-xs hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors text-gray-700 dark:text-gray-300"
+                    @click.stop="startVerification(v)"
+                  >
+                    <svg class="w-3.5 h-3.5 shrink-0 text-brand-500" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" d="M9.75 3.104v5.714a2.25 2.25 0 01-.659 1.591L5 14.5M9.75 3.104c-.251.023-.501.05-.75.082m.75-.082a24.301 24.301 0 014.5 0m0 0v5.714c0 .597.237 1.17.659 1.591L19.8 15.3M14.25 3.104c.251.023.501.05.75.082M19.8 15.3l-1.57.393A9.065 9.065 0 0112 15a9.065 9.065 0 00-6.23-.693L5 14.5m14.8.8l1.402 1.402c1 1 .03 2.798-1.345 2.798H4.543c-1.376 0-2.345-1.798-1.345-2.798L4.2 15.3" />
+                    </svg>
+                    {{ v.label }}
+                  </button>
+                </div>
+              </div>
             </div>
           </template>
 
@@ -822,6 +886,63 @@ const rightPanelPt = { root: { class: 'flex flex-col overflow-hidden h-full bord
     @confirm="saveManualSnapshot"
     @cancel="snapshotModal = false"
   />
+
+  <!-- ══ Modal saisie supplémentaire IA ══ -->
+  <Transition name="fade">
+    <div
+      v-if="extraInputOpen && pendingVerification"
+      class="fixed inset-0 z-50 flex items-center justify-center bg-black/40"
+      @click.self="cancelExtraInput"
+    >
+      <div class="bg-white dark:bg-gray-900 rounded-2xl shadow-2xl w-full max-w-md mx-4 p-6 space-y-4">
+        <h3 class="text-base font-semibold text-gray-900 dark:text-gray-100">
+          {{ pendingVerification.label }}
+        </h3>
+        <div>
+          <label
+            v-if="pendingVerification.extra_input_label"
+            class="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1"
+          >
+            {{ pendingVerification.extra_input_label }}
+          </label>
+          <textarea
+            v-model="extraInput"
+            rows="3"
+            :placeholder="pendingVerification.extra_input_placeholder ?? ''"
+            class="w-full text-sm rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-brand-500 resize-y"
+            autofocus
+            @keydown.enter.ctrl="submitExtraInput"
+            @keydown.enter.meta="submitExtraInput"
+          />
+          <p class="text-xs text-gray-400 mt-1">Ctrl+Entrée pour valider</p>
+        </div>
+        <div class="flex justify-end gap-2">
+          <button
+            class="px-4 py-2 text-sm rounded-lg text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
+            @click="cancelExtraInput"
+          >
+            Annuler
+          </button>
+          <button
+            class="px-4 py-2 text-sm rounded-lg bg-brand-600 hover:bg-brand-700 text-white transition-colors"
+            @click="submitExtraInput"
+          >
+            Analyser
+          </button>
+        </div>
+      </div>
+    </div>
+  </Transition>
+
+  <!-- ══ Toast erreur IA ══ -->
+  <Transition name="fade">
+    <div
+      v-if="aiRunError"
+      class="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 bg-red-600 text-white text-sm px-4 py-2.5 rounded-xl shadow-lg max-w-sm text-center"
+    >
+      {{ aiRunError }}
+    </div>
+  </Transition>
 </template>
 
 <style>

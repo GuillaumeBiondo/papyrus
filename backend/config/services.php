@@ -41,4 +41,8 @@ return [
         'model' => env('WHISPER_MODEL', 'Systran/faster-whisper-turbo'),
     ],
 
+    'openai' => [
+        'key' => env('OPENAI_API_KEY'),
+    ],
+
 ];

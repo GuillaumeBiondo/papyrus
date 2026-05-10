@@ -1,5 +1,5 @@
 import api from './api'
-import type { AdminStats, AdminUser, AvailableFont, Changelog, ContentType, Setting } from '@/types'
+import type { AdminStats, AdminUser, AiVerification, AvailableFont, Changelog, ContentType, Setting } from '@/types'
 
 export const adminService = {
   // Dashboard
@@ -107,5 +107,29 @@ export const adminService = {
 
   async reorderFonts(order: number[]): Promise<void> {
     await api.put('/admin/fonts/reorder', { order })
+  },
+
+  // AI Verifications
+  async getAiVerifications(): Promise<{ verifications: AiVerification[] }> {
+    const { data } = await api.get('/admin/ai-verifications')
+    return data
+  },
+
+  async createAiVerification(payload: Partial<AiVerification>): Promise<{ verification: AiVerification }> {
+    const { data } = await api.post('/admin/ai-verifications', payload)
+    return data
+  },
+
+  async updateAiVerification(id: number, payload: Partial<AiVerification>): Promise<{ verification: AiVerification }> {
+    const { data } = await api.put(`/admin/ai-verifications/${id}`, payload)
+    return data
+  },
+
+  async deleteAiVerification(id: number): Promise<void> {
+    await api.delete(`/admin/ai-verifications/${id}`)
+  },
+
+  async reorderAiVerifications(order: number[]): Promise<void> {
+    await api.put('/admin/ai-verifications/reorder', { order })
   },
 }
