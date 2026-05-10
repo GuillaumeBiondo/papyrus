@@ -15,7 +15,7 @@ const nav = [
   { name: 'admin-content-types',    label: 'Types de contenu', icon: 'layers' },
   { name: 'admin-changelogs',       label: 'Journaux',         icon: 'log' },
   { name: 'admin-fonts',            label: 'Polices',          icon: 'font' },
-  { name: 'admin-ai-verifications', label: 'Vérifications IA', icon: 'ai' },
+  { name: 'admin-ai-verifications', label: 'Révisions IA', icon: 'ai' },
   { name: 'admin-settings',         label: 'Paramètres',       icon: 'settings' },
 ]
 

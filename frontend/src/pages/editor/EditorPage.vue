@@ -650,7 +650,7 @@ const rightPanelPt = { root: { class: 'flex flex-col overflow-hidden h-full bord
                 <span>Ortho</span>
               </button>
 
-              <!-- Bouton Vérifier IA -->
+              <!-- Bouton Réviser IA -->
               <div v-if="aiVerifications.length" class="relative">
                 <button
                   class="flex items-center gap-1.5 text-xs px-2 py-1 rounded-lg transition-colors"
@@ -658,7 +658,7 @@ const rightPanelPt = { root: { class: 'flex flex-col overflow-hidden h-full bord
                     ? 'text-white bg-brand-500 hover:bg-brand-600 dark:bg-brand-600 dark:hover:bg-brand-500'
                     : 'text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800'"
                   :disabled="aiRunning"
-                  title="Vérifications IA"
+                  title="Révisions IA"
                   @click.stop="toggleVerifyOpen"
                 >
                   <svg v-if="aiRunning" class="w-3.5 h-3.5 shrink-0 animate-spin" fill="none" viewBox="0 0 24 24">
@@ -668,7 +668,7 @@ const rightPanelPt = { root: { class: 'flex flex-col overflow-hidden h-full bord
                   <svg v-else class="w-3.5 h-3.5 shrink-0" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" d="M9.75 3.104v5.714a2.25 2.25 0 01-.659 1.591L5 14.5M9.75 3.104c-.251.023-.501.05-.75.082m.75-.082a24.301 24.301 0 014.5 0m0 0v5.714c0 .597.237 1.17.659 1.591L19.8 15.3M14.25 3.104c.251.023.501.05.75.082M19.8 15.3l-1.57.393A9.065 9.065 0 0112 15a9.065 9.065 0 00-6.23-.693L5 14.5m14.8.8l1.402 1.402c1 1 .03 2.798-1.345 2.798H4.543c-1.376 0-2.345-1.798-1.345-2.798L4.2 15.3" />
                   </svg>
-                  <span>{{ aiRunning ? 'Analyse…' : 'Vérifier' }}</span>
+                  <span>{{ aiRunning ? 'Analyse…' : 'Réviser' }}</span>
                   <svg class="w-2.5 h-2.5 opacity-50 transition-transform" :class="verifyOpen ? 'rotate-180' : ''" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7"/>
                   </svg>
@@ -677,21 +677,21 @@ const rightPanelPt = { root: { class: 'flex flex-col overflow-hidden h-full bord
                 <!-- Backdrop -->
                 <div v-if="verifyOpen" class="fixed inset-0 z-10" @click="closeVerifyOpen" />
 
-                <!-- Sous-menu -->
+                <!-- Dropdown — scrollable si beaucoup de boutons -->
                 <div
                   v-if="verifyOpen"
-                  class="absolute top-full right-0 mt-1 z-20 bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-xl shadow-lg overflow-hidden min-w-40"
+                  class="absolute top-full right-0 mt-1 z-20 bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-xl shadow-lg overflow-y-auto min-w-44 max-h-72"
                 >
                   <button
                     v-for="v in aiVerifications"
                     :key="v.id"
-                    class="w-full flex items-center gap-2 px-3 py-2 text-left text-xs hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors text-gray-700 dark:text-gray-300"
+                    class="w-full flex items-center gap-2.5 px-3 py-2.5 text-left text-xs hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors text-gray-700 dark:text-gray-300 border-b border-gray-100 dark:border-gray-800 last:border-0"
                     @click.stop="startVerification(v)"
                   >
                     <svg class="w-3.5 h-3.5 shrink-0 text-brand-500" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24">
                       <path stroke-linecap="round" stroke-linejoin="round" d="M9.75 3.104v5.714a2.25 2.25 0 01-.659 1.591L5 14.5M9.75 3.104c-.251.023-.501.05-.75.082m.75-.082a24.301 24.301 0 014.5 0m0 0v5.714c0 .597.237 1.17.659 1.591L19.8 15.3M14.25 3.104c.251.023.501.05.75.082M19.8 15.3l-1.57.393A9.065 9.065 0 0112 15a9.065 9.065 0 00-6.23-.693L5 14.5m14.8.8l1.402 1.402c1 1 .03 2.798-1.345 2.798H4.543c-1.376 0-2.345-1.798-1.345-2.798L4.2 15.3" />
                     </svg>
-                    {{ v.label }}
+                    <span>{{ v.label }}</span>
                   </button>
                 </div>
               </div>

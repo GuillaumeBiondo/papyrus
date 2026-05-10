@@ -128,9 +128,9 @@ const TARGET_LABEL: Record<AiVerification['target'], string> = {
     <!-- En-tête -->
     <div class="flex items-center justify-between">
       <div>
-        <h1 class="text-xl font-semibold text-gray-900 dark:text-gray-100">Vérifications IA</h1>
+        <h1 class="text-xl font-semibold text-gray-900 dark:text-gray-100">Révisions IA</h1>
         <p class="text-sm text-gray-500 dark:text-gray-400 mt-0.5">
-          Configurez les boutons de vérification affichés dans la barre d'outils de l'éditeur.
+          Configurez les boutons de révision affichés dans la barre d'outils de l'éditeur.
         </p>
       </div>
       <button
@@ -233,7 +233,7 @@ const TARGET_LABEL: Record<AiVerification['target'], string> = {
         </div>
       </div>
     </div>
-    <p v-else class="text-sm text-gray-400">Aucune vérification configurée.</p>
+    <p v-else class="text-sm text-gray-400">Aucune révision configurée.</p>
 
     <!-- ── Formulaire ── -->
     <Transition name="fade">
@@ -245,7 +245,7 @@ const TARGET_LABEL: Record<AiVerification['target'], string> = {
         <div class="bg-white dark:bg-gray-900 rounded-2xl shadow-2xl w-full max-w-2xl mx-4 max-h-[90vh] overflow-y-auto">
           <div class="p-6 space-y-4">
             <h2 class="text-lg font-semibold text-gray-900 dark:text-gray-100">
-              {{ editingId !== null ? 'Modifier la vérification' : 'Nouvelle vérification' }}
+              {{ editingId !== null ? 'Modifier la révision' : 'Nouvelle révision' }}
             </h2>
 
             <p v-if="error" class="text-sm text-red-500">{{ error }}</p>
