@@ -286,6 +286,43 @@ export interface AiVerification {
   updated_at?: string
 }
 
+export interface AiRevisionStat {
+  label: string
+  calls: number
+  total_chars: number
+  avg_chars: number
+  avg_changes: number
+  est_tokens: number
+  last_used_at: string | null
+}
+
+export interface AiUserStat {
+  user_id: string
+  name: string
+  email: string
+  calls: number
+  total_chars: number
+  est_tokens: number
+  last_used_at: string | null
+}
+
+export interface AiDailyStat {
+  date: string
+  calls: number
+}
+
+export interface AiStats {
+  totals: {
+    calls: number
+    total_chars: number
+    est_tokens: number
+    estimated_cost: number
+  }
+  by_revision: AiRevisionStat[]
+  by_user: AiUserStat[]
+  daily: AiDailyStat[]
+}
+
 export interface AiChange {
   originalText: string
   suggestedText: string

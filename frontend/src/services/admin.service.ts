@@ -1,5 +1,5 @@
 import api from './api'
-import type { AdminStats, AdminUser, AiVerification, AvailableFont, Changelog, ContentType, Setting } from '@/types'
+import type { AdminStats, AdminUser, AiStats, AiVerification, AvailableFont, Changelog, ContentType, Setting } from '@/types'
 
 export const adminService = {
   // Dashboard
@@ -107,6 +107,12 @@ export const adminService = {
 
   async reorderFonts(order: number[]): Promise<void> {
     await api.put('/admin/fonts/reorder', { order })
+  },
+
+  // AI Stats
+  async getAiStats(): Promise<AiStats> {
+    const { data } = await api.get('/admin/ai-stats')
+    return data
   },
 
   // AI Verifications
