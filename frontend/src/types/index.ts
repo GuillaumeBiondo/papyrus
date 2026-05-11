@@ -275,6 +275,7 @@ export interface NotebookEntry {
 export interface AiVerification {
   id: number
   label: string
+  description: string | null
   is_active: boolean
   target: 'selection' | 'all' | 'both'
   has_extra_input: boolean

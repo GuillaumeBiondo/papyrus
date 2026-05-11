@@ -691,6 +691,7 @@ const rightPanelPt = { root: { class: 'flex flex-col overflow-hidden h-full bord
                     v-for="v in aiVerifications"
                     :key="v.id"
                     class="w-full flex items-center gap-2.5 px-3 py-2.5 text-left text-xs hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors text-gray-700 dark:text-gray-300 border-b border-gray-100 dark:border-gray-800 last:border-0"
+                    :title="v.description ?? undefined"
                     @click.stop="startVerification(v)"
                   >
                     <svg class="w-3.5 h-3.5 shrink-0 text-brand-500" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24">
