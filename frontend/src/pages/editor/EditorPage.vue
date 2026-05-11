@@ -559,7 +559,7 @@ const rightPanelPt = { root: { class: 'flex flex-col overflow-hidden h-full bord
     >
 
       <!-- ── Panneau éditeur ── -->
-      <SplitterPanel :size="isMobile ? 100 : 72" :minSize="30" :pt="panelPt">
+      <SplitterPanel :size="(isMobile || !rightSidebarOpen) ? 100 : 72" :minSize="30" :pt="panelPt">
 
         <!-- Barre d'outils — toujours visible pour les boutons mobile -->
         <div class="flex items-center gap-2 px-3 md:px-4 h-12 md:h-10 border-b border-gray-300 dark:border-gray-700 shrink-0">
@@ -620,7 +620,7 @@ const rightPanelPt = { root: { class: 'flex flex-col overflow-hidden h-full bord
             </span>
 
             <!-- Boutons snapshot + timeline + correcteur -->
-            <div class="hidden md:flex items-center gap-0.5">
+            <div class="flex items-center gap-0.5">
               <button
                 class="flex items-center gap-1 text-xs text-gray-400 hover:text-gray-600 dark:hover:text-gray-300
                        px-2 py-1 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
@@ -629,7 +629,7 @@ const rightPanelPt = { root: { class: 'flex flex-col overflow-hidden h-full bord
                 @click="snapshotModal = true"
               >
                 <span>📷</span>
-                <span>{{ snapshotSaving ? '…' : 'Snapshot' }}</span>
+                <span class="hidden md:inline">{{ snapshotSaving ? '…' : 'Snapshot' }}</span>
               </button>
               <button
                 class="flex items-center gap-1 text-xs text-gray-400 hover:text-gray-600 dark:hover:text-gray-300
@@ -638,7 +638,7 @@ const rightPanelPt = { root: { class: 'flex flex-col overflow-hidden h-full bord
                 @click="timelineOpen = true"
               >
                 <span>🎞️</span>
-                <span>Timeline</span>
+                <span class="hidden md:inline">Timeline</span>
               </button>
               <button
                 class="flex items-center gap-1.5 text-xs px-2 py-1 rounded-lg transition-colors"
@@ -652,7 +652,7 @@ const rightPanelPt = { root: { class: 'flex flex-col overflow-hidden h-full bord
                   <path stroke-linecap="round" stroke-linejoin="round" d="M4 6h4m0 0h4M8 6v12m0 0H6m2 0h2M14 6h6M14 11h4a2 2 0 010 4h-4v3" />
                   <path v-if="spellcheck" stroke-linecap="round" stroke-linejoin="round" d="M16 20l1.5 1.5L21 18" />
                 </svg>
-                <span>Ortho</span>
+                <span class="hidden md:inline">Ortho</span>
               </button>
 
               <!-- Bouton Réviser IA -->
@@ -673,7 +673,7 @@ const rightPanelPt = { root: { class: 'flex flex-col overflow-hidden h-full bord
                   <svg v-else class="w-3.5 h-3.5 shrink-0" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" d="M9.75 3.104v5.714a2.25 2.25 0 01-.659 1.591L5 14.5M9.75 3.104c-.251.023-.501.05-.75.082m.75-.082a24.301 24.301 0 014.5 0m0 0v5.714c0 .597.237 1.17.659 1.591L19.8 15.3M14.25 3.104c.251.023.501.05.75.082M19.8 15.3l-1.57.393A9.065 9.065 0 0112 15a9.065 9.065 0 00-6.23-.693L5 14.5m14.8.8l1.402 1.402c1 1 .03 2.798-1.345 2.798H4.543c-1.376 0-2.345-1.798-1.345-2.798L4.2 15.3" />
                   </svg>
-                  <span>{{ aiRunning ? 'Analyse…' : 'Réviser' }}</span>
+                  <span class="hidden md:inline">{{ aiRunning ? 'Analyse…' : 'Réviser' }}</span>
                   <svg class="w-2.5 h-2.5 opacity-50 transition-transform" :class="verifyOpen ? 'rotate-180' : ''" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7"/>
                   </svg>

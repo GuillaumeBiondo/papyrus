@@ -178,7 +178,7 @@ function scrollToChange(changeIdx: number) {
           </div>
 
           <!-- Actions par changement -->
-          <div class="flex items-center gap-1 shrink-0 opacity-0 group-hover:opacity-100 transition-opacity">
+          <div class="flex items-center gap-1 shrink-0 md:opacity-0 md:group-hover:opacity-100 transition-opacity">
             <button
               class="p-1 rounded text-red-400 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors"
               title="Refuser ce changement"
