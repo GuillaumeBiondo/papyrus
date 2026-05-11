@@ -96,7 +96,7 @@ function getCurrentFontSizePx(): number {
   if (!raw) return FONT_SIZE_DEFAULT
   const match = raw.match(/^(\d+(?:\.\d+)?)(px|em|rem)?$/)
   if (!match) return FONT_SIZE_DEFAULT
-  const value = parseFloat(match[1])
+  const value = parseFloat(match[1]!)
   const unit = match[2] ?? 'px'
   if (unit === 'em' || unit === 'rem') return Math.round(value * 16)
   return value
