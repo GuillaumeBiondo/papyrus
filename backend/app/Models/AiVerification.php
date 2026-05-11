@@ -8,6 +8,7 @@ class AiVerification extends Model
 {
     protected $fillable = [
         'label',
+        'description',
         'is_active',
         'target',
         'has_extra_input',

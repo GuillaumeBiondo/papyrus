@@ -24,7 +24,7 @@ const saving    = ref(false)
 const error     = ref('')
 
 const form = ref<Partial<AiVerification>>({
-  label: '', is_active: true, target: 'all',
+  label: '', description: '', is_active: true, target: 'all',
   has_extra_input: false, extra_input_label: '',
   extra_input_placeholder: '', pre_prompt: '',
   allowed_card_types: null, allow_multiple_cards: false,
@@ -33,7 +33,7 @@ const form = ref<Partial<AiVerification>>({
 function resetForm() {
   editingId.value = null
   form.value = {
-    label: '', is_active: true, target: 'all',
+    label: '', description: '', is_active: true, target: 'all',
     has_extra_input: false, extra_input_label: '',
     extra_input_placeholder: '', pre_prompt: '',
     allowed_card_types: null, allow_multiple_cards: false,
@@ -257,6 +257,7 @@ onMounted(async () => {
                 Fiches : {{ v.allowed_card_types.join(', ') }}{{ v.allow_multiple_cards ? ' (multi)' : '' }}
               </span>
             </div>
+            <p v-if="v.description" class="text-xs text-gray-500 dark:text-gray-400 italic line-clamp-1">{{ v.description }}</p>
             <p class="text-xs text-gray-400 dark:text-gray-500 line-clamp-2">{{ v.pre_prompt }}</p>
           </div>
 
@@ -445,6 +446,18 @@ onMounted(async () => {
               v-model="form.label"
               type="text"
               placeholder="Ex : Style, Répétitions, Reformuler…"
+              class="w-full text-sm rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-brand-500"
+            />
+          </div>
+
+          <div>
+            <label class="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">
+              Description (infobulle au survol)
+            </label>
+            <input
+              v-model="form.description"
+              type="text"
+              placeholder="Ex : Détecte les répétitions de mots dans un périmètre proche…"
               class="w-full text-sm rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-brand-500"
             />
           </div>

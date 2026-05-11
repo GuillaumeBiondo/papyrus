@@ -21,6 +21,7 @@ class AiVerificationController extends Controller
     {
         $data = $request->validate([
             'label'                   => ['required', 'string', 'max:100'],
+            'description'             => ['nullable', 'string', 'max:500'],
             'is_active'               => ['sometimes', 'boolean'],
             'target'                  => ['required', Rule::in(['selection', 'all', 'both'])],
             'has_extra_input'         => ['sometimes', 'boolean'],
@@ -43,6 +44,7 @@ class AiVerificationController extends Controller
     {
         $data = $request->validate([
             'label'                   => ['sometimes', 'string', 'max:100'],
+            'description'             => ['nullable', 'string', 'max:500'],
             'is_active'               => ['sometimes', 'boolean'],
             'target'                  => ['sometimes', Rule::in(['selection', 'all', 'both'])],
             'has_extra_input'         => ['sometimes', 'boolean'],
