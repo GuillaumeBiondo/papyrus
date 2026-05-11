@@ -4,6 +4,8 @@ import { useEditor, EditorContent } from '@tiptap/vue-3'
 import SelectionToolbar from './SelectionToolbar.vue'
 import StarterKit from '@tiptap/starter-kit'
 import Placeholder from '@tiptap/extension-placeholder'
+import Underline from '@tiptap/extension-underline'
+import { TextStyle, FontSize } from '@tiptap/extension-text-style'
 import { Extension } from '@tiptap/core'
 import { Plugin, PluginKey } from '@tiptap/pm/state'
 import { Decoration, DecorationSet } from '@tiptap/pm/view'
@@ -37,7 +39,7 @@ function buildDecos(doc: Parameters<typeof DecorationSet.create>[0], annotations
         decos.push(Decoration.inline(from, to, {
           class: 'annotation-underline',
           'data-annotation-id': ann.id,
-          style: `border-bottom: 2px solid ${color}; cursor: pointer;`,
+          style: `background-color: ${color}33; border-bottom: 2px dotted ${color}; cursor: pointer;`,
         }))
       }
     }
@@ -98,6 +100,9 @@ const editor = useEditor({
   extensions: [
     StarterKit.configure({ heading: { levels: [1, 2, 3] } }),
     Placeholder.configure({ placeholder: 'Commence à écrire…' }),
+    Underline,
+    TextStyle,
+    FontSize,
     AnnotationDecorations,
     SuggestionDecorations,
   ],
