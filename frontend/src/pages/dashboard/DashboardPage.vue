@@ -167,42 +167,51 @@ function onProjectDeleted(id: string) {
       >
         <!-- Header coloré -->
         <div
-          class="px-4 pt-4 pb-3 border-l-[8px]"
-          :style="{
-            background: hexRgba(cardColor(p), 0.08),
-            borderLeftColor: darkenHex(cardColor(p), 0.88),
-          }"
+          class="flex"
+          :style="{ background: hexRgba(cardColor(p), 0.08) }"
         >
-          <div class="flex items-start justify-between mb-1">
-            <h2
-              class="font-semibold text-base leading-tight"
-              :style="{ color: cardColor(p) }"
-            >{{ p.title }}</h2>
-            <div class="flex items-center gap-1 shrink-0 ml-2 mt-0.5">
-              <span
-                class="text-xs rounded-full px-2 py-0.5 font-medium"
-                :style="{
-                  background: STATUS_COLOR[p.status].bg,
-                  color: STATUS_COLOR[p.status].text,
-                }"
-              >{{ STATUS_LABEL[p.status] }}</span>
+          <!-- Statut vertical -->
+          <div
+            class="flex items-center justify-center w-7 shrink-0 py-3"
+            :style="{
+              background: STATUS_COLOR[p.status].bg,
+              borderRight: `1px solid ${STATUS_COLOR[p.status].text}55`,
+            }"
+          >
+            <span
+              class="text-[9px] font-bold uppercase tracking-widest select-none"
+              :style="{
+                color: STATUS_COLOR[p.status].text,
+                writingMode: 'vertical-rl',
+                transform: 'rotate(180deg)',
+              }"
+            >{{ STATUS_LABEL[p.status] }}</span>
+          </div>
+
+          <!-- Contenu header -->
+          <div class="flex-1 min-w-0 px-4 pt-4 pb-3">
+            <div class="flex items-start justify-between gap-2 mb-1">
+              <h2
+                class="font-semibold text-base leading-tight truncate"
+                :style="{ color: cardColor(p) }"
+              >{{ p.title }}</h2>
               <button
-                class="p-1 rounded-md opacity-60 hover:opacity-100 transition-opacity"
+                class="shrink-0 p-1.5 rounded-lg opacity-60 hover:opacity-100 transition-opacity"
                 :style="{ color: cardColor(p) }"
                 title="Paramètres du roman"
                 @click.stop="settingsProject = p"
               >
-                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"
                     d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/>
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
                 </svg>
               </button>
             </div>
+            <p class="text-xs" :style="{ color: cardColor(p), opacity: 0.7 }">
+              {{ p.genre ?? '—' }}
+            </p>
           </div>
-          <p class="text-xs" :style="{ color: cardColor(p), opacity: 0.7 }">
-            {{ p.genre ?? '—' }}
-          </p>
         </div>
 
         <!-- Stats ────────────────────────────────── -->
