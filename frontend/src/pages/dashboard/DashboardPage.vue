@@ -58,10 +58,10 @@ const STATUS_LABEL: Record<Project['status'], string> = {
   draft: 'brouillon', in_progress: 'en cours', revision: 'révision', complete: 'terminé',
 }
 const STATUS_COLOR: Record<Project['status'], { bg: string; text: string }> = {
-  draft:       { bg: 'rgba(156,163,175,0.18)', text: '#6b7280' },
-  in_progress: { bg: 'rgba(59,130,246,0.15)',  text: '#2563eb' },
-  revision:    { bg: 'rgba(245,158,11,0.15)',  text: '#d97706' },
-  complete:    { bg: 'rgba(34,197,94,0.15)',   text: '#16a34a' },
+  draft:       { bg: '#9ca3af', text: '#ffffff' },
+  in_progress: { bg: '#3b82f6', text: '#ffffff' },
+  revision:    { bg: '#f59e0b', text: '#ffffff' },
+  complete:    { bg: '#22c55e', text: '#ffffff' },
 }
 
 function wordPct(p: Project) {
@@ -173,10 +173,7 @@ function onProjectDeleted(id: string) {
           <!-- Statut vertical -->
           <div
             class="flex items-center justify-center w-7 shrink-0 py-3"
-            :style="{
-              background: STATUS_COLOR[p.status].bg,
-              borderRight: `1px solid ${STATUS_COLOR[p.status].text}55`,
-            }"
+            :style="{ background: STATUS_COLOR[p.status].bg }"
           >
             <span
               class="text-[9px] font-bold uppercase tracking-widest select-none"
