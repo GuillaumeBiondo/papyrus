@@ -162,7 +162,7 @@ function onProjectDeleted(id: string) {
       <div
         v-for="p in filtered"
         :key="p.id"
-        class="rounded-xl overflow-hidden border border-gray-200 dark:border-gray-700
+        class="relative rounded-xl overflow-hidden border border-gray-200 dark:border-gray-700
                bg-white dark:bg-gray-900 shadow-sm hover:shadow-md transition-shadow flex flex-col"
       >
         <!-- Header coloré -->
@@ -170,6 +170,20 @@ function onProjectDeleted(id: string) {
           class="flex"
           :style="{ background: hexRgba(cardColor(p), 0.08) }"
         >
+          <!-- Bouton paramètres (coin haut droit) -->
+          <button
+            class="absolute top-1 right-1 p-1.5 rounded-xl opacity-50 hover:opacity-100 transition-opacity z-10"
+            :style="{ color: cardColor(p) }"
+            title="Paramètres du roman"
+            @click.stop="settingsProject = p"
+          >
+            <svg class="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"
+                d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/>
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
+            </svg>
+          </button>
+
           <!-- Statut vertical -->
           <div
             class="flex items-center justify-center w-7 shrink-0 py-3"
@@ -187,23 +201,11 @@ function onProjectDeleted(id: string) {
 
           <!-- Contenu header -->
           <div class="flex-1 min-w-0 px-4 pt-4 pb-3">
-            <div class="flex items-start justify-between gap-2 mb-1">
+            <div class="mb-1 pr-8">
               <h2
                 class="font-semibold text-base leading-tight truncate"
                 :style="{ color: cardColor(p) }"
               >{{ p.title }}</h2>
-              <button
-                class="shrink-0 p-2 rounded-xl opacity-60 hover:opacity-100 transition-opacity"
-                :style="{ color: cardColor(p) }"
-                title="Paramètres du roman"
-                @click.stop="settingsProject = p"
-              >
-                <svg class="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"
-                    d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/>
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
-                </svg>
-              </button>
             </div>
             <p class="text-xs" :style="{ color: cardColor(p), opacity: 0.7 }">
               {{ p.genre ?? '—' }}
