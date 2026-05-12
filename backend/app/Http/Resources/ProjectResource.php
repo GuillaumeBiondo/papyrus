@@ -15,8 +15,11 @@ class ProjectResource extends JsonResource
             'genre'            => $this->genre,
             'color'            => $this->color,
             'status'           => $this->status,
-            'target_words'     => $this->target_words,
-            'target_scenes'    => $this->target_scenes,
+            'target_words'      => $this->target_words,
+            'target_scenes'     => $this->target_scenes,
+            'word_goal_arc'     => $this->word_goal_arc,
+            'word_goal_chapter' => $this->word_goal_chapter,
+            'word_goal_scene'   => $this->word_goal_scene,
             // Stats calculées dans le controller (subqueries)
             'word_count'       => (int) ($this->word_count ?? 0),
             'scene_count'      => (int) ($this->scene_count ?? 0),

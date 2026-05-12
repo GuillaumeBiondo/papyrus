@@ -2,6 +2,7 @@
 import { ref, watch, onMounted } from 'vue'
 import { projectsService } from '@/services/projects.service'
 import { activityService } from '@/services/activity.service'
+import { useAuthStore } from '@/stores/auth.store'
 import ActivityGrid from '@/components/activity/ActivityGrid.vue'
 import ActivityHeatmap from '@/components/activity/ActivityHeatmap.vue'
 import type { ActivityDay, ActivityHour, Project } from '@/types'
@@ -12,6 +13,8 @@ const emit  = defineEmits<{
   updated: [project: Project]
   deleted: [id: string]
 }>()
+
+const auth = useAuthStore()
 
 // ── Formulaire infos ──────────────────────────────────────────
 const title  = ref(props.project.title)
@@ -82,6 +85,61 @@ onMounted(async () => {
     activityLoading.value = false
   }
 })
+
+// ── Objectifs de mots ─────────────────────────────────────────
+const GOAL_LEVELS = [
+  { key: 'project', label: 'Projet',   field: 'target_words'    as const },
+  { key: 'arc',     label: 'Arc',      field: 'word_goal_arc'   as const },
+  { key: 'chapter', label: 'Chapitre', field: 'word_goal_chapter' as const },
+  { key: 'scene',   label: 'Scène',    field: 'word_goal_scene' as const },
+]
+
+const goalInputs = ref<Record<string, string>>({
+  project: String(props.project.target_words      || ''),
+  arc:     String(props.project.word_goal_arc     ?? ''),
+  chapter: String(props.project.word_goal_chapter ?? ''),
+  scene:   String(props.project.word_goal_scene   ?? ''),
+})
+const goalSaving = ref(false)
+const goalSaved  = ref(false)
+
+watch(() => props.project, p => {
+  goalInputs.value = {
+    project: String(p.target_words      || ''),
+    arc:     String(p.word_goal_arc     ?? ''),
+    chapter: String(p.word_goal_chapter ?? ''),
+    scene:   String(p.word_goal_scene   ?? ''),
+  }
+})
+
+function inheritedGoal(key: string): number {
+  const userPref = auth.user?.preferences?.wordGoals as Record<string, number | undefined> | undefined
+  const appDef   = auth.user?.word_goal_defaults as Record<string, number> | undefined
+  return userPref?.[key] ?? appDef?.[key] ?? 0
+}
+
+function goalPlaceholder(key: string): string {
+  const v = inheritedGoal(key)
+  return v ? v.toLocaleString('fr-FR') : '—'
+}
+
+async function saveGoals() {
+  goalSaving.value = true
+  goalSaved.value  = false
+  try {
+    const payload: Record<string, number | null> = {}
+    for (const { key, field } of GOAL_LEVELS) {
+      const v = parseInt(goalInputs.value[key] ?? '', 10)
+      payload[field] = isNaN(v) || v <= 0 ? null : v
+    }
+    const updated = await projectsService.update(props.project.id, payload as Partial<Project>)
+    goalSaved.value = true
+    emit('updated', updated)
+    setTimeout(() => { goalSaved.value = false }, 2000)
+  } finally {
+    goalSaving.value = false
+  }
+}
 
 // ── Suppression ───────────────────────────────────────────────
 const deleteStep    = ref<'idle' | 'confirm'>('idle')
@@ -180,6 +238,45 @@ async function confirmDelete() {
                   <span v-if="saved" class="text-xs text-green-600 dark:text-green-400">Modifications enregistrées ✓</span>
                 </Transition>
               </div>
+            </div>
+          </section>
+
+          <!-- ── Section : Objectifs ── -->
+          <section>
+            <h3 class="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-3">Objectifs de mots</h3>
+            <p class="text-xs text-gray-400 mb-4">
+              Laissez vide pour hériter de vos paramètres utilisateur ou des valeurs par défaut de l'application.
+            </p>
+            <div class="space-y-3">
+              <div
+                v-for="level in GOAL_LEVELS"
+                :key="level.key"
+                class="flex items-center gap-3"
+              >
+                <span class="w-20 shrink-0 text-xs font-medium text-gray-500 dark:text-gray-400">{{ level.label }}</span>
+                <div class="flex-1 relative">
+                  <input
+                    v-model="goalInputs[level.key]"
+                    type="number"
+                    min="1"
+                    :placeholder="goalPlaceholder(level.key)"
+                    class="w-full text-sm rounded-lg border border-gray-300 dark:border-gray-600
+                           bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100
+                           px-3 py-2 pr-14 focus:outline-none focus:ring-2 focus:ring-brand-500"
+                  />
+                  <span class="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-gray-400 pointer-events-none">mots</span>
+                </div>
+              </div>
+            </div>
+            <div class="flex items-center gap-3 mt-4">
+              <button
+                :disabled="goalSaving"
+                class="px-4 py-2 text-sm font-medium rounded-lg bg-brand-600 text-white hover:bg-brand-700 disabled:opacity-50 transition-colors"
+                @click="saveGoals"
+              >{{ goalSaving ? 'Enregistrement…' : 'Enregistrer' }}</button>
+              <Transition name="fade">
+                <span v-if="goalSaved" class="text-xs text-green-600 dark:text-green-400">Objectifs enregistrés ✓</span>
+              </Transition>
             </div>
           </section>
 

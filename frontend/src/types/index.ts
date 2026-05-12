@@ -43,12 +43,20 @@ export interface AppearancePrefs {
   uiSurface: string           // preset key for dark-mode surface intensity
 }
 
+export interface WordGoals {
+  project?: number
+  arc?: number
+  chapter?: number
+  scene?: number
+}
+
 export interface UserPreferences {
   light: Partial<AppearancePrefs>
   dark: Partial<AppearancePrefs>
   cardDisplay: 'dot' | 'avatar'
   defaultAttributes: Record<string, string[]>
   mantra?: string
+  wordGoals?: WordGoals
 }
 
 export interface User {
@@ -59,6 +67,7 @@ export interface User {
   bio: string | null
   avatar_url: string | null
   preferences: Partial<UserPreferences>
+  word_goal_defaults: Required<WordGoals>
   last_login_at: string | null
   currentRole?: 'owner' | 'co_author' | 'beta_reader'
 }
@@ -140,6 +149,9 @@ export interface Project {
   status: 'draft' | 'in_progress' | 'revision' | 'complete'
   target_words: number
   target_scenes: number | null
+  word_goal_arc: number | null
+  word_goal_chapter: number | null
+  word_goal_scene: number | null
   word_count: number
   scene_count: number
   cards_count: number

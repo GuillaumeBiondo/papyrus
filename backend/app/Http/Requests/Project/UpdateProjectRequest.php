@@ -15,7 +15,10 @@ class UpdateProjectRequest extends FormRequest
             'genre'        => ['sometimes', 'nullable', 'string', 'max:100'],
             'status'       => ['sometimes', 'in:draft,in_progress,revision,complete'],
             'color'        => ['sometimes', 'nullable', 'string', 'regex:/^#[0-9A-Fa-f]{6}$/'],
-            'target_words' => ['sometimes', 'nullable', 'integer', 'min:1'],
+            'target_words'    => ['sometimes', 'nullable', 'integer', 'min:1'],
+            'word_goal_arc'   => ['sometimes', 'nullable', 'integer', 'min:1'],
+            'word_goal_chapter' => ['sometimes', 'nullable', 'integer', 'min:1'],
+            'word_goal_scene' => ['sometimes', 'nullable', 'integer', 'min:1'],
         ];
     }
 }

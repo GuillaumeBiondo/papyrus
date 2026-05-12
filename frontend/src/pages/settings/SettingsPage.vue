@@ -11,7 +11,7 @@ const theme = useThemeStore()
 const fonts = useFontsStore()
 
 // ── Section active ────────────────────────────────────────────
-const activeSection = ref<'theme' | 'appearance' | 'cards' | 'attributes' | 'writing'>('theme')
+const activeSection = ref<'theme' | 'appearance' | 'cards' | 'attributes' | 'writing' | 'goals'>('theme')
 
 // ── Thème ─────────────────────────────────────────────────────
 const themeOptions = [
@@ -127,6 +127,54 @@ async function saveMantra() {
   }
 }
 
+// ── Objectifs de mots ─────────────────────────────────────────
+const GOAL_LEVELS = [
+  { key: 'project', label: 'Projet'   },
+  { key: 'arc',     label: 'Arc'      },
+  { key: 'chapter', label: 'Chapitre' },
+  { key: 'scene',   label: 'Scène'    },
+] as const
+
+const wordGoalInputs = ref<Record<string, string>>({
+  project: String(prefs.value.wordGoals?.project ?? ''),
+  arc:     String(prefs.value.wordGoals?.arc     ?? ''),
+  chapter: String(prefs.value.wordGoals?.chapter ?? ''),
+  scene:   String(prefs.value.wordGoals?.scene   ?? ''),
+})
+const goalSaving = ref(false)
+const goalSaved  = ref(false)
+
+watch(() => prefs.value.wordGoals, (wg) => {
+  wordGoalInputs.value = {
+    project: String(wg?.project ?? ''),
+    arc:     String(wg?.arc     ?? ''),
+    chapter: String(wg?.chapter ?? ''),
+    scene:   String(wg?.scene   ?? ''),
+  }
+}, { deep: true })
+
+function appDefault(key: string): number {
+  const d = auth.user?.word_goal_defaults
+  return (d as Record<string, number> | undefined)?.[key] ?? 0
+}
+
+async function saveWordGoals() {
+  goalSaving.value = true
+  goalSaved.value  = false
+  try {
+    const wg: Record<string, number | undefined> = {}
+    for (const { key } of GOAL_LEVELS) {
+      const v = parseInt(wordGoalInputs.value[key] ?? '', 10)
+      wg[key] = isNaN(v) || v <= 0 ? undefined : v
+    }
+    await auth.updatePreferences({ wordGoals: wg })
+    goalSaved.value = true
+    setTimeout(() => { goalSaved.value = false }, 2000)
+  } finally {
+    goalSaving.value = false
+  }
+}
+
 // Sync appearanceMode with current theme
 watch(() => theme.applied, (t) => { appearanceMode.value = t }, { immediate: true })
 </script>
@@ -144,13 +192,14 @@ watch(() => theme.applied, (t) => { appearanceMode.value = t }, { immediate: tru
           { key: 'cards',      label: 'Fiches',          icon: '🃏' },
           { key: 'attributes', label: 'Attrs par défaut', icon: '📋' },
           { key: 'writing',    label: 'Écriture',         icon: '✍️' },
+          { key: 'goals',      label: 'Objectifs',        icon: '🎯' },
         ]"
         :key="key"
         class="w-full text-left text-sm px-3 py-2 rounded-lg transition-colors flex items-center gap-2"
         :class="activeSection === key
           ? 'bg-white dark:bg-gray-800 text-brand-600 dark:text-brand-400 font-medium shadow-sm'
           : 'text-gray-600 dark:text-gray-400 hover:bg-white/60 dark:hover:bg-gray-800/50'"
-        @click="activeSection = key as typeof activeSection"
+        @click="activeSection = key as 'theme' | 'appearance' | 'cards' | 'attributes' | 'writing' | 'goals'"
       >
         <span>{{ icon }}</span>{{ label }}
       </button>
@@ -521,6 +570,53 @@ watch(() => theme.applied, (t) => { appearanceMode.value = t }, { immediate: tru
             >
               {{ mantraSaved ? 'Enregistré ✓' : 'Enregistrer' }}
             </button>
+          </div>
+        </div>
+      </section>
+
+      <!-- ── OBJECTIFS ── -->
+      <section v-else-if="activeSection === 'goals'">
+        <h2 class="text-base font-semibold text-gray-900 dark:text-gray-100 mb-1">Objectifs de mots</h2>
+        <p class="text-sm text-gray-500 dark:text-gray-400 mb-5">
+          Définissez vos objectifs par défaut à chaque niveau. Les projets peuvent les surcharger individuellement.
+        </p>
+
+        <div class="space-y-4">
+          <div
+            v-for="level in GOAL_LEVELS"
+            :key="level.key"
+            class="flex items-center gap-4"
+          >
+            <label class="w-24 shrink-0 text-sm font-medium text-gray-700 dark:text-gray-300">
+              {{ level.label }}
+            </label>
+            <div class="flex-1 relative">
+              <input
+                v-model="wordGoalInputs[level.key]"
+                type="number"
+                min="1"
+                :placeholder="appDefault(level.key).toLocaleString('fr-FR')"
+                class="w-full text-sm rounded-lg border border-gray-300 dark:border-gray-600
+                       bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100
+                       px-3 py-2 pr-16 focus:outline-none focus:ring-1 focus:ring-brand-500"
+              />
+              <span class="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-gray-400 pointer-events-none">mots</span>
+            </div>
+          </div>
+
+          <p class="text-xs text-gray-400">
+            Laisser vide pour utiliser la valeur par défaut de l'application (affichée en grisé).
+          </p>
+
+          <div class="flex items-center gap-3 pt-1">
+            <button
+              :disabled="goalSaving"
+              class="px-4 py-2 text-sm font-medium rounded-lg bg-brand-600 text-white hover:bg-brand-700 disabled:opacity-50 transition-colors"
+              @click="saveWordGoals"
+            >{{ goalSaving ? 'Enregistrement…' : 'Enregistrer' }}</button>
+            <Transition name="fade">
+              <span v-if="goalSaved" class="text-xs text-green-600 dark:text-green-400">Objectifs enregistrés ✓</span>
+            </Transition>
           </div>
         </div>
       </section>

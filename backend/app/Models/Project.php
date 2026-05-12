@@ -23,6 +23,9 @@ class Project extends Model
         'color',
         'target_words',
         'target_scenes',
+        'word_goal_arc',
+        'word_goal_chapter',
+        'word_goal_scene',
         'status',
         'type_data',
     ];
@@ -30,9 +33,12 @@ class Project extends Model
     protected function casts(): array
     {
         return [
-            'target_words'  => 'integer',
-            'target_scenes' => 'integer',
-            'type_data'     => 'array',
+            'target_words'    => 'integer',
+            'target_scenes'   => 'integer',
+            'word_goal_arc'   => 'integer',
+            'word_goal_chapter' => 'integer',
+            'word_goal_scene' => 'integer',
+            'type_data'       => 'array',
         ];
     }
 
