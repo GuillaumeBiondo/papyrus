@@ -25,6 +25,12 @@ class ProjectResource extends JsonResource
             'scene_count'      => (int) ($this->scene_count ?? 0),
             'cards_count'      => (int) ($this->cards_count ?? 0),
             'last_scene_title' => $this->last_scene_title,
+            'content_type'     => $this->whenLoaded('contentType', fn () => [
+                'id'         => $this->contentType->id,
+                'name'       => $this->contentType->name,
+                'short_name' => $this->contentType->short_name,
+                'slug'       => $this->contentType->slug,
+            ]),
             'owner'            => new UserResource($this->whenLoaded('owner')),
             'members'          => UserResource::collection($this->whenLoaded('members')),
             'updated_at'       => $this->updated_at,

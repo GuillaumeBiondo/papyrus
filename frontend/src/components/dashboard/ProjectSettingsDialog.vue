@@ -175,7 +175,9 @@ async function confirmDelete() {
         <div class="shrink-0 flex items-center justify-between px-5 md:px-6 py-4 border-b border-gray-200 dark:border-gray-800">
           <div class="min-w-0">
             <h2 class="font-semibold text-gray-900 dark:text-gray-100 truncate leading-tight">{{ project.title }}</h2>
-            <p class="text-xs text-gray-400 mt-0.5">Gestion du projet</p>
+            <p class="text-xs text-gray-400 mt-0.5">
+              {{ project.content_type?.short_name ?? project.content_type?.name ?? 'Projet' }}
+            </p>
           </div>
           <button
             class="ml-4 shrink-0 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-colors"
@@ -508,6 +510,8 @@ async function confirmDelete() {
 </template>
 
 <style scoped>
+@reference "@/assets/main.css";
+
 .section-title {
   @apply text-base font-semibold text-gray-900 dark:text-gray-100;
 }

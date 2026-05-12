@@ -30,7 +30,7 @@ class ProjectController extends Controller
 
         $projects = Project::where('owner_id', $request->user()->id)
             ->orWhereHas('members', fn ($q) => $q->where('user_id', $request->user()->id))
-            ->with(['owner', 'members'])
+            ->with(['owner', 'members', 'contentType'])
             ->withCount('cards')
             ->addSelect([
                 'projects.*',
@@ -59,7 +59,7 @@ class ProjectController extends Controller
         // Ajouter l'owner dans project_users
         $project->members()->attach($request->user()->id, ['role' => 'owner']);
 
-        return (new ProjectResource($project->load('owner')))
+        return (new ProjectResource($project->load('owner', 'contentType')))
             ->response()
             ->setStatusCode(201);
     }
@@ -68,7 +68,7 @@ class ProjectController extends Controller
     {
         $this->authorize('view', $project);
 
-        return new ProjectResource($project->load('owner', 'members'));
+        return new ProjectResource($project->load('owner', 'members', 'contentType'));
     }
 
     public function update(UpdateProjectRequest $request, Project $project): ProjectResource
@@ -77,7 +77,7 @@ class ProjectController extends Controller
 
         $project->update($request->validated());
 
-        return new ProjectResource($project->load('owner'));
+        return new ProjectResource($project->load('owner', 'contentType'));
     }
 
     public function destroy(Project $project): JsonResponse

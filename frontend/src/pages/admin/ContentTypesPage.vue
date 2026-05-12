@@ -13,6 +13,7 @@ const formError = ref('')
 
 const form = reactive({
   name: '',
+  short_name: '',
   slug: '',
   is_active: true,
   description: '',
@@ -34,6 +35,7 @@ async function fetchTypes() {
 function openCreate() {
   editTarget.value = null
   form.name = ''
+  form.short_name = ''
   form.slug = ''
   form.is_active = true
   form.description = ''
@@ -45,6 +47,7 @@ function openCreate() {
 function openEdit(ct: ContentType) {
   editTarget.value = ct
   form.name = ct.name
+  form.short_name = ct.short_name ?? ''
   form.slug = ct.slug
   form.is_active = ct.is_active
   form.description = ct.description ?? ''
@@ -78,9 +81,10 @@ async function save() {
   saving.value = true
   try {
     const payload = {
-      name: form.name,
-      slug: form.slug,
-      is_active: form.is_active,
+      name:        form.name,
+      short_name:  form.short_name.trim() || null,
+      slug:        form.slug,
+      is_active:   form.is_active,
       description: form.description || null,
       type_schema: JSON.parse(form.type_schema) as Record<string, unknown>,
     }
@@ -117,6 +121,7 @@ async function save() {
         <thead>
           <tr class="border-b border-gray-100 dark:border-gray-800 text-left">
             <th class="th">Nom</th>
+            <th class="th">Nom court</th>
             <th class="th">Slug</th>
             <th class="th text-right">Projets</th>
             <th class="th text-center">Actif</th>
@@ -131,6 +136,7 @@ async function save() {
             class="border-b border-gray-50 dark:border-gray-800/50 last:border-0"
           >
             <td class="td font-medium text-gray-900 dark:text-gray-100">{{ ct.name }}</td>
+            <td class="td text-gray-500">{{ ct.short_name || '—' }}</td>
             <td class="td"><code class="text-xs bg-gray-100 dark:bg-gray-800 px-1.5 py-0.5 rounded">{{ ct.slug }}</code></td>
             <td class="td text-right text-gray-500">{{ ct.projects_count ?? 0 }}</td>
             <td class="td text-center">
@@ -166,6 +172,10 @@ async function save() {
               <div>
                 <label class="admin-label">Nom</label>
                 <input v-model="form.name" class="admin-input" type="text" required />
+              </div>
+              <div>
+                <label class="admin-label">Nom court <span class="text-gray-400 font-normal">(affiché dans les dialogs)</span></label>
+                <input v-model="form.short_name" class="admin-input" type="text" maxlength="50" placeholder="Ex : Roman, Pièce, Scénario…" />
               </div>
               <div>
                 <label class="admin-label">Slug</label>

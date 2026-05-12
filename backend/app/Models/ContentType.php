@@ -12,6 +12,7 @@ class ContentType extends Model
 
     protected $fillable = [
         'name',
+        'short_name',
         'slug',
         'is_active',
         'type_schema',

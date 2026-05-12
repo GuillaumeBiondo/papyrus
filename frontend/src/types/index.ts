@@ -75,6 +75,7 @@ export interface User {
 export interface ContentType {
   id: string
   name: string
+  short_name: string | null
   slug: string
   is_active: boolean
   type_schema: Record<string, unknown> | null
@@ -82,6 +83,13 @@ export interface ContentType {
   projects_count?: number
   created_at: string
   updated_at: string
+}
+
+export interface ProjectContentType {
+  id: string
+  name: string
+  short_name: string | null
+  slug: string
 }
 
 export interface Changelog {
@@ -152,6 +160,7 @@ export interface Project {
   word_goal_arc: number | null
   word_goal_chapter: number | null
   word_goal_scene: number | null
+  content_type: ProjectContentType | null
   word_count: number
   scene_count: number
   cards_count: number

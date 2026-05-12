@@ -20,6 +20,7 @@ class ContentTypeController extends Controller
     {
         $data = $request->validate([
             'name'        => ['required', 'string', 'max:100'],
+            'short_name'  => ['nullable', 'string', 'max:50'],
             'slug'        => ['required', 'string', 'max:100', 'unique:content_types,slug', 'regex:/^[a-z0-9\-]+$/'],
             'is_active'   => ['boolean'],
             'description' => ['nullable', 'string'],
@@ -28,6 +29,7 @@ class ContentTypeController extends Controller
 
         $type = ContentType::create([
             'name'        => $data['name'],
+            'short_name'  => $data['short_name'] ?? null,
             'slug'        => $data['slug'],
             'is_active'   => $data['is_active'] ?? true,
             'description' => $data['description'] ?? null,
@@ -41,6 +43,7 @@ class ContentTypeController extends Controller
     {
         $data = $request->validate([
             'name'        => ['sometimes', 'string', 'max:100'],
+            'short_name'  => ['nullable', 'string', 'max:50'],
             'is_active'   => ['sometimes', 'boolean'],
             'description' => ['nullable', 'string'],
             'type_schema' => ['nullable', 'json'],
