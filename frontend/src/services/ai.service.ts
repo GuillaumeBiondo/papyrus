@@ -21,4 +21,12 @@ export const aiService = {
     })
     return data
   },
+
+  async enrich(
+    type: 'definition' | 'synonymes' | 'metaphores' | 'champ_lexical' | 'registre',
+    text: string,
+  ): Promise<{ items: { text: string; detail: string }[] }> {
+    const { data } = await api.post('/ai/enrich', { type, text })
+    return data
+  },
 }
