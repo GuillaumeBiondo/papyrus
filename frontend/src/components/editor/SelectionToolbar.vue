@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, watch, onBeforeUnmount } from 'vue'
+import { onMounted, onBeforeUnmount, ref, watch } from 'vue'
 import type { Editor } from '@tiptap/core'
 import { aiService } from '@/services/ai.service'
 import DictionaryDialog from './DictionaryDialog.vue'
@@ -12,7 +12,24 @@ const emit = defineEmits<{
   annotate: [sel: { from: number; to: number; text: string }]
 }>()
 
-const visible = ref(false)
+// ── Icônes par type_key (fallback si type inconnu) ────────────
+
+const ICON_PATH: Record<string, string> = {
+  definition:    'M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z',
+  synonymes:     'M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4',
+  metaphores:    'M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z',
+  champ_lexical: 'M7 20l4-16m2 16l4-16M6 9h14M4 15h14',
+  registre:      'M4 6h16M4 10h16M4 14h16M4 18h16',
+}
+const ICON_DEFAULT = 'M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253'
+
+function iconPath(typeKey: string): string {
+  return ICON_PATH[typeKey] ?? ICON_DEFAULT
+}
+
+// ── Position toolbar ──────────────────────────────────────────
+
+const visible      = ref(false)
 const toolbarStyle = ref<{ top: string; left: string }>({ top: '0px', left: '0px' })
 
 const W         = 420
@@ -46,24 +63,23 @@ function update() {
   visible.value = true
 }
 
+// ── Formatage ─────────────────────────────────────────────────
+
 function onBold(e: MouseEvent) {
   e.preventDefault()
   props.editor?.chain().focus().toggleBold().run()
   requestAnimationFrame(update)
 }
-
 function onItalic(e: MouseEvent) {
   e.preventDefault()
   props.editor?.chain().focus().toggleItalic().run()
   requestAnimationFrame(update)
 }
-
 function onUnderline(e: MouseEvent) {
   e.preventDefault()
   props.editor?.chain().focus().toggleUnderline().run()
   requestAnimationFrame(update)
 }
-
 function onStrike(e: MouseEvent) {
   e.preventDefault()
   props.editor?.chain().focus().toggleStrike().run()
@@ -80,7 +96,6 @@ function onGuillemetsFr(e: MouseEvent) {
   ed.chain().focus().insertContentAt({ from, to }, `« ${text} »`).run()
   requestAnimationFrame(update)
 }
-
 function onGuillemetsEn(e: MouseEvent) {
   e.preventDefault()
   const ed = props.editor
@@ -106,14 +121,12 @@ function getCurrentFontSizePx(): number {
   if (unit === 'em' || unit === 'rem') return Math.round(value * 16)
   return value
 }
-
 function onFontSizeIncrease(e: MouseEvent) {
   e.preventDefault()
   const newSize = Math.min(getCurrentFontSizePx() + FONT_SIZE_STEP, 72)
   props.editor?.chain().focus().setFontSize(`${newSize}px`).run()
   requestAnimationFrame(update)
 }
-
 function onFontSizeDecrease(e: MouseEvent) {
   e.preventDefault()
   const newSize = Math.max(getCurrentFontSizePx() - FONT_SIZE_STEP, 8)
@@ -134,19 +147,28 @@ function onAnnotate(e: MouseEvent) {
 
 // ── Dictionnaire ──────────────────────────────────────────────
 
-const showDictMenu    = ref(false)
+type EnrichTypeRef = { id: number; type_key: string; label: string; description: string | null }
+
+const enrichTypes      = ref<EnrichTypeRef[]>([])
+const showDictMenu     = ref(false)
 const capturedDictText = ref('')
 
-type DictType = 'definition' | 'synonymes' | 'metaphores' | 'champ_lexical' | 'registre'
-
-const dictLoading     = ref(false)
-const dictItems       = ref<{ text: string; detail: string }[]>([])
-const dictError       = ref<string | null>(null)
-const dictType        = ref<DictType>('definition')
-const dictQuery       = ref('')
-const showDictDialog  = ref(false)
+const dictLoading    = ref(false)
+const dictItems      = ref<{ text: string; detail: string }[]>([])
+const dictError      = ref<string | null>(null)
+const dictTypeKey    = ref('')
+const dictTypeLabel  = ref('')
+const dictQuery      = ref('')
+const showDictDialog = ref(false)
 
 const MAX_DICT_CHARS = 80
+
+onMounted(async () => {
+  try {
+    const { types } = await aiService.getEnrichTypes()
+    enrichTypes.value = types
+  } catch { /* silencieux si l'API échoue */ }
+})
 
 function onDictMousedown(e: MouseEvent) {
   e.preventDefault()
@@ -165,16 +187,17 @@ function closeDictMenu(e: MouseEvent) {
   requestAnimationFrame(update)
 }
 
-async function onDictEnrich(e: MouseEvent, type: DictType) {
+async function onDictEnrich(e: MouseEvent, type: EnrichTypeRef) {
   e.preventDefault()
   const text = capturedDictText.value
   if (!text) return
 
   showDictMenu.value = false
-  dictType.value     = type
-  dictQuery.value    = text
-  dictError.value    = null
-  dictItems.value    = []
+  dictTypeKey.value   = type.type_key
+  dictTypeLabel.value = type.label
+  dictQuery.value     = text
+  dictError.value     = null
+  dictItems.value     = []
 
   if (text.length > MAX_DICT_CHARS) {
     dictError.value    = `La sélection est trop longue (${text.length} caractères). Sélectionne un seul mot ou une expression courte pour obtenir un résultat précis.`
@@ -186,7 +209,7 @@ async function onDictEnrich(e: MouseEvent, type: DictType) {
   showDictDialog.value = true
 
   try {
-    const result    = await aiService.enrich(type, text)
+    const result    = await aiService.enrich(type.type_key, text)
     dictItems.value = result.items
   } catch (err: unknown) {
     const axiosErr  = err as { response?: { data?: { message?: string } } }
@@ -299,100 +322,63 @@ onBeforeUnmount(() => cleanup?.())
           </svg>
           Annoter
         </button>
-        <div class="w-px h-4 bg-gray-200 dark:bg-gray-600 mx-0.5" />
-        <!-- Bouton Dictionnaire -->
-        <button
-          class="flex items-center gap-1 px-2 h-7 rounded text-xs font-medium transition-colors"
-          :class="showDictMenu
-            ? 'text-white bg-indigo-500 dark:bg-indigo-600'
-            : 'text-indigo-600 dark:text-indigo-400 hover:bg-indigo-50 dark:hover:bg-indigo-900/30'"
-          title="Outils dictionnaire"
-          @mousedown="onDictMousedown"
-        >
-          <svg class="w-3.5 h-3.5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"/>
-          </svg>
-          Dico
-          <svg
-            class="w-2.5 h-2.5 opacity-60 transition-transform"
-            :class="showDictMenu ? 'rotate-180' : ''"
-            fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"
+
+        <!-- Bouton Dictionnaire (masqué si aucun type actif) -->
+        <template v-if="enrichTypes.length">
+          <div class="w-px h-4 bg-gray-200 dark:bg-gray-600 mx-0.5" />
+          <button
+            class="flex items-center gap-1 px-2 h-7 rounded text-xs font-medium transition-colors"
+            :class="showDictMenu
+              ? 'text-white bg-indigo-500 dark:bg-indigo-600'
+              : 'text-indigo-600 dark:text-indigo-400 hover:bg-indigo-50 dark:hover:bg-indigo-900/30'"
+            title="Outils dictionnaire"
+            @mousedown="onDictMousedown"
           >
-            <path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7"/>
-          </svg>
-        </button>
+            <svg class="w-3.5 h-3.5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"/>
+            </svg>
+            Dico
+            <svg
+              class="w-2.5 h-2.5 opacity-60 transition-transform"
+              :class="showDictMenu ? 'rotate-180' : ''"
+              fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"
+            >
+              <path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7"/>
+            </svg>
+          </button>
+        </template>
       </div>
 
-      <!-- Sous-menu dictionnaire -->
+      <!-- Sous-menu dictionnaire (dynamique) -->
       <div
-        v-if="showDictMenu"
-        class="flex items-center gap-0.5 px-1 py-0.5 border-t border-gray-100 dark:border-gray-700"
+        v-if="showDictMenu && enrichTypes.length"
+        class="flex items-center gap-0.5 px-1 py-0.5 border-t border-gray-100 dark:border-gray-700 flex-wrap"
       >
-        <button
-          class="flex items-center gap-1 px-2 h-7 rounded text-xs text-gray-600 dark:text-gray-300 hover:bg-indigo-50 dark:hover:bg-indigo-900/30 hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors"
-          title="Définitions du mot ou de l'expression sélectionnée"
-          @mousedown="(e) => onDictEnrich(e, 'definition')"
-        >
-          <svg class="w-3 h-3 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
-          </svg>
-          Définition
-        </button>
-        <div class="w-px h-4 bg-gray-200 dark:bg-gray-600 mx-0.5" />
-        <button
-          class="flex items-center gap-1 px-2 h-7 rounded text-xs text-gray-600 dark:text-gray-300 hover:bg-indigo-50 dark:hover:bg-indigo-900/30 hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors"
-          title="Synonymes avec nuances de registre"
-          @mousedown="(e) => onDictEnrich(e, 'synonymes')"
-        >
-          <svg class="w-3 h-3 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4"/>
-          </svg>
-          Synonymes
-        </button>
-        <div class="w-px h-4 bg-gray-200 dark:bg-gray-600 mx-0.5" />
-        <button
-          class="flex items-center gap-1 px-2 h-7 rounded text-xs text-gray-600 dark:text-gray-300 hover:bg-indigo-50 dark:hover:bg-indigo-900/30 hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors"
-          title="Métaphores littéraires utilisables directement"
-          @mousedown="(e) => onDictEnrich(e, 'metaphores')"
-        >
-          <svg class="w-3 h-3 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z"/>
-          </svg>
-          Métaphores
-        </button>
-        <div class="w-px h-4 bg-gray-200 dark:bg-gray-600 mx-0.5" />
-        <button
-          class="flex items-center gap-1 px-2 h-7 rounded text-xs text-gray-600 dark:text-gray-300 hover:bg-indigo-50 dark:hover:bg-indigo-900/30 hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors"
-          title="Mots du même univers sémantique"
-          @mousedown="(e) => onDictEnrich(e, 'champ_lexical')"
-        >
-          <svg class="w-3 h-3 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 20l4-16m2 16l4-16M6 9h14M4 15h14"/>
-          </svg>
-          Champ lex.
-        </button>
-        <div class="w-px h-4 bg-gray-200 dark:bg-gray-600 mx-0.5" />
-        <button
-          class="flex items-center gap-1 px-2 h-7 rounded text-xs text-gray-600 dark:text-gray-300 hover:bg-indigo-50 dark:hover:bg-indigo-900/30 hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors"
-          title="Le même sens en différents registres de langue"
-          @mousedown="(e) => onDictEnrich(e, 'registre')"
-        >
-          <svg class="w-3 h-3 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 10h16M4 14h16M4 18h16"/>
-          </svg>
-          Registre
-        </button>
+        <template v-for="(type, idx) in enrichTypes" :key="type.id">
+          <div v-if="idx > 0" class="w-px h-4 bg-gray-200 dark:bg-gray-600 mx-0.5" />
+          <button
+            class="flex items-center gap-1 px-2 h-7 rounded text-xs text-gray-600 dark:text-gray-300 hover:bg-indigo-50 dark:hover:bg-indigo-900/30 hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors"
+            :title="type.description ?? type.label"
+            @mousedown="(e) => onDictEnrich(e, type)"
+          >
+            <svg class="w-3 h-3 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" :d="iconPath(type.type_key)"/>
+            </svg>
+            {{ type.label }}
+          </button>
+        </template>
       </div>
     </div>
   </Teleport>
 
   <DictionaryDialog
     v-if="showDictDialog"
-    :type="dictType"
+    :type="dictTypeKey"
     :query="dictQuery"
     :loading="dictLoading"
     :error="dictError"
     :items="dictItems"
+    :type-label="dictTypeLabel"
     @close="showDictDialog = false"
   />
 </template>

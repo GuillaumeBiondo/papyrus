@@ -1,14 +1,7 @@
 <script setup lang="ts">
-const TYPE_LABELS: Record<string, string> = {
-  definition:    'Définition',
-  synonymes:     'Synonymes',
-  metaphores:    'Métaphores',
-  champ_lexical: 'Champ lexical',
-  registre:      'Registre de langue',
-}
-
 defineProps<{
   type: string
+  typeLabel: string
   query: string
   loading: boolean
   error: string | null
@@ -38,7 +31,7 @@ async function copy(text: string) {
         <div class="flex items-start justify-between px-5 py-3.5 border-b border-gray-100 dark:border-gray-800 shrink-0">
           <div>
             <h3 class="text-sm font-semibold text-gray-900 dark:text-gray-100">
-              {{ TYPE_LABELS[type] ?? type }}
+              {{ typeLabel }}
             </h3>
             <p class="text-xs text-gray-400 dark:text-gray-500 mt-0.5 truncate max-w-xs">
               « {{ query }} »

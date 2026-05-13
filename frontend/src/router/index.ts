@@ -70,6 +70,7 @@ const router = createRouter({
         { path: 'settings',          name: 'admin-settings',          component: () => import('@/pages/admin/SettingsPage.vue') },
         { path: 'fonts',             name: 'admin-fonts',             component: () => import('@/pages/admin/AdminFontsPage.vue') },
         { path: 'ai-verifications',  name: 'admin-ai-verifications',  component: () => import('@/pages/admin/AdminAiVerificationsPage.vue') },
+        { path: 'ai-enrich',         name: 'admin-ai-enrich',         component: () => import('@/pages/admin/AdminAiEnrichPage.vue') },
       ],
     },
     {

@@ -347,6 +347,18 @@ export interface AiStats {
   daily: AiDailyStat[]
 }
 
+export interface AiEnrichType {
+  id: number
+  type_key: string
+  label: string
+  description: string | null
+  is_active: boolean
+  system_prompt: string
+  sort_order: number
+  created_at?: string
+  updated_at?: string
+}
+
 export interface AiChange {
   originalText: string
   suggestedText: string
