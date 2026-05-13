@@ -5,6 +5,7 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use App\Models\Todo;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
@@ -15,6 +16,7 @@ class Chapter extends Model
     protected $fillable = [
         'arc_id',
         'title',
+        'summary',
         'order',
     ];
 
@@ -38,5 +40,10 @@ class Chapter extends Model
     public function scenes(): HasMany
     {
         return $this->hasMany(Scene::class)->orderBy('order');
+    }
+
+    public function todos(): HasMany
+    {
+        return $this->hasMany(Todo::class)->orderBy('sort_order');
     }
 }

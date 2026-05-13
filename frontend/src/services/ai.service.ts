@@ -22,7 +22,7 @@ export const aiService = {
     return data
   },
 
-  async getEnrichTypes(): Promise<{ types: Pick<AiEnrichType, 'id' | 'type_key' | 'label' | 'description' | 'sort_order'>[] }> {
+  async getEnrichTypes(): Promise<{ types: Pick<AiEnrichType, 'id' | 'type_key' | 'label' | 'description' | 'sort_order' | 'is_premium'>[] }> {
     const { data } = await api.get('/ai/enrich-types')
     return data
   },

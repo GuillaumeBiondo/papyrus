@@ -33,6 +33,7 @@ use App\Http\Controllers\Api\Admin\AiEnrichController as AdminAiEnrichController
 use App\Http\Controllers\Api\Admin\AiVerificationController as AdminAiVerificationController;
 use App\Http\Controllers\Api\Admin\AiStatsController as AdminAiStatsController;
 use App\Http\Controllers\Api\Admin\WorkshopController as AdminWorkshopController;
+use App\Http\Controllers\Api\TodoController;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -110,16 +111,30 @@ Route::prefix('v1')->middleware(['auth:sanctum', 'throttle:60,1', 'user_blocked'
     // Arcs
     Route::get('projects/{project}/arcs', [ArcController::class, 'index']);
     Route::post('projects/{project}/arcs', [ArcController::class, 'store']);
+    Route::get('arcs/{arc}', [ArcController::class, 'show']);
     Route::put('arcs/{arc}', [ArcController::class, 'update']);
     Route::delete('arcs/{arc}', [ArcController::class, 'destroy']);
     Route::post('projects/{project}/arcs/reorder', [ArcController::class, 'reorder']);
+    Route::put('arcs/{arc}/summary', [ArcController::class, 'saveSummary']);
+    Route::post('arcs/{arc}/summary/generate', [ArcController::class, 'generateSummary']);
+    Route::get('arcs/{arc}/todos', [ArcController::class, 'todos']);
+    Route::post('arcs/{arc}/todos', [ArcController::class, 'storeTodo']);
 
     // Chapters
     Route::get('arcs/{arc}/chapters', [ChapterController::class, 'index']);
     Route::post('arcs/{arc}/chapters', [ChapterController::class, 'store']);
+    Route::get('chapters/{chapter}', [ChapterController::class, 'show']);
     Route::put('chapters/{chapter}', [ChapterController::class, 'update']);
     Route::delete('chapters/{chapter}', [ChapterController::class, 'destroy']);
     Route::post('chapters/reorder', [ChapterController::class, 'reorder']);
+    Route::put('chapters/{chapter}/summary', [ChapterController::class, 'saveSummary']);
+    Route::post('chapters/{chapter}/summary/generate', [ChapterController::class, 'generateSummary']);
+    Route::get('chapters/{chapter}/todos', [ChapterController::class, 'todos']);
+    Route::post('chapters/{chapter}/todos', [ChapterController::class, 'storeTodo']);
+
+    // Todos (update / delete)
+    Route::put('todos/{todo}', [TodoController::class, 'update']);
+    Route::delete('todos/{todo}', [TodoController::class, 'destroy']);
 
     // Scenes
     Route::get('chapters/{chapter}/scenes', [SceneController::class, 'index']);

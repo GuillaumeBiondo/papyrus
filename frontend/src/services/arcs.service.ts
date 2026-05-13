@@ -16,4 +16,10 @@ export const arcsService = {
 
   reorder: (projectId: string, items: { id: string; order: number }[]): Promise<void> =>
     api.post(`/projects/${projectId}/arcs/reorder`, { items }),
+
+  saveSummary: (id: string, summary: string | null): Promise<{ summary: string | null }> =>
+    api.put(`/arcs/${id}/summary`, { summary }).then((r) => r.data),
+
+  generateSummary: (id: string): Promise<{ summary: string }> =>
+    api.post(`/arcs/${id}/summary/generate`).then((r) => r.data),
 }

@@ -16,4 +16,10 @@ export const chaptersService = {
 
   reorder: (items: { id: string; order: number; arc_id?: string }[]): Promise<void> =>
     api.post('/chapters/reorder', { items }),
+
+  saveSummary: (id: string, summary: string | null): Promise<{ summary: string | null }> =>
+    api.put(`/chapters/${id}/summary`, { summary }).then((r) => r.data),
+
+  generateSummary: (id: string): Promise<{ summary: string }> =>
+    api.post(`/chapters/${id}/summary/generate`).then((r) => r.data),
 }

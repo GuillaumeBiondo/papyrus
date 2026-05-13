@@ -13,17 +13,41 @@ import ConfirmDeleteDialog from '@/components/editor/ConfirmDeleteDialog.vue'
 import CardEditDialog from '@/components/editor/CardEditDialog.vue'
 import SceneTimelineDrawer from '@/components/editor/SceneTimelineDrawer.vue'
 import SnapshotManualModal from '@/components/editor/SnapshotManualModal.vue'
+import ArcChapterDialog from '@/components/editor/ArcChapterDialog.vue'
 import Splitter from 'primevue/splitter'
 import SplitterPanel from 'primevue/splitterpanel'
 import draggable from 'vuedraggable'
 import { snapshotsService } from '@/services/snapshots.service'
 import { activityService } from '@/services/activity.service'
 import type { Arc, Chapter, Scene } from '@/types'
+import { useAppConfigStore } from '@/stores/appConfig.store'
 
 const route = useRoute()
 const editor = useEditorStore()
 const auth   = useAuthStore()
 const suggestions = useSuggestionsStore()
+const appConfig = useAppConfigStore()
+
+// ── Dialog arc/chapitre ───────────────────────────────────────
+type DialogTarget = { type: 'arc'; item: Arc } | { type: 'chapter'; item: Chapter }
+const arcChapterDialog = ref<DialogTarget | null>(null)
+
+function openArcDialog(arc: Arc) { arcChapterDialog.value = { type: 'arc', item: arc } }
+function openChapterDialog(chapter: Chapter) { arcChapterDialog.value = { type: 'chapter', item: chapter } }
+
+function onSummaryUpdate(summary: string | null) {
+  if (!arcChapterDialog.value) return
+  // Update local store data so summary persists without reload
+  if (arcChapterDialog.value.type === 'arc') {
+    const arc = editor.arcs.find(a => a.id === arcChapterDialog.value!.item.id)
+    if (arc) arc.summary = summary
+  } else {
+    for (const arc of editor.arcs) {
+      const ch = arc.chapters?.find(c => c.id === arcChapterDialog.value!.item.id)
+      if (ch) { ch.summary = summary; break }
+    }
+  }
+}
 
 const vFocus = { mounted: (el: HTMLElement) => el.focus() }
 
@@ -45,7 +69,7 @@ const leftSidebarOpen = ref(!isMobile.value)
 const rightSidebarOpen = ref(!isMobile.value)
 
 // ── Panneau droit ─────────────────────────────────────────────
-const rightTab = ref<'annotations' | 'notes' | 'fiches'>('annotations')
+const rightTab = ref<'annotations' | 'notes' | 'fiches' | 'todos'>('annotations')
 
 // ── Drag & Drop ───────────────────────────────────────────────
 const addingArc = ref(false)
@@ -283,6 +307,7 @@ function onRestored(content: string) {
 onMounted(() => {
   editor.loadProject(route.params.projectId as string)
   window.addEventListener('resize', onResize)
+  appConfig.fetch()
 })
 onUnmounted(() => {
   editor.reset()
@@ -433,7 +458,7 @@ const rightPanelPt = { root: { class: 'flex flex-col overflow-hidden h-full bord
                   @keyup.escape="cancelRename"
                   @blur="commitRename('arc', arc.id)"
                 />
-                <span v-else class="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide truncate flex-1">{{ arc.title }}</span>
+                <span v-else class="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide truncate flex-1 cursor-pointer hover:text-gray-700 dark:hover:text-gray-200 transition-colors" @click.stop="openArcDialog(arc)">{{ arc.title }}</span>
                 <div class="flex items-center gap-0.5 md:opacity-0 group-hover:opacity-100 transition-opacity shrink-0">
                   <button class="px-1.5 py-0.5 text-sm text-brand-600/70 dark:text-brand-400/70 hover:text-brand-700 dark:hover:text-brand-300 transition-colors" @click="addingChapter = arc.id; newChapterTitle = ''">+</button>
                   <button class="px-1.5 py-0.5 text-xs text-brand-600/70 dark:text-brand-400/70 hover:text-brand-700 dark:hover:text-brand-300 transition-colors" @click.stop="startRename(arc.id, arc.title)">✎</button>
@@ -457,7 +482,7 @@ const rightPanelPt = { root: { class: 'flex flex-col overflow-hidden h-full bord
                         @keyup.escape="cancelRename"
                         @blur="commitRename('chapter', chapter.id)"
                       />
-                      <span v-else class="text-xs text-gray-500 dark:text-gray-400 italic truncate flex-1">{{ chapter.title }}</span>
+                      <span v-else class="text-xs text-gray-500 dark:text-gray-400 italic truncate flex-1 cursor-pointer hover:text-gray-700 dark:hover:text-gray-200 transition-colors" @click.stop="openChapterDialog(chapter)">{{ chapter.title }}</span>
                       <div class="flex items-center gap-0.5 md:opacity-0 group-hover:opacity-100 transition-opacity shrink-0">
                         <button class="px-1.5 py-0.5 text-sm text-brand-600/70 dark:text-brand-400/70 hover:text-brand-700 dark:hover:text-brand-300 transition-colors" @click="addingScene = chapter.id; newSceneTitle = ''">+</button>
                         <button class="px-1.5 py-0.5 text-xs text-brand-600/70 dark:text-brand-400/70 hover:text-brand-700 dark:hover:text-brand-300 transition-colors" @click.stop="startRename(chapter.id, chapter.title)">✎</button>
@@ -914,6 +939,15 @@ const rightPanelPt = { root: { class: 'flex flex-col overflow-hidden h-full bord
     :open="timelineOpen"
     @close="timelineOpen = false"
     @restored="onRestored"
+  />
+
+  <!-- ══ Dialog arc / chapitre ══ -->
+  <ArcChapterDialog
+    v-if="arcChapterDialog"
+    :type="arcChapterDialog.type"
+    :item="arcChapterDialog.item"
+    @close="arcChapterDialog = null"
+    @update:summary="onSummaryUpdate"
   />
 
   <!-- ══ Modal snapshot manuel ══ -->

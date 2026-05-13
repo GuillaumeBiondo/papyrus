@@ -1,20 +1,21 @@
 <script setup lang="ts">
-import { computed, ref } from 'vue'
+import { computed, ref, watch } from 'vue'
 import { useEditorStore } from '@/stores/editor.store'
 import { useAuthStore } from '@/stores/auth.store'
 import { cardsService } from '@/services/cards.service'
+import { todosService } from '@/services/todos.service'
 import CardInlineView from './CardInlineView.vue'
-import type { Annotation, Card } from '@/types'
+import type { Annotation, Card, Todo } from '@/types'
 
 const props = defineProps<{
-  tab: 'annotations' | 'notes' | 'fiches'
+  tab: 'annotations' | 'notes' | 'fiches' | 'todos'
   pendingSelection: { from: number; to: number; text: string } | null
   highlightedAnnotationId: string | null
   getAnchorText: (ann: { anchor_start: number | null; anchor_end: number | null }) => string
 }>()
 
 const emit = defineEmits<{
-  'update:tab': [tab: 'annotations' | 'notes' | 'fiches']
+  'update:tab': [tab: 'annotations' | 'notes' | 'fiches' | 'todos']
   close: []
   'card-selected': [id: string]
   'focus-annotation': [anchor_start: number, anchor_end: number]
@@ -197,6 +198,76 @@ async function toggleCardExpand(cardId: string) {
   }
 }
 
+// ── Todos sidebar ─────────────────────────────────────────────
+
+const arcTodos     = ref<Todo[]>([])
+const chapterTodos = ref<Todo[]>([])
+const todosLoading = ref(false)
+const newTodoText  = ref('')
+const todosScope   = ref<'chapter' | 'arc'>('chapter')
+
+const currentChapter = computed(() => {
+  if (!editor.activeScene) return null
+  for (const arc of editor.arcs) {
+    const ch = arc.chapters?.find(c => c.scenes?.some(s => s.id === editor.activeScene!.id))
+    if (ch) return ch
+  }
+  return null
+})
+
+const currentArc = computed(() => {
+  if (!editor.activeScene) return null
+  return editor.arcs.find(a => a.chapters?.some(ch => ch.scenes?.some(s => s.id === editor.activeScene!.id))) ?? null
+})
+
+async function loadTodosSidebar() {
+  if (todosLoading.value) return
+  todosLoading.value = true
+  try {
+    const [arcRes, chRes] = await Promise.all([
+      currentArc.value ? todosService.forArc(currentArc.value.id) : Promise.resolve([]),
+      currentChapter.value ? todosService.forChapter(currentChapter.value.id) : Promise.resolve([]),
+    ])
+    arcTodos.value     = arcRes
+    chapterTodos.value = chRes
+  } finally {
+    todosLoading.value = false
+  }
+}
+
+watch([() => props.tab, () => editor.activeScene?.id], ([newTab]) => {
+  if (newTab === 'todos') loadTodosSidebar()
+})
+
+const displayedTodos = computed(() => todosScope.value === 'chapter' ? chapterTodos : arcTodos)
+
+async function addSidebarTodo() {
+  const text = newTodoText.value.trim()
+  if (!text) return
+  let todo: Todo
+  if (todosScope.value === 'chapter' && currentChapter.value) {
+    todo = await todosService.createForChapter(currentChapter.value.id, text)
+    chapterTodos.value.push(todo)
+  } else if (currentArc.value) {
+    todo = await todosService.createForArc(currentArc.value.id, text)
+    arcTodos.value.push(todo)
+  }
+  newTodoText.value = ''
+}
+
+async function toggleSidebarTodo(todo: Todo, list: 'arc' | 'chapter') {
+  const updated = await todosService.update(todo.id, { is_done: !todo.is_done })
+  const arr = list === 'arc' ? arcTodos : chapterTodos
+  const idx = arr.value.findIndex(t => t.id === todo.id)
+  if (idx !== -1) arr.value[idx] = updated
+}
+
+async function deleteSidebarTodo(todo: Todo, list: 'arc' | 'chapter') {
+  await todosService.destroy(todo.id)
+  if (list === 'arc') arcTodos.value = arcTodos.value.filter(t => t.id !== todo.id)
+  else chapterTodos.value = chapterTodos.value.filter(t => t.id !== todo.id)
+}
+
 // ── Helpers ───────────────────────────────────────────────────
 function relativeTime(dateStr: string) {
   const diff = Date.now() - new Date(dateStr).getTime()
@@ -215,12 +286,18 @@ function relativeTime(dateStr: string) {
     <!-- Onglets + bouton fermer -->
     <div class="flex items-center border-b border-gray-300 dark:border-gray-700 shrink-0">
       <button
-        v-for="t in (['annotations', 'notes', 'fiches'] as const)"
+        v-for="t in (['annotations', 'notes', 'fiches', 'todos'] as const)"
         :key="t"
-        class="flex-1 py-2.5 text-xs font-medium transition-colors"
+        class="flex-1 py-2.5 text-xs font-medium transition-colors relative"
         :class="tab === t ? 'border-b-2 border-brand-600 text-brand-600' : 'text-gray-400 hover:text-gray-600 dark:hover:text-gray-300'"
         @click="emit('update:tab', t)"
-      >{{ t.charAt(0).toUpperCase() + t.slice(1) }}</button>
+      >
+        {{ t === 'annotations' ? 'Annot.' : t === 'notes' ? 'Notes' : t === 'fiches' ? (editor.currentProject?.content_type?.short_name ?? 'Fiches') : 'Todos' }}
+        <span
+          v-if="t === 'todos' && (arcTodos.filter(x => !x.is_done).length + chapterTodos.filter(x => !x.is_done).length) > 0"
+          class="absolute top-1 right-1 w-1.5 h-1.5 rounded-full bg-brand-500"
+        />
+      </button>
 
       <button
         class="shrink-0 px-2 py-2.5 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
@@ -434,7 +511,7 @@ function relativeTime(dateStr: string) {
     </div>
 
     <!-- ── Fiches ── -->
-    <div v-else class="flex-1 flex flex-col overflow-hidden">
+    <div v-else-if="tab === 'fiches'" class="flex-1 flex flex-col overflow-hidden">
       <div class="p-3 border-b border-gray-200 dark:border-gray-700 shrink-0 space-y-2">
         <div class="relative">
           <input v-model="cardsSearchQuery" type="text" placeholder="Chercher une fiche…"
@@ -542,6 +619,124 @@ function relativeTime(dateStr: string) {
           <button v-else class="w-full border border-dashed border-gray-300 dark:border-gray-700 rounded-lg py-1.5 text-xs text-gray-400 hover:text-brand-600 hover:border-brand-400 transition-colors" @click="showCreateCardForm = true">+ nouvelle fiche</button>
         </div>
       </template>
+    </div>
+
+    <!-- ── Todos ── -->
+    <div v-if="tab === 'todos'" class="flex-1 flex flex-col overflow-hidden">
+
+      <!-- Sélecteur chapitre / arc -->
+      <div class="flex border-b border-gray-100 dark:border-gray-800 shrink-0">
+        <button
+          class="flex-1 py-2 text-xs font-medium transition-colors"
+          :class="todosScope === 'chapter'
+            ? 'text-brand-600 dark:text-brand-400 bg-brand-50 dark:bg-brand-900/20'
+            : 'text-gray-400 hover:text-gray-600 dark:hover:text-gray-300'"
+          @click="todosScope = 'chapter'"
+        >
+          Chapitre
+          <span v-if="chapterTodos.filter(t => !t.is_done).length" class="ml-1 text-[10px] font-semibold text-brand-500">{{ chapterTodos.filter(t => !t.is_done).length }}</span>
+        </button>
+        <button
+          class="flex-1 py-2 text-xs font-medium transition-colors"
+          :class="todosScope === 'arc'
+            ? 'text-brand-600 dark:text-brand-400 bg-brand-50 dark:bg-brand-900/20'
+            : 'text-gray-400 hover:text-gray-600 dark:hover:text-gray-300'"
+          @click="todosScope = 'arc'"
+        >
+          Arc
+          <span v-if="arcTodos.filter(t => !t.is_done).length" class="ml-1 text-[10px] font-semibold text-brand-500">{{ arcTodos.filter(t => !t.is_done).length }}</span>
+        </button>
+      </div>
+
+      <!-- Context label -->
+      <div class="px-3 py-1.5 shrink-0 border-b border-gray-100 dark:border-gray-800">
+        <p class="text-[10px] text-gray-400 truncate">
+          <span v-if="todosScope === 'chapter'">{{ currentChapter?.title ?? '—' }}</span>
+          <span v-else>{{ currentArc?.title ?? '—' }}</span>
+        </p>
+      </div>
+
+      <div v-if="todosLoading" class="flex-1 flex items-center justify-center">
+        <svg class="w-4 h-4 animate-spin text-gray-400" fill="none" viewBox="0 0 24 24">
+          <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="3"/>
+          <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"/>
+        </svg>
+      </div>
+
+      <div v-else class="flex-1 overflow-y-auto px-3 py-2 space-y-0.5">
+        <p v-if="displayedTodos.value.length === 0" class="text-xs text-gray-400 text-center py-6">
+          Aucune todo pour {{ todosScope === 'chapter' ? 'ce chapitre' : 'cet arc' }}.
+        </p>
+
+        <!-- Pending -->
+        <div
+          v-for="todo in displayedTodos.value.filter(t => !t.is_done)"
+          :key="todo.id"
+          class="group flex items-start gap-2 py-1"
+        >
+          <button
+            class="shrink-0 mt-0.5 w-3.5 h-3.5 rounded border-2 border-gray-300 dark:border-gray-600 hover:border-brand-400 transition-colors"
+            @click="toggleSidebarTodo(todo, todosScope)"
+          />
+          <span class="flex-1 text-xs text-gray-800 dark:text-gray-200 leading-relaxed">{{ todo.text }}</span>
+          <button
+            class="shrink-0 p-0.5 opacity-0 group-hover:opacity-100 text-gray-400 hover:text-red-500 transition-opacity"
+            @click="deleteSidebarTodo(todo, todosScope)"
+          >
+            <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+            </svg>
+          </button>
+        </div>
+
+        <!-- Done -->
+        <template v-if="displayedTodos.value.some(t => t.is_done)">
+          <div class="pt-2 border-t border-gray-100 dark:border-gray-800 mt-1">
+            <p class="text-[10px] uppercase tracking-widest text-gray-400 mb-1">Terminées</p>
+          </div>
+          <div
+            v-for="todo in displayedTodos.value.filter(t => t.is_done)"
+            :key="todo.id"
+            class="group flex items-start gap-2 py-0.5"
+          >
+            <button
+              class="shrink-0 mt-0.5 w-3.5 h-3.5 rounded border-2 border-brand-400 bg-brand-400 flex items-center justify-center"
+              @click="toggleSidebarTodo(todo, todosScope)"
+            >
+              <svg class="w-2 h-2 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"/>
+              </svg>
+            </button>
+            <span class="flex-1 text-xs text-gray-400 dark:text-gray-500 line-through leading-relaxed">{{ todo.text }}</span>
+            <button
+              class="shrink-0 p-0.5 opacity-0 group-hover:opacity-100 text-gray-400 hover:text-red-500 transition-opacity"
+              @click="deleteSidebarTodo(todo, todosScope)"
+            >
+              <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+              </svg>
+            </button>
+          </div>
+        </template>
+      </div>
+
+      <!-- Nouvelle todo -->
+      <div class="px-3 py-2 border-t border-gray-200 dark:border-gray-800 shrink-0">
+        <div class="flex gap-1.5">
+          <input
+            v-model="newTodoText"
+            type="text"
+            placeholder="Nouvelle todo…"
+            class="flex-1 text-xs rounded-lg border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 text-gray-900 dark:text-gray-100 px-2.5 py-1.5 focus:outline-none focus:ring-1 focus:ring-brand-500"
+            @keyup.enter="addSidebarTodo"
+          />
+          <button
+            class="px-2.5 py-1.5 rounded-lg bg-brand-600 hover:bg-brand-700 text-white text-xs font-medium transition-colors disabled:opacity-50"
+            :disabled="!newTodoText.trim()"
+            @click="addSidebarTodo"
+          >+</button>
+        </div>
+      </div>
     </div>
 
   </div>

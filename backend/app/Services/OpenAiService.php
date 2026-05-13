@@ -97,4 +97,33 @@ class OpenAiService
 
         return $parsed['items'] ?? [];
     }
+
+    public function summarize(
+        string $systemPrompt,
+        string $userPrompt,
+        string $model = 'gpt-4o-mini'
+    ): string {
+        if (empty($this->apiKey)) {
+            throw new \RuntimeException('OpenAI API key is not configured (OPENAI_API_KEY missing).');
+        }
+
+        $response = Http::withHeaders([
+            'Authorization' => 'Bearer ' . $this->apiKey,
+            'Content-Type'  => 'application/json',
+        ])->timeout(30)->post($this->baseUrl . '/chat/completions', [
+            'model'       => $model,
+            'messages'    => [
+                ['role' => 'system', 'content' => $systemPrompt],
+                ['role' => 'user',   'content' => $userPrompt],
+            ],
+            'temperature' => 0.5,
+            'max_tokens'  => 400,
+        ]);
+
+        if ($response->failed()) {
+            throw new \RuntimeException('OpenAI API error: ' . $response->status() . ' ' . $response->body());
+        }
+
+        return trim($response->json('choices.0.message.content', ''));
+    }
 }

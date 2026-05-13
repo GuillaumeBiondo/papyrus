@@ -18,7 +18,7 @@ class AiController extends Controller
         $verifications = AiVerification::where('is_active', true)
             ->orderBy('sort_order')
             ->orderBy('id')
-            ->get(['id', 'label', 'target', 'has_extra_input', 'extra_input_label', 'extra_input_placeholder', 'allowed_card_types', 'allow_multiple_cards']);
+            ->get(['id', 'label', 'target', 'has_extra_input', 'extra_input_label', 'extra_input_placeholder', 'allowed_card_types', 'allow_multiple_cards', 'is_premium']);
 
         return response()->json(['verifications' => $verifications]);
     }

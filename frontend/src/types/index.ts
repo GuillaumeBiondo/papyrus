@@ -24,6 +24,7 @@ export interface ActivityHour {
 export interface AppConfig {
   snapshot_interval_words: number
   premium_project_limit: number
+  summary_auto_is_premium: boolean
 }
 
 export interface AvailableFont {
@@ -206,10 +207,22 @@ export interface UserMember extends User {
   pivot?: { role: 'owner' | 'co_author' | 'beta_reader' }
 }
 
+export interface Todo {
+  id: string
+  arc_id: string | null
+  chapter_id: string | null
+  text: string
+  is_done: boolean
+  sort_order: number
+  created_at: string
+  updated_at: string
+}
+
 export interface Arc {
   id: string
   project_id: string
   title: string
+  summary: string | null
   order: number
   chapters?: Chapter[]
   updated_at: string
@@ -219,6 +232,7 @@ export interface Chapter {
   id: string
   arc_id: string
   title: string
+  summary: string | null
   order: number
   scenes?: Scene[]
   updated_at: string

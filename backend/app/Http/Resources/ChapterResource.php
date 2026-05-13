@@ -13,6 +13,7 @@ class ChapterResource extends JsonResource
             'id'         => $this->id,
             'arc_id'     => $this->arc_id,
             'title'      => $this->title,
+            'summary'    => $this->summary,
             'order'      => $this->order,
             'scenes'     => SceneResource::collection($this->whenLoaded('scenes')),
             'updated_at' => $this->updated_at,

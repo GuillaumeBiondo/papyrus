@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { onMounted, onBeforeUnmount, ref, watch } from 'vue'
+import { computed, onMounted, onBeforeUnmount, ref, watch } from 'vue'
 import type { Editor } from '@tiptap/core'
 import { aiService } from '@/services/ai.service'
 import { useAuthStore } from '@/stores/auth.store'
@@ -7,7 +7,7 @@ import DictionaryDialog from './DictionaryDialog.vue'
 import PremiumLock from '@/components/common/PremiumLock.vue'
 
 const auth = useAuthStore()
-const isPremium = () => auth.user?.effective_premium ?? false
+const isPremium = computed(() => auth.user?.effective_premium ?? false)
 
 const props = defineProps<{
   editor: Editor | undefined
@@ -38,9 +38,7 @@ const visible      = ref(false)
 const toolbarStyle = ref<{ top: string; left: string; width: string }>({ top: '0px', left: '0px', width: '420px' })
 const isMobile     = ref(window.innerWidth < 640)
 
-const W         = 420
-const H_BASE    = 36
-const H_SUBMENU = 76
+const W = 420
 
 function update() {
   const ed = props.editor
@@ -63,13 +61,11 @@ function update() {
     const w = window.innerWidth - 16
     toolbarStyle.value = { top: `${rect.bottom + GAP}px`, left: '8px', width: `${w}px` }
   } else {
-    const H        = showDictMenu.value ? H_SUBMENU : H_BASE
-    const left     = Math.max(8, Math.min(
+    const left = Math.max(8, Math.min(
       rect.left + rect.width / 2 - W / 2,
       window.innerWidth - W - 8,
     ))
-    const topAbove = rect.top - H - GAP
-    const top      = topAbove >= 8 ? topAbove : rect.bottom + GAP
+    const top = rect.bottom + GAP
     toolbarStyle.value = { top: `${top}px`, left: `${left}px`, width: `${W}px` }
   }
 
@@ -334,12 +330,8 @@ onBeforeUnmount(() => { cleanup?.(); resizeCleanup?.() })
           <span class="text-sm font-semibold leading-none">A</span><span class="text-[9px] leading-none mb-0.5">−</span>
         </button>
 
-        <!-- Saut de ligne sur mobile : force Annoter + Dico sur la 2e ligne -->
-        <div class="basis-full h-0 sm:hidden" />
-
-        <!-- ── Groupe actions (ligne 2 sur mobile, suite sur desktop) ── -->
-        <!-- Séparateur avant Annoter : visible uniquement sur desktop -->
-        <div class="hidden sm:block w-px h-4 bg-gray-200 dark:bg-gray-600 mx-0.5" />
+        <!-- Saut de ligne : force Annoter + Dico sur la 2e ligne -->
+        <div class="basis-full h-0" />
         <button
           class="flex items-center gap-1 px-2 h-7 rounded text-xs font-medium text-brand-600 dark:text-brand-400 hover:bg-brand-50 dark:hover:bg-brand-900/30 transition-colors"
           title="Annoter ce passage"
@@ -386,13 +378,13 @@ onBeforeUnmount(() => { cleanup?.(); resizeCleanup?.() })
           <div v-if="idx > 0" class="w-px h-4 bg-gray-200 dark:bg-gray-600 mx-0.5" />
           <button
             class="flex items-center gap-1 px-2 h-7 rounded text-xs transition-colors"
-            :class="type.is_premium && !isPremium()
+            :class="type.is_premium && !isPremium
               ? 'text-amber-500 hover:bg-amber-50 dark:hover:bg-amber-900/20 cursor-not-allowed'
               : 'text-gray-600 dark:text-gray-300 hover:bg-indigo-50 dark:hover:bg-indigo-900/30 hover:text-indigo-600 dark:hover:text-indigo-400'"
-            :title="type.is_premium && !isPremium() ? 'Fonctionnalité premium' : (type.description ?? type.label)"
-            @mousedown="(e) => type.is_premium && !isPremium() ? e.preventDefault() : onDictEnrich(e, type)"
+            :title="type.is_premium && !isPremium ? 'Fonctionnalité premium' : (type.description ?? type.label)"
+            @mousedown="(e) => type.is_premium && !isPremium ? e.preventDefault() : onDictEnrich(e, type)"
           >
-            <PremiumLock v-if="type.is_premium && !isPremium()" size="xs" />
+            <PremiumLock v-if="type.is_premium && !isPremium" size="xs" />
             <svg v-else class="w-3 h-3 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" :d="iconPath(type.type_key)"/>
             </svg>

@@ -17,7 +17,7 @@ class AiEnrichController extends Controller
         $types = AiEnrichType::where('is_active', true)
             ->orderBy('sort_order')
             ->orderBy('id')
-            ->get(['id', 'type_key', 'label', 'description', 'sort_order']);
+            ->get(['id', 'type_key', 'label', 'description', 'sort_order', 'is_premium']);
 
         return response()->json(['types' => $types]);
     }
