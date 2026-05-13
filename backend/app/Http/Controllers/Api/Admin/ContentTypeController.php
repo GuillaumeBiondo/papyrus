@@ -24,7 +24,7 @@ class ContentTypeController extends Controller
             'slug'        => ['required', 'string', 'max:100', 'unique:content_types,slug', 'regex:/^[a-z0-9\-]+$/'],
             'is_active'   => ['boolean'],
             'description' => ['nullable', 'string'],
-            'type_schema' => ['nullable', 'json'],
+            'type_schema' => ['nullable', 'array'],
         ]);
 
         $type = ContentType::create([
@@ -33,7 +33,7 @@ class ContentTypeController extends Controller
             'slug'        => $data['slug'],
             'is_active'   => $data['is_active'] ?? true,
             'description' => $data['description'] ?? null,
-            'type_schema' => isset($data['type_schema']) ? json_decode($data['type_schema'], true) : null,
+            'type_schema' => $data['type_schema'] ?? null,
         ]);
 
         return response()->json(['content_type' => $type], 201);
@@ -46,12 +46,8 @@ class ContentTypeController extends Controller
             'short_name'  => ['nullable', 'string', 'max:50'],
             'is_active'   => ['sometimes', 'boolean'],
             'description' => ['nullable', 'string'],
-            'type_schema' => ['nullable', 'json'],
+            'type_schema' => ['nullable', 'array'],
         ]);
-
-        if (isset($data['type_schema'])) {
-            $data['type_schema'] = json_decode($data['type_schema'], true);
-        }
 
         $contentType->update($data);
 

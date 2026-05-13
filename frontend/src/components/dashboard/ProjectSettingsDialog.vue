@@ -169,7 +169,7 @@ async function confirmDelete() {
       class="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm p-2 md:p-4"
       @click.self="emit('close')"
     >
-      <div class="w-full max-w-sm md:max-w-3xl bg-white dark:bg-gray-900 rounded-2xl shadow-2xl flex flex-col max-h-[92dvh] overflow-hidden">
+      <div class="w-full max-w-sm md:max-w-4xl bg-white dark:bg-gray-900 rounded-2xl shadow-2xl flex flex-col max-h-[92dvh] md:h-[640px] overflow-hidden">
 
         <!-- ── En-tête ── -->
         <div class="shrink-0 flex items-center justify-between px-5 md:px-6 py-4 border-b border-gray-200 dark:border-gray-800">

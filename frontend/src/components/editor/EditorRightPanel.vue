@@ -2,7 +2,9 @@
 import { computed, ref } from 'vue'
 import { useEditorStore } from '@/stores/editor.store'
 import { useAuthStore } from '@/stores/auth.store'
-import type { Annotation } from '@/types'
+import { cardsService } from '@/services/cards.service'
+import CardInlineView from './CardInlineView.vue'
+import type { Annotation, Card } from '@/types'
 
 const props = defineProps<{
   tab: 'annotations' | 'notes' | 'fiches'
@@ -139,11 +141,16 @@ const showCreateCardForm = ref(false)
 const newCardTitle = ref('')
 const newCardType = ref('personnage')
 
+const cardDisplay = computed(() => auth.user?.preferences?.cardDisplay ?? 'dot')
+
 function cardTypeColor(type: string) {
   return CARD_TYPES.find(t => t.value === type)?.color ?? '#6b7280'
 }
 function cardTypeLabel(type: string) {
   return CARD_TYPES.find(t => t.value === type)?.label ?? type
+}
+function initials(title: string) {
+  return title.trim().split(/\s+/).slice(0, 2).map(w => w[0]?.toUpperCase() ?? '').join('')
 }
 
 const filteredSceneCards = computed(() => {
@@ -167,6 +174,27 @@ async function submitCreateCard() {
   })
   newCardTitle.value = ''
   showCreateCardForm.value = false
+}
+
+// ── Dépliage fiche inline ─────────────────────────────────────
+const expandedCardId  = ref<string | null>(null)
+const expandedCards   = ref<Record<string, Card>>({})
+const expandingCardId = ref<string | null>(null)
+
+async function toggleCardExpand(cardId: string) {
+  if (expandedCardId.value === cardId) {
+    expandedCardId.value = null
+    return
+  }
+  expandedCardId.value = cardId
+  if (!expandedCards.value[cardId]) {
+    expandingCardId.value = cardId
+    try {
+      expandedCards.value[cardId] = await cardsService.show(cardId)
+    } finally {
+      expandingCardId.value = null
+    }
+  }
 }
 
 // ── Helpers ───────────────────────────────────────────────────
@@ -415,7 +443,7 @@ function relativeTime(dateStr: string) {
         </div>
         <div class="flex rounded-lg overflow-hidden border border-gray-200 dark:border-gray-700 text-xs">
           <button class="flex-1 py-1 transition-colors" :class="cardsMode === 'scene' ? 'bg-brand-600 text-white' : 'text-gray-500 hover:bg-gray-50 dark:hover:bg-gray-800'" @click="cardsMode = 'scene'">Scène</button>
-          <button class="flex-1 py-1 transition-colors border-l border-gray-200 dark:border-gray-700" :class="cardsMode === 'global' ? 'bg-brand-600 text-white' : 'text-gray-500 hover:bg-gray-50 dark:hover:bg-gray-800'" @click="cardsMode = 'global'">Global</button>
+          <button class="flex-1 py-1 transition-colors border-l border-gray-200 dark:border-gray-700" :class="cardsMode === 'global' ? 'bg-brand-600 text-white' : 'text-gray-500 hover:bg-gray-50 dark:hover:bg-gray-800'" @click="cardsMode = 'global'">{{ editor.currentProject?.content_type?.short_name ?? editor.currentProject?.content_type?.name ?? 'Global' }}</button>
         </div>
       </div>
 
@@ -426,13 +454,40 @@ function relativeTime(dateStr: string) {
         <div v-else class="flex-1 overflow-y-auto p-3 space-y-1">
           <div v-if="editor.cardsLoading" class="text-xs text-gray-400 text-center py-6">Chargement…</div>
           <template v-else>
-            <button v-for="card in filteredSceneCards" :key="card.id"
-              class="w-full text-left flex items-center gap-2 px-2 py-1.5 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors group"
-              @click="emit('card-selected', card.id)">
-              <span class="w-2 h-2 rounded-full shrink-0" :style="{ background: cardTypeColor(card.type) }" />
-              <span class="flex-1 text-xs text-gray-800 dark:text-gray-200 truncate">{{ card.title }}</span>
-              <span class="text-xs opacity-0 group-hover:opacity-60 transition-opacity shrink-0" :style="{ color: cardTypeColor(card.type) }">{{ cardTypeLabel(card.type) }}</span>
-            </button>
+            <div v-for="card in filteredSceneCards" :key="card.id" class="rounded-lg overflow-hidden">
+              <div
+                class="w-full text-left flex items-center gap-2 px-2 py-1.5 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors group cursor-pointer"
+                :class="expandedCardId === card.id ? 'bg-gray-50 dark:bg-gray-800/60' : ''"
+                @click="toggleCardExpand(card.id)"
+              >
+                <svg class="w-3 h-3 text-gray-400 shrink-0 transition-transform duration-150" :class="expandedCardId === card.id ? 'rotate-90' : ''" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
+                </svg>
+                <!-- Pastille ou avatar -->
+                <template v-if="cardDisplay === 'dot'">
+                  <span class="w-2 h-2 rounded-full shrink-0" :style="{ background: cardTypeColor(card.type) }" />
+                </template>
+                <template v-else>
+                  <div v-if="card.images?.find((i: any) => i.is_avatar)" class="w-6 h-6 rounded-full overflow-hidden shrink-0" :style="{ outline: '2px solid ' + cardTypeColor(card.type), outlineOffset: '1px' }">
+                    <img :src="card.images.find((i: any) => i.is_avatar)!.url" class="w-full h-full object-cover" />
+                  </div>
+                  <div v-else class="w-6 h-6 rounded-full flex items-center justify-center text-white text-[9px] font-semibold shrink-0" :style="{ background: cardTypeColor(card.type), outline: '2px solid ' + cardTypeColor(card.type), outlineOffset: '1px' }">
+                    {{ initials(card.title) }}
+                  </div>
+                </template>
+                <span class="flex-1 text-xs text-gray-800 dark:text-gray-200 truncate">{{ card.title }}</span>
+                <button
+                  class="opacity-0 group-hover:opacity-100 transition-opacity p-0.5 rounded hover:bg-gray-200 dark:hover:bg-gray-700 shrink-0"
+                  title="Éditer"
+                  @click.stop="emit('card-selected', card.id)"
+                >
+                  <svg class="w-3 h-3 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536M9 13l6.586-6.586a2 2 0 012.828 2.828L11.828 15.828a2 2 0 01-1.414.586H9v-2a2 2 0 01.586-1.414z"/>
+                  </svg>
+                </button>
+              </div>
+              <CardInlineView v-if="expandedCardId === card.id" :card="expandedCards[card.id]" :loading="expandingCardId === card.id" :color="cardTypeColor(card.type)" />
+            </div>
             <p v-if="!filteredSceneCards.length" class="text-xs text-gray-400 text-center py-6 leading-relaxed">Aucune fiche liée à cette scène<br><span class="text-gray-300 dark:text-gray-600">via les mots-clés.</span></p>
           </template>
         </div>
@@ -442,13 +497,29 @@ function relativeTime(dateStr: string) {
         <div class="flex-1 overflow-y-auto p-3 space-y-1">
           <div v-if="editor.cardsLoading" class="text-xs text-gray-400 text-center py-6">Chargement…</div>
           <template v-else>
-            <button v-for="card in filteredProjectCards" :key="card.id"
-              class="w-full text-left flex items-center gap-2 px-2 py-1.5 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors group"
-              @click="emit('card-selected', card.id)">
-              <span class="w-2 h-2 rounded-full shrink-0" :style="{ background: cardTypeColor(card.type) }" />
-              <span class="flex-1 text-xs text-gray-800 dark:text-gray-200 truncate">{{ card.title }}</span>
-              <span class="text-xs opacity-0 group-hover:opacity-60 transition-opacity shrink-0" :style="{ color: cardTypeColor(card.type) }">{{ cardTypeLabel(card.type) }}</span>
-            </button>
+            <div v-for="card in filteredProjectCards" :key="card.id" class="rounded-lg overflow-hidden">
+              <div
+                class="w-full text-left flex items-center gap-2 px-2 py-1.5 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors group cursor-pointer"
+                :class="expandedCardId === card.id ? 'bg-gray-50 dark:bg-gray-800/60' : ''"
+                @click="toggleCardExpand(card.id)"
+              >
+                <svg class="w-3 h-3 text-gray-400 shrink-0 transition-transform duration-150" :class="expandedCardId === card.id ? 'rotate-90' : ''" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
+                </svg>
+                <span class="w-2 h-2 rounded-full shrink-0" :style="{ background: cardTypeColor(card.type) }" />
+                <span class="flex-1 text-xs text-gray-800 dark:text-gray-200 truncate">{{ card.title }}</span>
+                <button
+                  class="opacity-0 group-hover:opacity-100 transition-opacity p-0.5 rounded hover:bg-gray-200 dark:hover:bg-gray-700 shrink-0"
+                  title="Éditer"
+                  @click.stop="emit('card-selected', card.id)"
+                >
+                  <svg class="w-3 h-3 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536M9 13l6.586-6.586a2 2 0 012.828 2.828L11.828 15.828a2 2 0 01-1.414.586H9v-2a2 2 0 01.586-1.414z"/>
+                  </svg>
+                </button>
+              </div>
+              <CardInlineView v-if="expandedCardId === card.id" :card="expandedCards[card.id]" :loading="expandingCardId === card.id" :color="cardTypeColor(card.type)" />
+            </div>
             <p v-if="!filteredProjectCards.length" class="text-xs text-gray-400 text-center py-6">Aucune fiche.</p>
           </template>
         </div>

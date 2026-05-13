@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { onMounted, onUnmounted, ref, watch } from 'vue'
+import { computed, onMounted, onUnmounted, ref, watch } from 'vue'
 import { useAiVerification } from '@/composables/useAiVerification'
 import { useRoute } from 'vue-router'
 import { useEditorStore } from '@/stores/editor.store'
@@ -25,6 +25,15 @@ const auth   = useAuthStore()
 const suggestions = useSuggestionsStore()
 
 const vFocus = { mounted: (el: HTMLElement) => el.focus() }
+
+// ── Objectif de mots (scène) ──────────────────────────────────
+const sceneWordGoal = computed(() => {
+  const proj = editor.currentProject
+  if (proj?.word_goal_scene) return proj.word_goal_scene
+  const prefs = auth.user?.preferences?.wordGoals as Record<string, number | undefined> | undefined
+  if (prefs?.scene) return prefs.scene
+  return auth.user?.word_goal_defaults?.scene ?? 0
+})
 
 // ── Mobile detection ──────────────────────────────────────────
 const isMobile = ref(window.innerWidth < 768)
@@ -615,8 +624,24 @@ const rightPanelPt = { root: { class: 'flex flex-col overflow-hidden h-full bord
               </div>
             </div>
 
-            <span class="ml-auto text-xs text-gray-400 hidden md:inline">
-              {{ editor.saving ? 'Enregistrement…' : `${editor.activeScene.word_count ?? 0} mots` }}
+            <span class="ml-auto hidden md:flex items-center gap-2">
+              <template v-if="editor.saving">
+                <span class="text-xs text-gray-400">Enregistrement…</span>
+              </template>
+              <template v-else>
+                <span class="text-xs" :class="sceneWordGoal && (editor.activeScene.word_count ?? 0) >= sceneWordGoal ? 'text-green-500 dark:text-green-400 font-medium' : 'text-gray-400'">
+                  {{ (editor.activeScene.word_count ?? 0).toLocaleString('fr-FR') }}
+                  <template v-if="sceneWordGoal"> / {{ sceneWordGoal.toLocaleString('fr-FR') }}</template>
+                  mots
+                </span>
+                <span v-if="sceneWordGoal" class="w-16 h-1.5 rounded-full bg-gray-200 dark:bg-gray-700 overflow-hidden">
+                  <span
+                    class="block h-full rounded-full transition-all duration-500"
+                    :class="(editor.activeScene.word_count ?? 0) >= sceneWordGoal ? 'bg-green-500' : 'bg-brand-500'"
+                    :style="{ width: `${Math.min(100, Math.round(((editor.activeScene.word_count ?? 0) / sceneWordGoal) * 100))}%` }"
+                  />
+                </span>
+              </template>
             </span>
 
             <!-- Boutons snapshot + timeline + correcteur -->

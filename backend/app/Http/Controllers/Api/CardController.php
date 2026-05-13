@@ -24,7 +24,7 @@ class CardController extends Controller
     {
         $this->authorize('viewAny', [Card::class, $project]);
 
-        $query = $project->cards()->with('attributes');
+        $query = $project->cards()->with(['attributes', 'images']);
 
         if ($request->filled('type')) {
             $query->where('type', $request->type);
@@ -141,7 +141,7 @@ class CardController extends Controller
             ->whereHas('keywords', function ($q) use ($scene) {
                 $q->whereHas('occurrences', fn ($q2) => $q2->where('scene_id', $scene->id));
             })
-            ->with(['keywords'])
+            ->with(['keywords', 'images'])
             ->orderBy('title')
             ->get();
 
