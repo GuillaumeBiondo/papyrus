@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { computed, onMounted, onUnmounted, ref, watch } from 'vue'
+import PremiumLock from '@/components/common/PremiumLock.vue'
 import { useAiVerification } from '@/composables/useAiVerification'
 import { useRoute } from 'vue-router'
 import { useEditorStore } from '@/stores/editor.store'
@@ -715,11 +716,15 @@ const rightPanelPt = { root: { class: 'flex flex-col overflow-hidden h-full bord
                   <button
                     v-for="v in aiVerifications"
                     :key="v.id"
-                    class="w-full flex items-center gap-2.5 px-3 py-2.5 text-left text-xs hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors text-gray-700 dark:text-gray-300 border-b border-gray-100 dark:border-gray-800 last:border-0"
-                    :title="v.description ?? undefined"
-                    @click.stop="startVerification(v)"
+                    class="w-full flex items-center gap-2.5 px-3 py-2.5 text-left text-xs transition-colors border-b border-gray-100 dark:border-gray-800 last:border-0"
+                    :class="v.is_premium && !auth.user?.effective_premium
+                      ? 'text-amber-500 cursor-not-allowed hover:bg-amber-50 dark:hover:bg-amber-900/20'
+                      : 'text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800'"
+                    :title="v.is_premium && !auth.user?.effective_premium ? 'Fonctionnalité premium' : (v.description ?? undefined)"
+                    @click.stop="v.is_premium && !auth.user?.effective_premium ? null : startVerification(v)"
                   >
-                    <svg class="w-3.5 h-3.5 shrink-0 text-brand-500" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24">
+                    <PremiumLock v-if="v.is_premium && !auth.user?.effective_premium" size="xs" />
+                    <svg v-else class="w-3.5 h-3.5 shrink-0 text-brand-500" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24">
                       <path stroke-linecap="round" stroke-linejoin="round" d="M9.75 3.104v5.714a2.25 2.25 0 01-.659 1.591L5 14.5M9.75 3.104c-.251.023-.501.05-.75.082m.75-.082a24.301 24.301 0 014.5 0m0 0v5.714c0 .597.237 1.17.659 1.591L19.8 15.3M14.25 3.104c.251.023.501.05.75.082M19.8 15.3l-1.57.393A9.065 9.065 0 0112 15a9.065 9.065 0 00-6.23-.693L5 14.5m14.8.8l1.402 1.402c1 1 .03 2.798-1.345 2.798H4.543c-1.376 0-2.345-1.798-1.345-2.798L4.2 15.3" />
                     </svg>
                     <span>{{ v.label }}</span>

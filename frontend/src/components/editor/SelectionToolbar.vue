@@ -2,7 +2,12 @@
 import { onMounted, onBeforeUnmount, ref, watch } from 'vue'
 import type { Editor } from '@tiptap/core'
 import { aiService } from '@/services/ai.service'
+import { useAuthStore } from '@/stores/auth.store'
 import DictionaryDialog from './DictionaryDialog.vue'
+import PremiumLock from '@/components/common/PremiumLock.vue'
+
+const auth = useAuthStore()
+const isPremium = () => auth.user?.effective_premium ?? false
 
 const props = defineProps<{
   editor: Editor | undefined
@@ -155,7 +160,7 @@ function onAnnotate(e: MouseEvent) {
 
 // ── Dictionnaire ──────────────────────────────────────────────
 
-type EnrichTypeRef = { id: number; type_key: string; label: string; description: string | null }
+type EnrichTypeRef = { id: number; type_key: string; label: string; description: string | null; is_premium: boolean }
 
 const enrichTypes      = ref<EnrichTypeRef[]>([])
 const showDictMenu     = ref(false)
@@ -380,11 +385,15 @@ onBeforeUnmount(() => { cleanup?.(); resizeCleanup?.() })
         <template v-for="(type, idx) in enrichTypes" :key="type.id">
           <div v-if="idx > 0" class="w-px h-4 bg-gray-200 dark:bg-gray-600 mx-0.5" />
           <button
-            class="flex items-center gap-1 px-2 h-7 rounded text-xs text-gray-600 dark:text-gray-300 hover:bg-indigo-50 dark:hover:bg-indigo-900/30 hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors"
-            :title="type.description ?? type.label"
-            @mousedown="(e) => onDictEnrich(e, type)"
+            class="flex items-center gap-1 px-2 h-7 rounded text-xs transition-colors"
+            :class="type.is_premium && !isPremium()
+              ? 'text-amber-500 hover:bg-amber-50 dark:hover:bg-amber-900/20 cursor-not-allowed'
+              : 'text-gray-600 dark:text-gray-300 hover:bg-indigo-50 dark:hover:bg-indigo-900/30 hover:text-indigo-600 dark:hover:text-indigo-400'"
+            :title="type.is_premium && !isPremium() ? 'Fonctionnalité premium' : (type.description ?? type.label)"
+            @mousedown="(e) => type.is_premium && !isPremium() ? e.preventDefault() : onDictEnrich(e, type)"
           >
-            <svg class="w-3 h-3 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <PremiumLock v-if="type.is_premium && !isPremium()" size="xs" />
+            <svg v-else class="w-3 h-3 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" :d="iconPath(type.type_key)"/>
             </svg>
             {{ type.label }}
