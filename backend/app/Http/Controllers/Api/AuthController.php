@@ -10,7 +10,6 @@ use App\Models\LoginEvent;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\Hash;
 
 class AuthController extends Controller
 {
@@ -53,7 +52,7 @@ class AuthController extends Controller
     public function updatePassword(UpdatePasswordRequest $request): JsonResponse
     {
         $request->user()->update([
-            'password' => Hash::make($request->password),
+            'password' => $request->password,
         ]);
 
         return response()->json(['message' => 'Mot de passe mis à jour.']);

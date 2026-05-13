@@ -7,7 +7,6 @@ use App\Models\User;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Hash;
 use Illuminate\Validation\Rules\Password;
 
 class UserController extends Controller
@@ -94,7 +93,7 @@ class UserController extends Controller
         $user = User::create([
             'name'     => $data['name'],
             'email'    => $data['email'],
-            'password' => Hash::make($data['password']),
+            'password' => $data['password'],
         ]);
 
         return response()->json([
