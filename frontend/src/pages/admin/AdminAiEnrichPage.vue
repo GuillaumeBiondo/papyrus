@@ -70,6 +70,11 @@ async function toggleActive(t: AiEnrichType) {
   await adminService.updateAiEnrichType(t.id, { is_active: t.is_active })
 }
 
+async function togglePremium(t: AiEnrichType) {
+  t.is_premium = !t.is_premium
+  await adminService.updateAiEnrichType(t.id, { is_premium: t.is_premium })
+}
+
 const confirmDeleteId = ref<number | null>(null)
 async function confirmDelete(id: number) {
   await adminService.deleteAiEnrichType(id)
@@ -223,6 +228,13 @@ onMounted(async () => {
           </div>
 
           <div class="flex items-center gap-2 shrink-0">
+            <button
+              :title="t.is_premium ? 'Premium — cliquer pour rendre gratuit' : 'Gratuit — cliquer pour réserver au premium'"
+              :class="['w-9 h-5 rounded-full transition-colors relative', t.is_premium ? 'bg-amber-500' : 'bg-gray-300 dark:bg-gray-700']"
+              @click="togglePremium(t)"
+            >
+              <span :class="['absolute left-0 top-0.5 w-4 h-4 rounded-full bg-white shadow transition-transform', t.is_premium ? 'translate-x-4' : 'translate-x-0.5']"/>
+            </button>
             <button
               :title="t.is_active ? 'Désactiver' : 'Activer'"
               :class="['w-9 h-5 rounded-full transition-colors relative', t.is_active ? 'bg-indigo-500' : 'bg-gray-300 dark:bg-gray-700']"

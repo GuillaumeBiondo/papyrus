@@ -74,6 +74,11 @@ async function toggleActive(v: AiVerification) {
   await adminService.updateAiVerification(v.id, { is_active: v.is_active })
 }
 
+async function togglePremium(v: AiVerification) {
+  v.is_premium = !v.is_premium
+  await adminService.updateAiVerification(v.id, { is_premium: v.is_premium })
+}
+
 const confirmDeleteId = ref<number | null>(null)
 async function confirmDelete(id: number) {
   await adminService.deleteAiVerification(id)
@@ -262,6 +267,13 @@ onMounted(async () => {
           </div>
 
           <div class="flex items-center gap-2 shrink-0">
+            <button
+              :title="v.is_premium ? 'Premium — cliquer pour rendre gratuit' : 'Gratuit — cliquer pour réserver au premium'"
+              :class="['w-9 h-5 rounded-full transition-colors relative', v.is_premium ? 'bg-amber-500' : 'bg-gray-300 dark:bg-gray-700']"
+              @click="togglePremium(v)"
+            >
+              <span :class="['absolute left-0 top-0.5 w-4 h-4 rounded-full bg-white shadow transition-transform', v.is_premium ? 'translate-x-4' : 'translate-x-0.5']"/>
+            </button>
             <button
               :title="v.is_active ? 'Désactiver' : 'Activer'"
               :class="['w-9 h-5 rounded-full transition-colors relative', v.is_active ? 'bg-brand-500' : 'bg-gray-300 dark:bg-gray-700']"

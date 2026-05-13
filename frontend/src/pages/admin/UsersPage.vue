@@ -16,6 +16,20 @@ const createError = ref('')
 // Preferences detail
 const expanded = ref<string | null>(null)
 
+// Premium override
+const togglingPremium = ref<string | null>(null)
+
+async function togglePremiumOverride(u: AdminUser) {
+  togglingPremium.value = u.id
+  try {
+    const { premium_override, effective_premium } = await adminService.updatePremiumOverride(u.id, !u.premium_override)
+    const idx = users.value.findIndex(x => x.id === u.id)
+    if (idx !== -1) users.value[idx] = { ...users.value[idx]!, premium_override, effective_premium }
+  } finally {
+    togglingPremium.value = null
+  }
+}
+
 // Maintenance bypass
 const togglingBypass = ref<string | null>(null)
 
@@ -135,6 +149,7 @@ function hasPreferences(u: AdminUser) {
               <th class="th text-right">Scènes</th>
               <th class="th text-right">Mots</th>
               <th class="th text-right">Moy./projet</th>
+              <th class="th text-center">Premium</th>
               <th class="th">Maint.</th>
               <th class="th">Bloqué</th>
               <th class="th">Prefs</th>
@@ -160,6 +175,31 @@ function hasPreferences(u: AdminUser) {
                 <td class="td text-right text-gray-500">{{ u.scenes_count }}</td>
                 <td class="td text-right text-gray-700 dark:text-gray-300">{{ formatNumber(u.total_words) }}</td>
                 <td class="td text-right text-gray-500">{{ formatNumber(u.avg_words_per_project) }}</td>
+                <td class="td text-center">
+                  <div class="flex items-center justify-center gap-1.5">
+                    <!-- Badge "payé" -->
+                    <span
+                      v-if="u.is_premium"
+                      class="text-[10px] font-semibold px-1.5 py-0.5 rounded bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-400"
+                      title="Abonnement actif"
+                    >★ payé</span>
+                    <!-- Toggle override -->
+                    <button
+                      v-if="u.role !== 'admin'"
+                      class="relative inline-flex h-5 w-9 rounded-full transition-colors"
+                      :class="[
+                        u.premium_override ? 'bg-amber-500' : 'bg-gray-300 dark:bg-gray-700',
+                        togglingPremium === u.id ? 'opacity-50 pointer-events-none' : '',
+                      ]"
+                      :title="u.premium_override ? 'Premium forcé par admin' : 'Forcer le premium'"
+                      @click="togglePremiumOverride(u)"
+                    >
+                      <span class="absolute top-0.5 left-0.5 h-4 w-4 rounded-full bg-white shadow transition-transform"
+                        :class="u.premium_override ? 'translate-x-4' : 'translate-x-0'" />
+                    </button>
+                    <span v-else class="text-xs text-gray-300 dark:text-gray-700">—</span>
+                  </div>
+                </td>
                 <td class="td">
                   <!-- Bypass maintenance (désactivé pour les admins) -->
                   <button

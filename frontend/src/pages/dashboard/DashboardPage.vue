@@ -4,14 +4,24 @@ import { useRouter } from 'vue-router'
 import { useProjectsStore } from '@/stores/projects.store'
 import { useAuthStore } from '@/stores/auth.store'
 import { useThemeStore } from '@/stores/theme.store'
+import { useAppConfigStore } from '@/stores/appConfig.store'
 import { ACCENT_PALETTES } from '@/utils/accentColors'
 import ProjectSettingsDialog from '@/components/dashboard/ProjectSettingsDialog.vue'
+import PremiumLock from '@/components/common/PremiumLock.vue'
 import type { Project } from '@/types'
 
 const router = useRouter()
 const projects = useProjectsStore()
 const auth = useAuthStore()
 const theme = useThemeStore()
+const appConfig = useAppConfigStore()
+
+// ── Premium ───────────────────────────────────────────────
+const isPremium = computed(() => auth.user?.effective_premium ?? false)
+const projectLimit = computed(() => appConfig.config?.premium_project_limit ?? 1)
+const atProjectLimit = computed(() =>
+  !isPremium.value && projects.projects.length >= projectLimit.value
+)
 
 // ── Création ──────────────────────────────────────────────
 const showNewForm = ref(false)
@@ -19,7 +29,7 @@ const newTitle = ref('')
 const newGenre = ref('')
 const creating = ref(false)
 
-onMounted(() => projects.fetchAll())
+onMounted(() => { projects.fetchAll(); appConfig.fetch() })
 
 async function createProject() {
   if (!newTitle.value.trim()) return
@@ -295,14 +305,17 @@ function onProjectDeleted(id: string) {
 
       <!-- Card "+ Nouveau roman" ──────────────────── -->
       <button
-        class="rounded-xl border-2 border-dashed border-gray-300 dark:border-gray-700
-               hover:border-brand-300 dark:hover:border-brand-600
-               text-gray-400 hover:text-brand-600 transition-colors
+        class="rounded-xl border-2 border-dashed transition-colors
                flex flex-col items-center justify-center gap-2 min-h-48 py-8"
-        @click="showNewForm = true"
+        :class="atProjectLimit
+          ? 'border-amber-300 dark:border-amber-800 text-amber-500 cursor-not-allowed'
+          : 'border-gray-300 dark:border-gray-700 hover:border-brand-300 dark:hover:border-brand-600 text-gray-400 hover:text-brand-600'"
+        :title="atProjectLimit ? `Limite de ${projectLimit} projet(s) atteinte — passez en premium` : 'Créer un nouveau projet'"
+        @click="atProjectLimit ? null : showNewForm = true"
       >
-        <span class="text-2xl leading-none">+</span>
-        <span class="text-sm">Nouveau roman</span>
+        <PremiumLock v-if="atProjectLimit" size="md" />
+        <span v-else class="text-2xl leading-none">+</span>
+        <span class="text-sm">{{ atProjectLimit ? 'Premium requis' : 'Nouveau roman' }}</span>
       </button>
     </div>
 

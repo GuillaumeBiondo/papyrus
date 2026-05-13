@@ -12,6 +12,7 @@ class AppConfigController extends Controller
     {
         return response()->json([
             'snapshot_interval_words' => (int) (Setting::find('snapshot_interval_words')?->value ?? 100),
+            'premium_project_limit'   => (int) (Setting::find('premium.project_limit')?->value ?? 1),
         ]);
     }
 }

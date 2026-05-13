@@ -162,4 +162,19 @@ export const adminService = {
   async reorderAiEnrichTypes(order: number[]): Promise<void> {
     await api.put('/admin/ai-enrich-types/reorder', { order })
   },
+
+  async updatePremiumOverride(userId: string, premiumOverride: boolean): Promise<{ premium_override: boolean; effective_premium: boolean }> {
+    const { data } = await api.put(`/admin/users/${userId}/premium-override`, { premium_override: premiumOverride })
+    return data
+  },
+
+  async getWorkshops(): Promise<{ workshops: import('@/types').Workshop[] }> {
+    const { data } = await api.get('/admin/workshops')
+    return data
+  },
+
+  async updateWorkshop(id: number, payload: Partial<import('@/types').Workshop>): Promise<{ workshop: import('@/types').Workshop }> {
+    const { data } = await api.put(`/admin/workshops/${id}`, payload)
+    return data
+  },
 }

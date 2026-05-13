@@ -16,6 +16,7 @@ const form = reactive({
   short_name: '',
   slug: '',
   is_active: true,
+  is_premium: false,
   description: '',
   type_schema: '',
 })
@@ -38,6 +39,7 @@ function openCreate() {
   form.short_name = ''
   form.slug = ''
   form.is_active = true
+  form.is_premium = false
   form.description = ''
   form.type_schema = '{}'
   formError.value = ''
@@ -50,10 +52,20 @@ function openEdit(ct: ContentType) {
   form.short_name = ct.short_name ?? ''
   form.slug = ct.slug
   form.is_active = ct.is_active
+  form.is_premium = ct.is_premium
   form.description = ct.description ?? ''
   form.type_schema = ct.type_schema ? JSON.stringify(ct.type_schema, null, 2) : '{}'
   formError.value = ''
   showForm.value = true
+}
+
+async function togglePremium(ct: ContentType) {
+  ct.is_premium = !ct.is_premium
+  try {
+    await adminService.updateContentType(ct.id, { is_premium: ct.is_premium })
+  } catch {
+    ct.is_premium = !ct.is_premium
+  }
 }
 
 async function toggleActive(ct: ContentType) {
@@ -85,6 +97,7 @@ async function save() {
       short_name:  form.short_name.trim() || null,
       slug:        form.slug,
       is_active:   form.is_active,
+      is_premium:  form.is_premium,
       description: form.description || null,
       type_schema: JSON.parse(form.type_schema) as Record<string, unknown>,
     }
@@ -125,6 +138,7 @@ async function save() {
             <th class="th">Slug</th>
             <th class="th text-right">Projets</th>
             <th class="th text-center">Actif</th>
+            <th class="th text-center">Premium</th>
             <th class="th">Description</th>
             <th class="th"></th>
           </tr>
@@ -149,6 +163,16 @@ async function save() {
                   class="absolute top-0.5 left-0.5 h-4 w-4 rounded-full bg-white shadow transition-transform"
                   :class="ct.is_active ? 'translate-x-4' : 'translate-x-0'"
                 />
+              </button>
+            </td>
+            <td class="td text-center">
+              <button
+                class="relative inline-flex h-5 w-9 rounded-full transition-colors"
+                :class="ct.is_premium ? 'bg-amber-500' : 'bg-gray-300 dark:bg-gray-700'"
+                @click="togglePremium(ct)"
+              >
+                <span class="absolute top-0.5 left-0.5 h-4 w-4 rounded-full bg-white shadow transition-transform"
+                  :class="ct.is_premium ? 'translate-x-4' : 'translate-x-0'" />
               </button>
             </td>
             <td class="td text-gray-500 max-w-xs truncate">{{ ct.description || '—' }}</td>
@@ -184,19 +208,31 @@ async function save() {
               </div>
             </div>
 
-            <div class="flex items-center gap-3">
-              <button
-                type="button"
-                class="relative inline-flex h-5 w-9 rounded-full transition-colors"
-                :class="form.is_active ? 'bg-brand-600' : 'bg-gray-300 dark:bg-gray-700'"
-                @click="form.is_active = !form.is_active"
-              >
-                <span
-                  class="absolute top-0.5 left-0.5 h-4 w-4 rounded-full bg-white shadow transition-transform"
-                  :class="form.is_active ? 'translate-x-4' : 'translate-x-0'"
-                />
-              </button>
-              <span class="text-sm text-gray-700 dark:text-gray-300">Actif</span>
+            <div class="flex items-center gap-6">
+              <div class="flex items-center gap-3">
+                <button
+                  type="button"
+                  class="relative inline-flex h-5 w-9 rounded-full transition-colors"
+                  :class="form.is_active ? 'bg-brand-600' : 'bg-gray-300 dark:bg-gray-700'"
+                  @click="form.is_active = !form.is_active"
+                >
+                  <span class="absolute top-0.5 left-0.5 h-4 w-4 rounded-full bg-white shadow transition-transform"
+                    :class="form.is_active ? 'translate-x-4' : 'translate-x-0'" />
+                </button>
+                <span class="text-sm text-gray-700 dark:text-gray-300">Actif</span>
+              </div>
+              <div class="flex items-center gap-3">
+                <button
+                  type="button"
+                  class="relative inline-flex h-5 w-9 rounded-full transition-colors"
+                  :class="form.is_premium ? 'bg-amber-500' : 'bg-gray-300 dark:bg-gray-700'"
+                  @click="form.is_premium = !form.is_premium"
+                >
+                  <span class="absolute top-0.5 left-0.5 h-4 w-4 rounded-full bg-white shadow transition-transform"
+                    :class="form.is_premium ? 'translate-x-4' : 'translate-x-0'" />
+                </button>
+                <span class="text-sm text-gray-700 dark:text-gray-300">Premium</span>
+              </div>
             </div>
 
             <div>

@@ -23,6 +23,7 @@ export interface ActivityHour {
 
 export interface AppConfig {
   snapshot_interval_words: number
+  premium_project_limit: number
 }
 
 export interface AvailableFont {
