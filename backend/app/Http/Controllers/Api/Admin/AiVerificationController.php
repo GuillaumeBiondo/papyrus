@@ -31,6 +31,7 @@ class AiVerificationController extends Controller
             'allowed_card_types'      => ['nullable', 'array'],
             'allowed_card_types.*'    => ['string', 'max:50'],
             'allow_multiple_cards'    => ['sometimes', 'boolean'],
+            'is_premium'              => ['sometimes', 'boolean'],
         ]);
 
         $data['sort_order'] = AiVerification::max('sort_order') + 1;
@@ -55,6 +56,7 @@ class AiVerificationController extends Controller
             'allowed_card_types'      => ['nullable', 'array'],
             'allowed_card_types.*'    => ['string', 'max:50'],
             'allow_multiple_cards'    => ['sometimes', 'boolean'],
+            'is_premium'              => ['sometimes', 'boolean'],
         ]);
 
         $aiVerification->update($data);

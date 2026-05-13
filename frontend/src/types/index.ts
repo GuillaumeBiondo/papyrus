@@ -69,6 +69,9 @@ export interface User {
   preferences: Partial<UserPreferences>
   word_goal_defaults: Required<WordGoals>
   last_login_at: string | null
+  is_premium: boolean
+  premium_override: boolean
+  effective_premium: boolean
   currentRole?: 'owner' | 'co_author' | 'beta_reader'
 }
 
@@ -78,6 +81,7 @@ export interface ContentType {
   short_name: string | null
   slug: string
   is_active: boolean
+  is_premium: boolean
   type_schema: Record<string, unknown> | null
   description: string | null
   projects_count?: number
@@ -128,6 +132,9 @@ export interface AdminUser {
   maintenance_bypass: boolean
   is_blocked: boolean
   block_reason: string | null
+  is_premium: boolean
+  premium_override: boolean
+  effective_premium: boolean
   last_login_at: string | null
   created_at: string
   preferences: Record<string, unknown>
@@ -137,6 +144,29 @@ export interface AdminUser {
   scenes_count: number
   total_words: number
   avg_words_per_project: number
+}
+
+export interface Workshop {
+  id: number
+  key: string
+  label: string
+  description: string | null
+  is_active: boolean
+  is_premium: boolean
+  sort_order: number
+  created_at: string
+  updated_at: string
+}
+
+export interface AiEnrichType {
+  id: number
+  type_key: string
+  label: string
+  description: string | null
+  is_active: boolean
+  is_premium: boolean
+  system_prompt: string
+  sort_order: number
 }
 
 export interface MaintenanceStatus {
@@ -298,6 +328,7 @@ export interface AiVerification {
   label: string
   description: string | null
   is_active: boolean
+  is_premium: boolean
   target: 'selection' | 'all' | 'both'
   has_extra_input: boolean
   extra_input_label: string | null

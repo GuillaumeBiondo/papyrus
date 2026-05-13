@@ -32,6 +32,7 @@ use App\Http\Controllers\Api\AiEnrichController;
 use App\Http\Controllers\Api\Admin\AiEnrichController as AdminAiEnrichController;
 use App\Http\Controllers\Api\Admin\AiVerificationController as AdminAiVerificationController;
 use App\Http\Controllers\Api\Admin\AiStatsController as AdminAiStatsController;
+use App\Http\Controllers\Api\Admin\WorkshopController as AdminWorkshopController;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -214,6 +215,7 @@ Route::prefix('v1')->middleware(['auth:sanctum', 'throttle:60,1', 'user_blocked'
         Route::post('users', [AdminUserController::class, 'store']);
         Route::put('users/{user}/maintenance-bypass', [AdminUserController::class, 'updateMaintenanceBypass']);
         Route::put('users/{user}/block', [AdminUserController::class, 'updateBlockedStatus']);
+        Route::put('users/{user}/premium-override', [AdminUserController::class, 'updatePremiumOverride']);
 
         Route::get('content-types', [AdminContentTypeController::class, 'index']);
         Route::post('content-types', [AdminContentTypeController::class, 'store']);
@@ -247,5 +249,9 @@ Route::prefix('v1')->middleware(['auth:sanctum', 'throttle:60,1', 'user_blocked'
         Route::put('ai-enrich-types/reorder', [AdminAiEnrichController::class, 'reorder']);
         Route::put('ai-enrich-types/{aiEnrichType}', [AdminAiEnrichController::class, 'update']);
         Route::delete('ai-enrich-types/{aiEnrichType}', [AdminAiEnrichController::class, 'destroy']);
+
+        Route::get('workshops', [AdminWorkshopController::class, 'index']);
+        Route::put('workshops/reorder', [AdminWorkshopController::class, 'reorder']);
+        Route::put('workshops/{workshop}', [AdminWorkshopController::class, 'update']);
     });
 });

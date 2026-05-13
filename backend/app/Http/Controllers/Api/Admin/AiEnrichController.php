@@ -22,6 +22,7 @@ class AiEnrichController extends Controller
             'label'         => ['required', 'string', 'max:100'],
             'description'   => ['nullable', 'string', 'max:500'],
             'is_active'     => ['boolean'],
+            'is_premium'    => ['boolean'],
             'system_prompt' => ['required', 'string'],
             'sort_order'    => ['integer'],
         ]);
@@ -40,6 +41,7 @@ class AiEnrichController extends Controller
             'label'         => ['sometimes', 'string', 'max:100'],
             'description'   => ['nullable', 'string', 'max:500'],
             'is_active'     => ['sometimes', 'boolean'],
+            'is_premium'    => ['sometimes', 'boolean'],
             'system_prompt' => ['sometimes', 'string'],
             'sort_order'    => ['sometimes', 'integer'],
         ]);

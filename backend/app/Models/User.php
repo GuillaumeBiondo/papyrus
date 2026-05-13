@@ -14,7 +14,7 @@ use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Spatie\Permission\Traits\HasRoles;
 
-#[Fillable(['name', 'email', 'password', 'role', 'maintenance_bypass', 'is_blocked', 'block_reason', 'bio', 'avatar_stored_name', 'preferences', 'last_login_at'])]
+#[Fillable(['name', 'email', 'password', 'role', 'maintenance_bypass', 'is_blocked', 'block_reason', 'is_premium', 'premium_override', 'bio', 'avatar_stored_name', 'preferences', 'last_login_at'])]
 #[Hidden(['password', 'remember_token'])]
 class User extends Authenticatable
 {
@@ -30,12 +30,19 @@ class User extends Authenticatable
             'preferences'         => 'array',
             'maintenance_bypass'  => 'boolean',
             'is_blocked'          => 'boolean',
+            'is_premium'          => 'boolean',
+            'premium_override'    => 'boolean',
         ];
     }
 
     public function isAdmin(): bool
     {
         return $this->role === 'admin';
+    }
+
+    public function isPremium(): bool
+    {
+        return (bool) $this->is_premium || (bool) $this->premium_override;
     }
 
     public function ownedProjects(): HasMany

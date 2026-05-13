@@ -59,21 +59,24 @@ class UserController extends Controller
             ->get()
             ->map(function (User $user) {
                 return [
-                    'id'            => $user->id,
-                    'name'          => $user->name,
-                    'email'         => $user->email,
+                    'id'                 => $user->id,
+                    'name'               => $user->name,
+                    'email'              => $user->email,
                     'role'               => $user->role,
                     'maintenance_bypass' => (bool) $user->maintenance_bypass,
                     'is_blocked'         => (bool) $user->is_blocked,
                     'block_reason'       => $user->block_reason,
+                    'is_premium'         => (bool) $user->is_premium,
+                    'premium_override'   => (bool) $user->premium_override,
+                    'effective_premium'  => $user->isPremium(),
                     'last_login_at'      => $user->last_login_at?->toISOString(),
-                    'created_at'    => $user->created_at->toISOString(),
-                    'preferences'   => $user->preferences ?? [],
-                    'projects_count' => (int) $user->projects_count,
-                    'arcs_count'    => (int) $user->arcs_count,
-                    'chapters_count' => (int) $user->chapters_count,
-                    'scenes_count'  => (int) $user->scenes_count,
-                    'total_words'   => (int) $user->total_words,
+                    'created_at'         => $user->created_at->toISOString(),
+                    'preferences'        => $user->preferences ?? [],
+                    'projects_count'     => (int) $user->projects_count,
+                    'arcs_count'         => (int) $user->arcs_count,
+                    'chapters_count'     => (int) $user->chapters_count,
+                    'scenes_count'       => (int) $user->scenes_count,
+                    'total_words'        => (int) $user->total_words,
                     'avg_words_per_project' => $user->projects_count > 0
                         ? (int) round($user->total_words / $user->projects_count)
                         : 0,
@@ -133,6 +136,20 @@ class UserController extends Controller
         return response()->json([
             'is_blocked'   => (bool) $user->is_blocked,
             'block_reason' => $user->block_reason,
+        ]);
+    }
+
+    public function updatePremiumOverride(Request $request, User $user): JsonResponse
+    {
+        $data = $request->validate([
+            'premium_override' => ['required', 'boolean'],
+        ]);
+
+        $user->update(['premium_override' => $data['premium_override']]);
+
+        return response()->json([
+            'premium_override'  => (bool) $user->premium_override,
+            'effective_premium' => $user->isPremium(),
         ]);
     }
 }

@@ -11,11 +11,13 @@ class AiEnrichType extends Model
         'label',
         'description',
         'is_active',
+        'is_premium',
         'system_prompt',
         'sort_order',
     ];
 
     protected $casts = [
-        'is_active' => 'boolean',
+        'is_active'  => 'boolean',
+        'is_premium' => 'boolean',
     ];
 }

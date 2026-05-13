@@ -18,12 +18,14 @@ class AiVerification extends Model
         'sort_order',
         'allowed_card_types',
         'allow_multiple_cards',
+        'is_premium',
     ];
 
     protected function casts(): array
     {
         return [
             'is_active'            => 'boolean',
+            'is_premium'           => 'boolean',
             'has_extra_input'      => 'boolean',
             'sort_order'           => 'integer',
             'allowed_card_types'   => 'array',

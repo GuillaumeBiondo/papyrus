@@ -15,6 +15,7 @@ class ContentType extends Model
         'short_name',
         'slug',
         'is_active',
+        'is_premium',
         'type_schema',
         'description',
     ];
@@ -23,6 +24,7 @@ class ContentType extends Model
     {
         return [
             'is_active'   => 'boolean',
+            'is_premium'  => 'boolean',
             'type_schema' => 'array',
         ];
     }

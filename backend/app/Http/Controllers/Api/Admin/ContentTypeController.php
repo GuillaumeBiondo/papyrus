@@ -23,6 +23,7 @@ class ContentTypeController extends Controller
             'short_name'  => ['nullable', 'string', 'max:50'],
             'slug'        => ['required', 'string', 'max:100', 'unique:content_types,slug', 'regex:/^[a-z0-9\-]+$/'],
             'is_active'   => ['boolean'],
+            'is_premium'  => ['boolean'],
             'description' => ['nullable', 'string'],
             'type_schema' => ['nullable', 'array'],
         ]);
@@ -45,6 +46,7 @@ class ContentTypeController extends Controller
             'name'        => ['sometimes', 'string', 'max:100'],
             'short_name'  => ['nullable', 'string', 'max:50'],
             'is_active'   => ['sometimes', 'boolean'],
+            'is_premium'  => ['sometimes', 'boolean'],
             'description' => ['nullable', 'string'],
             'type_schema' => ['nullable', 'array'],
         ]);

@@ -14,16 +14,19 @@ class UserResource extends JsonResource
         $goals = Setting::whereIn('key', $goalKeys)->pluck('value', 'key');
 
         return [
-            'id'            => $this->id,
-            'name'          => $this->name,
-            'email'         => $this->email,
-            'role'          => $this->role,
-            'bio'           => $this->bio,
-            'avatar_url'    => $this->avatar_stored_name
-                                ? route('profile.avatar')
-                                : null,
-            'preferences'   => $this->preferences ?? [],
-            'last_login_at' => $this->last_login_at?->toISOString(),
+            'id'               => $this->id,
+            'name'             => $this->name,
+            'email'            => $this->email,
+            'role'             => $this->role,
+            'bio'              => $this->bio,
+            'avatar_url'       => $this->avatar_stored_name
+                                    ? route('profile.avatar')
+                                    : null,
+            'preferences'      => $this->preferences ?? [],
+            'last_login_at'    => $this->last_login_at?->toISOString(),
+            'is_premium'       => (bool) $this->is_premium,
+            'premium_override' => (bool) $this->premium_override,
+            'effective_premium'=> $this->isPremium(),
             'word_goal_defaults' => [
                 'project' => (int) ($goals->get('word_goals.project') ?? 80000),
                 'arc'     => (int) ($goals->get('word_goals.arc')     ?? 20000),
