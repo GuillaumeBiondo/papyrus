@@ -1,5 +1,5 @@
 import api from './api'
-import type { AiChange, AiVerification } from '@/types'
+import type { AiChange, AiEnrichType, AiVerification } from '@/types'
 
 export const aiService = {
   async getVerifications(): Promise<{ verifications: AiVerification[] }> {
@@ -19,6 +19,19 @@ export const aiService = {
       extra_input: extraInput ?? null,
       card_ids: cardIds?.length ? cardIds : null,
     })
+    return data
+  },
+
+  async getEnrichTypes(): Promise<{ types: Pick<AiEnrichType, 'id' | 'type_key' | 'label' | 'description' | 'sort_order'>[] }> {
+    const { data } = await api.get('/ai/enrich-types')
+    return data
+  },
+
+  async enrich(
+    type: string,
+    text: string,
+  ): Promise<{ items: { text: string; detail: string }[] }> {
+    const { data } = await api.post('/ai/enrich', { type, text })
     return data
   },
 }

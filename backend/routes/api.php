@@ -28,6 +28,8 @@ use App\Http\Controllers\Api\TranscriptionController;
 use App\Http\Controllers\Api\ProjectController;
 use App\Http\Controllers\Api\SceneController;
 use App\Http\Controllers\Api\AiController;
+use App\Http\Controllers\Api\AiEnrichController;
+use App\Http\Controllers\Api\Admin\AiEnrichController as AdminAiEnrichController;
 use App\Http\Controllers\Api\Admin\AiVerificationController as AdminAiVerificationController;
 use App\Http\Controllers\Api\Admin\AiStatsController as AdminAiStatsController;
 use Illuminate\Support\Facades\Route;
@@ -200,6 +202,10 @@ Route::prefix('v1')->middleware(['auth:sanctum', 'throttle:60,1', 'user_blocked'
     Route::get('ai/verifications', [AiController::class, 'verifications']);
     Route::post('ai/verify', [AiController::class, 'verify']);
 
+    // AI enrichissement (dictionnaire)
+    Route::get('ai/enrich-types', [AiEnrichController::class, 'types']);
+    Route::post('ai/enrich', [AiEnrichController::class, 'enrich']);
+
     // Admin
     Route::prefix('admin')->middleware('admin')->group(function () {
         Route::get('dashboard', [AdminDashboardController::class, 'index']);
@@ -235,5 +241,11 @@ Route::prefix('v1')->middleware(['auth:sanctum', 'throttle:60,1', 'user_blocked'
         Route::put('ai-verifications/reorder', [AdminAiVerificationController::class, 'reorder']);
         Route::put('ai-verifications/{aiVerification}', [AdminAiVerificationController::class, 'update']);
         Route::delete('ai-verifications/{aiVerification}', [AdminAiVerificationController::class, 'destroy']);
+
+        Route::get('ai-enrich-types', [AdminAiEnrichController::class, 'index']);
+        Route::post('ai-enrich-types', [AdminAiEnrichController::class, 'store']);
+        Route::put('ai-enrich-types/reorder', [AdminAiEnrichController::class, 'reorder']);
+        Route::put('ai-enrich-types/{aiEnrichType}', [AdminAiEnrichController::class, 'update']);
+        Route::delete('ai-enrich-types/{aiEnrichType}', [AdminAiEnrichController::class, 'destroy']);
     });
 });

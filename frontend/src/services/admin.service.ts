@@ -1,5 +1,5 @@
 import api from './api'
-import type { AdminStats, AdminUser, AiStats, AiVerification, AvailableFont, Changelog, ContentType, Setting } from '@/types'
+import type { AdminStats, AdminUser, AiEnrichType, AiStats, AiVerification, AvailableFont, Changelog, ContentType, Setting } from '@/types'
 
 export const adminService = {
   // Dashboard
@@ -137,5 +137,29 @@ export const adminService = {
 
   async reorderAiVerifications(order: number[]): Promise<void> {
     await api.put('/admin/ai-verifications/reorder', { order })
+  },
+
+  // AI Enrich Types
+  async getAiEnrichTypes(): Promise<{ types: AiEnrichType[] }> {
+    const { data } = await api.get('/admin/ai-enrich-types')
+    return data
+  },
+
+  async createAiEnrichType(payload: Partial<AiEnrichType>): Promise<{ type: AiEnrichType }> {
+    const { data } = await api.post('/admin/ai-enrich-types', payload)
+    return data
+  },
+
+  async updateAiEnrichType(id: number, payload: Partial<AiEnrichType>): Promise<{ type: AiEnrichType }> {
+    const { data } = await api.put(`/admin/ai-enrich-types/${id}`, payload)
+    return data
+  },
+
+  async deleteAiEnrichType(id: number): Promise<void> {
+    await api.delete(`/admin/ai-enrich-types/${id}`)
+  },
+
+  async reorderAiEnrichTypes(order: number[]): Promise<void> {
+    await api.put('/admin/ai-enrich-types/reorder', { order })
   },
 }

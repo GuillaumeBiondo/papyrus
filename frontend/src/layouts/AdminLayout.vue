@@ -15,7 +15,8 @@ const nav = [
   { name: 'admin-content-types',    label: 'Types de contenu', icon: 'layers' },
   { name: 'admin-changelogs',       label: 'Journaux',         icon: 'log' },
   { name: 'admin-fonts',            label: 'Polices',          icon: 'font' },
-  { name: 'admin-ai-verifications', label: 'Révisions IA', icon: 'ai' },
+  { name: 'admin-ai-verifications', label: 'Révisions IA',    icon: 'ai' },
+  { name: 'admin-ai-enrich',        label: 'Dictionnaire IA',  icon: 'book' },
   { name: 'admin-settings',         label: 'Paramètres',       icon: 'settings' },
 ]
 
@@ -80,6 +81,11 @@ async function logout() {
           <svg v-else-if="item.icon === 'ai'" class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                   d="M9.75 3.104v5.714a2.25 2.25 0 01-.659 1.591L5 14.5M9.75 3.104c-.251.023-.501.05-.75.082m.75-.082a24.301 24.301 0 014.5 0m0 0v5.714c0 .597.237 1.17.659 1.591L19.8 15.3M14.25 3.104c.251.023.501.05.75.082M19.8 15.3l-1.57.393A9.065 9.065 0 0112 15a9.065 9.065 0 00-6.23-.693L5 14.5m14.8.8l1.402 1.402c1 1 .03 2.798-1.345 2.798H4.543c-1.376 0-2.345-1.798-1.345-2.798L4.2 15.3" />
+          </svg>
+          <!-- Book icon -->
+          <svg v-else-if="item.icon === 'book'" class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                  d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
           </svg>
           <!-- Settings icon -->
           <svg v-else-if="item.icon === 'settings'" class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
