@@ -30,7 +30,8 @@ function iconPath(typeKey: string): string {
 // ── Position toolbar ──────────────────────────────────────────
 
 const visible      = ref(false)
-const toolbarStyle = ref<{ top: string; left: string }>({ top: '0px', left: '0px' })
+const toolbarStyle = ref<{ top: string; left: string; width: string }>({ top: '0px', left: '0px', width: '420px' })
+const isMobile     = ref(window.innerWidth < 640)
 
 const W         = 420
 const H_BASE    = 36
@@ -49,17 +50,24 @@ function update() {
   const rect = domSel.getRangeAt(0).getBoundingClientRect()
   if (!rect.width && !rect.height) { visible.value = false; return }
 
-  const H   = showDictMenu.value ? H_SUBMENU : H_BASE
-  const GAP = 6
+  const GAP    = 6
+  const mobile = isMobile.value
 
-  const left = Math.max(8, Math.min(
-    rect.left + rect.width / 2 - W / 2,
-    window.innerWidth - W - 8,
-  ))
-  const topAbove = rect.top - H - GAP
-  const top = topAbove >= 8 ? topAbove : rect.bottom + GAP
+  if (mobile) {
+    // Sur mobile : toujours en dessous pour ne pas entrer en conflit avec la toolbar système
+    const w = window.innerWidth - 16
+    toolbarStyle.value = { top: `${rect.bottom + GAP}px`, left: '8px', width: `${w}px` }
+  } else {
+    const H        = showDictMenu.value ? H_SUBMENU : H_BASE
+    const left     = Math.max(8, Math.min(
+      rect.left + rect.width / 2 - W / 2,
+      window.innerWidth - W - 8,
+    ))
+    const topAbove = rect.top - H - GAP
+    const top      = topAbove >= 8 ? topAbove : rect.bottom + GAP
+    toolbarStyle.value = { top: `${top}px`, left: `${left}px`, width: `${W}px` }
+  }
 
-  toolbarStyle.value = { top: `${top}px`, left: `${left}px` }
   visible.value = true
 }
 
@@ -168,6 +176,13 @@ onMounted(async () => {
     const { types } = await aiService.getEnrichTypes()
     enrichTypes.value = types
   } catch { /* silencieux si l'API échoue */ }
+
+  const onResize = () => {
+    isMobile.value = window.innerWidth < 640
+    if (visible.value) requestAnimationFrame(update)
+  }
+  window.addEventListener('resize', onResize)
+  resizeCleanup = () => window.removeEventListener('resize', onResize)
 })
 
 function onDictMousedown(e: MouseEvent) {
@@ -221,7 +236,8 @@ async function onDictEnrich(e: MouseEvent, type: EnrichTypeRef) {
 
 // ── Lifecycle ─────────────────────────────────────────────────
 
-let cleanup: (() => void) | null = null
+let cleanup:       (() => void) | null = null
+let resizeCleanup: (() => void) | null = null
 
 watch(
   () => props.editor,
@@ -241,7 +257,7 @@ watch(
   { immediate: true },
 )
 
-onBeforeUnmount(() => cleanup?.())
+onBeforeUnmount(() => { cleanup?.(); resizeCleanup?.() })
 </script>
 
 <template>
@@ -259,8 +275,9 @@ onBeforeUnmount(() => cleanup?.())
       class="fixed z-50 flex flex-col rounded-lg shadow-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800"
       :style="toolbarStyle"
     >
-      <!-- Ligne principale -->
-      <div class="flex items-center gap-0.5 px-1 py-0.5">
+      <!-- Ligne principale (flex-wrap pour 2 lignes sur mobile) -->
+      <div class="flex flex-wrap items-center gap-0.5 px-1 py-0.5">
+        <!-- ── Groupe formatage (ligne 1 sur mobile et desktop) ── -->
         <button
           class="w-7 h-7 rounded text-sm font-bold transition-colors"
           :class="editor?.isActive('bold') ? 'bg-gray-200 dark:bg-gray-600 text-gray-900 dark:text-gray-100' : 'text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700'"
@@ -311,7 +328,13 @@ onBeforeUnmount(() => cleanup?.())
         >
           <span class="text-sm font-semibold leading-none">A</span><span class="text-[9px] leading-none mb-0.5">−</span>
         </button>
-        <div class="w-px h-4 bg-gray-200 dark:bg-gray-600 mx-0.5" />
+
+        <!-- Saut de ligne sur mobile : force Annoter + Dico sur la 2e ligne -->
+        <div class="basis-full h-0 sm:hidden" />
+
+        <!-- ── Groupe actions (ligne 2 sur mobile, suite sur desktop) ── -->
+        <!-- Séparateur avant Annoter : visible uniquement sur desktop -->
+        <div class="hidden sm:block w-px h-4 bg-gray-200 dark:bg-gray-600 mx-0.5" />
         <button
           class="flex items-center gap-1 px-2 h-7 rounded text-xs font-medium text-brand-600 dark:text-brand-400 hover:bg-brand-50 dark:hover:bg-brand-900/30 transition-colors"
           title="Annoter ce passage"
