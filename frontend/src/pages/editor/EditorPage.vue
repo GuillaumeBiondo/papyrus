@@ -8,6 +8,10 @@ import { useAuthStore } from '@/stores/auth.store'
 import { useSuggestionsStore } from '@/stores/suggestions.store'
 import SceneEditor from '@/components/editor/SceneEditor.vue'
 import EditorRightPanel from '@/components/editor/EditorRightPanel.vue'
+import EditionLeftSidebar from '@/components/editor/EditionLeftSidebar.vue'
+import EditionRightPanel from '@/components/editor/EditionRightPanel.vue'
+import EditionCenter from '@/components/editor/EditionCenter.vue'
+import EditionPreview from '@/components/editor/EditionPreview.vue'
 import SuggestionPanel from '@/components/editor/SuggestionPanel.vue'
 import ConfirmDeleteDialog from '@/components/editor/ConfirmDeleteDialog.vue'
 import CardEditDialog from '@/components/editor/CardEditDialog.vue'
@@ -19,14 +23,40 @@ import SplitterPanel from 'primevue/splitterpanel'
 import draggable from 'vuedraggable'
 import { snapshotsService } from '@/services/snapshots.service'
 import { activityService } from '@/services/activity.service'
-import type { Arc, Chapter, Scene } from '@/types'
+import type { Arc, Chapter, Scene, EditionDocumentEntry } from '@/types'
 import { useAppConfigStore } from '@/stores/appConfig.store'
+import { useEditionStore } from '@/stores/edition.store'
 
 const route = useRoute()
 const editor = useEditorStore()
 const auth   = useAuthStore()
 const suggestions = useSuggestionsStore()
 const appConfig = useAppConfigStore()
+const edition = useEditionStore()
+
+// ── Atelier actif ─────────────────────────────────────────────
+const currentAtelier = ref<string>('writing')
+const selectedEditionDoc = ref<EditionDocumentEntry | null>(null)
+
+function onEditionDocumentSelected(doc: EditionDocumentEntry) {
+  selectedEditionDoc.value = doc
+  // Ouvrir la sidebar droite si elle est fermée
+  if (!rightSidebarOpen.value && !isMobile.value) rightSidebarOpen.value = true
+}
+
+const availableWorkshops = computed(() => appConfig.config?.workshops ?? [])
+
+function canAccessWorkshop(key: string): boolean {
+  const w = availableWorkshops.value.find(w => w.key === key)
+  if (!w) return false
+  return !w.is_premium || !!auth.user?.effective_premium
+}
+
+function switchAtelier(key: string) {
+  if (!canAccessWorkshop(key)) return
+  currentAtelier.value = key
+  if (key !== 'editing') selectedEditionDoc.value = null
+}
 
 // ── Dialog arc/chapitre ───────────────────────────────────────
 type DialogTarget = { type: 'arc'; item: Arc } | { type: 'chapter'; item: Chapter }
@@ -35,18 +65,43 @@ const arcChapterDialog = ref<DialogTarget | null>(null)
 function openArcDialog(arc: Arc) { arcChapterDialog.value = { type: 'arc', item: arc } }
 function openChapterDialog(chapter: Chapter) { arcChapterDialog.value = { type: 'chapter', item: chapter } }
 
-function onSummaryUpdate(summary: string | null) {
+function onSummaryUpdate({ summary, generatedAt }: { summary: string | null; generatedAt?: string | null }) {
   if (!arcChapterDialog.value) return
-  // Update local store data so summary persists without reload
   if (arcChapterDialog.value.type === 'arc') {
     const arc = editor.arcs.find(a => a.id === arcChapterDialog.value!.item.id)
-    if (arc) arc.summary = summary
+    if (arc) {
+      arc.summary = summary
+      if (generatedAt !== undefined) arc.summary_generated_at = generatedAt
+    }
   } else {
     for (const arc of editor.arcs) {
       const ch = arc.chapters?.find(c => c.id === arcChapterDialog.value!.item.id)
-      if (ch) { ch.summary = summary; break }
+      if (ch) {
+        ch.summary = summary
+        if (generatedAt !== undefined) ch.summary_generated_at = generatedAt
+        break
+      }
     }
   }
+}
+
+// ── Tooltip résumé au survol ──────────────────────────────────
+const summaryTooltip = ref<{ text: string; x: number; y: number } | null>(null)
+let tooltipTimer: ReturnType<typeof setTimeout> | null = null
+
+function showSummaryTooltip(event: MouseEvent, summary: string) {
+  if (tooltipTimer) clearTimeout(tooltipTimer)
+  const el = event.currentTarget as HTMLElement
+  tooltipTimer = setTimeout(() => {
+    const rect = el.getBoundingClientRect()
+    summaryTooltip.value = { text: summary, x: rect.right + 10, y: rect.top + rect.height / 2 }
+  }, 350)
+}
+
+function hideSummaryTooltip() {
+  if (tooltipTimer) clearTimeout(tooltipTimer)
+  tooltipTimer = null
+  summaryTooltip.value = null
 }
 
 const vFocus = { mounted: (el: HTMLElement) => el.focus() }
@@ -311,6 +366,7 @@ onMounted(() => {
 })
 onUnmounted(() => {
   editor.reset()
+  edition.reset()
   window.removeEventListener('resize', onResize)
 })
 
@@ -425,24 +481,68 @@ const rightPanelPt = { root: { class: 'flex flex-col overflow-hidden h-full bord
         leftSidebarOpen ? 'translate-x-0' : '-translate-x-full md:hidden',
       ]"
     >
-      <!-- En-tête projet -->
-      <div class="px-4 py-3 border-b border-gray-300 dark:border-gray-700 flex items-center justify-between gap-2 shrink-0">
-        <div class="min-w-0">
-          <p class="text-xs font-semibold text-gray-800 dark:text-gray-100 truncate">{{ editor.currentProject?.title }}</p>
-          <p class="text-xs text-gray-400 mt-0.5">{{ editor.arcs.length }} arc{{ editor.arcs.length !== 1 ? 's' : '' }}</p>
+      <!-- En-tête : switcher d'ateliers -->
+      <div class="px-3 py-2 border-b border-gray-300 dark:border-gray-700 shrink-0">
+        <!-- Switcher — visible uniquement si plusieurs ateliers actifs -->
+        <div v-if="availableWorkshops.length > 1" class="flex items-center gap-1 mb-2">
+          <div class="flex-1 flex bg-gray-200 dark:bg-gray-800 rounded-md p-0.5 gap-0.5">
+            <button
+              v-for="w in availableWorkshops"
+              :key="w.key"
+              class="flex-1 flex items-center justify-center gap-1 text-xs py-1 px-2 rounded transition-all font-medium"
+              :class="currentAtelier === w.key
+                ? 'bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 shadow-sm'
+                : canAccessWorkshop(w.key)
+                  ? 'text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200'
+                  : 'text-amber-500 dark:text-amber-400 cursor-default opacity-80'"
+              :title="w.is_premium && !auth.user?.effective_premium ? 'Fonctionnalité premium' : w.label"
+              @click="switchAtelier(w.key)"
+            >
+              <span class="truncate">{{ w.label.replace('Atelier ', '') }}</span>
+              <PremiumLock v-if="w.is_premium && !auth.user?.effective_premium" size="xs" />
+            </button>
+          </div>
+          <button
+            class="shrink-0 p-1 rounded text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-800 transition-colors"
+            @click="leftSidebarOpen = false"
+          >
+            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/>
+            </svg>
+          </button>
         </div>
-        <button
-          class="shrink-0 p-1 rounded text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-800 transition-colors"
-          @click="leftSidebarOpen = false"
-        >
-          <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/>
-          </svg>
-        </button>
+
+        <!-- Fallback (un seul atelier ou config pas encore chargée) -->
+        <div v-else class="flex items-center justify-between gap-2">
+          <div class="min-w-0">
+            <p class="text-xs font-semibold text-gray-800 dark:text-gray-100 truncate">{{ editor.currentProject?.title }}</p>
+            <p class="text-xs text-gray-400 mt-0.5">{{ editor.arcs.length }} arc{{ editor.arcs.length !== 1 ? 's' : '' }}</p>
+          </div>
+          <button
+            class="shrink-0 p-1 rounded text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-800 transition-colors"
+            @click="leftSidebarOpen = false"
+          >
+            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/>
+            </svg>
+          </button>
+        </div>
+
+        <!-- Titre projet sous le switcher -->
+        <div v-if="availableWorkshops.length > 1" class="min-w-0 px-0.5">
+          <p class="text-xs text-gray-500 dark:text-gray-400 truncate">{{ editor.currentProject?.title }}</p>
+        </div>
       </div>
 
-      <!-- Arcs -->
-      <div class="flex-1 overflow-y-auto py-2">
+      <!-- Contenu sidebar : Atelier Édition -->
+      <EditionLeftSidebar
+        v-if="currentAtelier === 'editing' && editor.currentProject"
+        :project-id="editor.currentProject.id"
+        @select-document="onEditionDocumentSelected"
+      />
+
+      <!-- Contenu sidebar : Atelier Écriture — Arcs -->
+      <div v-else class="flex-1 overflow-y-auto py-2">
         <draggable v-model="editor.arcs" item-key="id" handle=".drag-arc" :animation="150" ghost-class="opacity-30" @end="editor.reorderArcs()">
           <template #item="{ element: arc }">
             <div class="mb-2">
@@ -458,7 +558,13 @@ const rightPanelPt = { root: { class: 'flex flex-col overflow-hidden h-full bord
                   @keyup.escape="cancelRename"
                   @blur="commitRename('arc', arc.id)"
                 />
-                <span v-else class="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide truncate flex-1 cursor-pointer hover:text-gray-700 dark:hover:text-gray-200 transition-colors" @click.stop="openArcDialog(arc)">{{ arc.title }}</span>
+                <span
+                  v-else
+                  class="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide truncate flex-1 cursor-pointer hover:text-gray-700 dark:hover:text-gray-200 transition-colors"
+                  @click.stop="openArcDialog(arc)"
+                  @mouseenter="arc.summary ? showSummaryTooltip($event, arc.summary) : undefined"
+                  @mouseleave="hideSummaryTooltip"
+                >{{ arc.title }}</span>
                 <div class="flex items-center gap-0.5 md:opacity-0 group-hover:opacity-100 transition-opacity shrink-0">
                   <button class="px-1.5 py-0.5 text-sm text-brand-600/70 dark:text-brand-400/70 hover:text-brand-700 dark:hover:text-brand-300 transition-colors" @click="addingChapter = arc.id; newChapterTitle = ''">+</button>
                   <button class="px-1.5 py-0.5 text-xs text-brand-600/70 dark:text-brand-400/70 hover:text-brand-700 dark:hover:text-brand-300 transition-colors" @click.stop="startRename(arc.id, arc.title)">✎</button>
@@ -482,7 +588,13 @@ const rightPanelPt = { root: { class: 'flex flex-col overflow-hidden h-full bord
                         @keyup.escape="cancelRename"
                         @blur="commitRename('chapter', chapter.id)"
                       />
-                      <span v-else class="text-xs text-gray-500 dark:text-gray-400 italic truncate flex-1 cursor-pointer hover:text-gray-700 dark:hover:text-gray-200 transition-colors" @click.stop="openChapterDialog(chapter)">{{ chapter.title }}</span>
+                      <span
+                        v-else
+                        class="text-xs text-gray-500 dark:text-gray-400 italic truncate flex-1 cursor-pointer hover:text-gray-700 dark:hover:text-gray-200 transition-colors"
+                        @click.stop="openChapterDialog(chapter)"
+                        @mouseenter="chapter.summary ? showSummaryTooltip($event, chapter.summary) : undefined"
+                        @mouseleave="hideSummaryTooltip"
+                      >{{ chapter.title }}</span>
                       <div class="flex items-center gap-0.5 md:opacity-0 group-hover:opacity-100 transition-opacity shrink-0">
                         <button class="px-1.5 py-0.5 text-sm text-brand-600/70 dark:text-brand-400/70 hover:text-brand-700 dark:hover:text-brand-300 transition-colors" @click="addingScene = chapter.id; newSceneTitle = ''">+</button>
                         <button class="px-1.5 py-0.5 text-xs text-brand-600/70 dark:text-brand-400/70 hover:text-brand-700 dark:hover:text-brand-300 transition-colors" @click.stop="startRename(chapter.id, chapter.title)">✎</button>
@@ -565,7 +677,7 @@ const rightPanelPt = { root: { class: 'flex flex-col overflow-hidden h-full bord
         </div>
       </div>
 
-      <div class="px-3 py-3 border-t border-gray-300 dark:border-gray-700 shrink-0">
+      <div v-if="currentAtelier === 'writing'" class="px-3 py-3 border-t border-gray-300 dark:border-gray-700 shrink-0">
         <button class="w-full text-xs text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 flex items-center gap-1.5 transition-colors" @click="addingArc = true">
           <span class="text-base leading-none">+</span> Nouvel arc
         </button>
@@ -784,51 +896,65 @@ const rightPanelPt = { root: { class: 'flex flex-col overflow-hidden h-full bord
           </button>
         </div>
 
-        <!-- Zone centrale — état vide -->
-        <div
-          v-if="!editor.activeScene"
-          class="flex-1 relative flex flex-col overflow-hidden"
-          style="background: var(--editor-bg)"
-        >
-          <!-- Titre du projet en haut -->
-          <div
-            class="absolute top-0 left-0 right-0 flex justify-center pt-10 pointer-events-none select-none overflow-hidden"
-            aria-hidden="true"
-          >
-            <span
-              class="font-bold tracking-tighter leading-none text-center px-8
-                     text-gray-200 dark:text-white/[0.04]"
-              style="font-size: clamp(2rem, 8vw, 5.5rem)"
-            >{{ editor.currentProject?.title ?? 'Papyrus' }}</span>
-          </div>
-          <!-- Mantra ou hint premier arc, centré -->
-          <div class="flex-1 flex items-center justify-center pointer-events-none select-none">
-            <p
-              v-if="auth.preferences.mantra"
-              class="text-center italic px-12 text-gray-300 dark:text-white/[0.10]"
-              style="font-size: clamp(1rem, 2.2vw, 1.4rem); letter-spacing: 0.01em"
-            >{{ auth.preferences.mantra }}</p>
-            <p
-              v-else-if="!editor.arcs.length"
-              class="text-sm text-gray-300 dark:text-white/[0.08]"
-            >Crée ton premier arc pour commencer.</p>
-          </div>
-        </div>
+        <!-- ── Atelier Édition ── -->
+        <template v-if="currentAtelier === 'editing' && editor.currentProject">
+          <!-- Éditeur de document quand un doc est sélectionné dans la sidebar -->
+          <EditionCenter
+            v-if="selectedEditionDoc"
+            :document="selectedEditionDoc"
+            :project-title="editor.currentProject.title"
+            @close="selectedEditionDoc = null"
+          />
+          <!-- Prévisualisation du livre sinon -->
+          <EditionPreview
+            v-else
+            :project-id="editor.currentProject.id"
+          />
+        </template>
 
+        <!-- ── Atelier Écriture : état vide / éditeur scène ── -->
         <template v-else>
-          <div class="flex-1 flex flex-col overflow-hidden">
-            <!-- Éditeur TipTap -->
+          <!-- Zone centrale — état vide -->
+          <div
+            v-if="!editor.activeScene"
+            class="flex-1 relative flex flex-col overflow-hidden"
+            style="background: var(--editor-bg)"
+          >
+            <div
+              class="absolute top-0 left-0 right-0 flex justify-center pt-10 pointer-events-none select-none overflow-hidden"
+              aria-hidden="true"
+            >
+              <span
+                class="font-bold tracking-tighter leading-none text-center px-8
+                       text-gray-200 dark:text-white/[0.04]"
+                style="font-size: clamp(2rem, 8vw, 5.5rem)"
+              >{{ editor.currentProject?.title ?? 'Papyrus' }}</span>
+            </div>
+            <div class="flex-1 flex items-center justify-center pointer-events-none select-none">
+              <p
+                v-if="auth.preferences.mantra"
+                class="text-center italic px-12 text-gray-300 dark:text-white/[0.10]"
+                style="font-size: clamp(1rem, 2.2vw, 1.4rem); letter-spacing: 0.01em"
+              >{{ auth.preferences.mantra }}</p>
+              <p
+                v-else-if="!editor.arcs.length"
+                class="text-sm text-gray-300 dark:text-white/[0.08]"
+              >Crée ton premier arc pour commencer.</p>
+            </div>
+          </div>
+
+          <div v-else class="flex-1 flex flex-col overflow-hidden">
             <div
               class="flex-1 overflow-y-auto px-4 md:px-8 py-6 editor-viewport"
               style="background: var(--editor-bg)"
             >
-            <h1
-              :key="editor.activeScene.id"
-              class="text-xl font-semibold text-gray-900 dark:text-gray-100 mb-6 outline-none empty:before:content-[attr(data-placeholder)] empty:before:text-gray-400"
-              contenteditable
-              data-placeholder="Titre de la scène…"
-              @blur="onSceneTitleBlur"
-            >{{ editor.activeScene.title }}</h1>
+              <h1
+                :key="editor.activeScene.id"
+                class="text-xl font-semibold text-gray-900 dark:text-gray-100 mb-6 outline-none empty:before:content-[attr(data-placeholder)] empty:before:text-gray-400"
+                contenteditable
+                data-placeholder="Titre de la scène…"
+                @blur="onSceneTitleBlur"
+              >{{ editor.activeScene.title }}</h1>
               <SceneEditor
                 ref="sceneEditorRef"
                 :content="editor.activeScene.content ?? ''"
@@ -839,7 +965,6 @@ const rightPanelPt = { root: { class: 'flex flex-col overflow-hidden h-full bord
                 @annotation-click="onAnnotationClick"
               />
             </div>
-            <!-- Panneau suggestions (s'affiche quand des suggestions sont en attente) -->
             <SuggestionPanel :editor="tiptap()" />
           </div>
         </template>
@@ -852,7 +977,14 @@ const rightPanelPt = { root: { class: 'flex flex-col overflow-hidden h-full bord
         :minSize="15"
         :pt="rightPanelPt"
       >
+        <!-- Atelier Édition -->
+        <EditionRightPanel
+          v-if="currentAtelier === 'editing' && editor.currentProject"
+          :project-id="editor.currentProject.id"
+        />
+        <!-- Atelier Écriture -->
         <EditorRightPanel
+          v-else
           v-model:tab="rightTab"
           :pending-selection="pendingSelection"
           :highlighted-annotation-id="highlightedAnnotationId"
@@ -1063,6 +1195,21 @@ const rightPanelPt = { root: { class: 'flex flex-col overflow-hidden h-full bord
       {{ aiRunError }}
     </div>
   </Transition>
+
+  <!-- ══ Tooltip résumé ══ -->
+  <Teleport to="body">
+    <Transition name="fade">
+      <div
+        v-if="summaryTooltip"
+        class="fixed z-[200] pointer-events-none"
+        :style="{ left: summaryTooltip.x + 'px', top: summaryTooltip.y + 'px', transform: 'translateY(-50%)' }"
+      >
+        <div class="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl shadow-xl px-3.5 py-2.5 max-w-[300px] max-h-[50vh] overflow-y-auto text-xs text-gray-700 dark:text-gray-300 leading-relaxed">
+          {{ summaryTooltip.text }}
+        </div>
+      </div>
+    </Transition>
+  </Teleport>
 </template>
 
 <style>

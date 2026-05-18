@@ -21,10 +21,93 @@ export interface ActivityHour {
   words: number
 }
 
+export interface WorkshopConfig {
+  key: string
+  label: string
+  description: string | null
+  is_premium: boolean
+  sort_order: number
+}
+
+export type EditionDocumentCategory = 'liminary' | 'annex'
+
+export interface EditionDocumentEntry {
+  id: number | null
+  type: string
+  label: string
+  category: EditionDocumentCategory
+  sort_order: number
+  title: string | null
+  is_enabled: boolean
+  updated_at: string | null
+}
+
+export interface EditionSettings {
+  template: 'pocket' | 'large_format' | 'a4' | 'custom'
+  page: {
+    width: number
+    height: number
+    margin_top: number
+    margin_bottom: number
+    margin_inner: number
+    margin_outer: number
+    gutter: number
+  }
+  text: {
+    alignment: 'justified' | 'left'
+    line_height: number
+    body_font: string
+    body_font_size: number
+  }
+  titles: {
+    font: string | null
+    size: number
+    alignment: 'left' | 'center' | 'right'
+    numbering: 'none' | 'roman' | 'arabic' | 'text'
+    drop_cap: boolean
+    drop_cap_lines: number
+    vertical_position: 'top' | 'center'
+    space_before: number  // em, espace au-dessus du titre de chapitre
+    space_after: number   // em, espace entre titre et corps
+  }
+  structure: {
+    chapter_start: 'any' | 'odd' | 'even'
+    part_page: boolean
+    scene_separator: 'stars' | 'dash' | 'symbol' | 'none' | 'custom'
+    scene_separator_custom: string | null
+    separator_space_before: number  // em
+    separator_space_after: number   // em
+  }
+  headers: {
+    left_field: string
+    right_field: string
+    header_rule: boolean
+    footer_rule: boolean
+    rule_space_before: number  // pt — espace entre texte courant et filet (aussi corps→filet pied)
+    rule_space_after: number   // pt — espace entre filet et corps (aussi filet pied→numéro)
+  }
+  footer: {
+    position: 'center' | 'outer' | 'inner'
+    show_on_liminaries: boolean
+    show_on_toc: boolean
+    show_on_parts: boolean
+  }
+}
+
 export interface AppConfig {
   snapshot_interval_words: number
   premium_project_limit: number
   summary_auto_is_premium: boolean
+  edition_presets_is_premium: boolean
+  edition_export_is_premium: boolean
+  workshops: WorkshopConfig[]
+}
+
+export interface EditionPreset {
+  id: number
+  name: string
+  settings: EditionSettings
+  created_at: string
 }
 
 export interface AvailableFont {
@@ -223,6 +306,7 @@ export interface Arc {
   project_id: string
   title: string
   summary: string | null
+  summary_generated_at: string | null
   order: number
   chapters?: Chapter[]
   updated_at: string
@@ -233,6 +317,7 @@ export interface Chapter {
   arc_id: string
   title: string
   summary: string | null
+  summary_generated_at: string | null
   order: number
   scenes?: Scene[]
   updated_at: string

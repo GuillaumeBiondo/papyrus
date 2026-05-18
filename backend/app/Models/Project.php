@@ -8,6 +8,7 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Database\Eloquent\Relations\MorphMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
@@ -76,5 +77,15 @@ class Project extends Model
     public function notes(): MorphMany
     {
         return $this->morphMany(Note::class, 'noteable')->latest();
+    }
+
+    public function editionDocuments(): HasMany
+    {
+        return $this->hasMany(EditionDocument::class)->orderBy('sort_order');
+    }
+
+    public function editionSettings(): HasOne
+    {
+        return $this->hasOne(ProjectEditionSettings::class);
     }
 }

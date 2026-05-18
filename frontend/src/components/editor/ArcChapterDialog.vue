@@ -15,7 +15,7 @@ const props = defineProps<{
 
 const emit = defineEmits<{
   close: []
-  'update:summary': [summary: string | null]
+  'update:summary': [payload: { summary: string | null; generatedAt?: string | null }]
 }>()
 
 const auth     = useAuthStore()
@@ -25,11 +25,18 @@ const tab = ref<'summary' | 'todos'>('summary')
 
 // ── Summary ───────────────────────────────────────────────────
 
-const summary        = ref(props.item.summary ?? '')
-const summaryDirty   = ref(false)
-const summarySaving  = ref(false)
-const summaryGenning = ref(false)
-const summaryError   = ref<string | null>(null)
+const summary            = ref(props.item.summary ?? '')
+const summaryGeneratedAt = ref(props.item.summary_generated_at ?? null)
+const summaryDirty       = ref(false)
+const summarySaving      = ref(false)
+const summaryGenning     = ref(false)
+const summaryError       = ref<string | null>(null)
+
+const generatedAtLabel = computed(() => {
+  if (!summaryGeneratedAt.value) return null
+  return new Intl.DateTimeFormat('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' })
+    .format(new Date(summaryGeneratedAt.value))
+})
 
 const summaryAutoIsPremium = computed(() => appStore.config?.summary_auto_is_premium ?? false)
 const canGenerateSummary   = computed(() =>
@@ -37,8 +44,11 @@ const canGenerateSummary   = computed(() =>
 )
 
 watch(() => props.item.summary, (v) => {
-  summary.value    = v ?? ''
+  summary.value      = v ?? ''
   summaryDirty.value = false
+})
+watch(() => props.item.summary_generated_at, (v) => {
+  summaryGeneratedAt.value = v ?? null
 })
 
 async function saveSummary() {
@@ -47,7 +57,7 @@ async function saveSummary() {
   try {
     const svc = props.type === 'arc' ? arcsService : chaptersService
     const res = await svc.saveSummary(props.item.id, summary.value || null)
-    emit('update:summary', res.summary)
+    emit('update:summary', { summary: res.summary })
     summaryDirty.value = false
   } finally {
     summarySaving.value = false
@@ -60,9 +70,10 @@ async function generateSummary() {
   try {
     const svc = props.type === 'arc' ? arcsService : chaptersService
     const res = await svc.generateSummary(props.item.id)
-    summary.value      = res.summary
-    summaryDirty.value = false
-    emit('update:summary', res.summary)
+    summary.value            = res.summary
+    summaryGeneratedAt.value = res.summary_generated_at ?? null
+    summaryDirty.value       = false
+    emit('update:summary', { summary: res.summary, generatedAt: res.summary_generated_at ?? null })
   } catch (e: unknown) {
     const ax = e as { response?: { data?: { error?: string } } }
     summaryError.value = ax?.response?.data?.error ?? 'Erreur lors de la génération.'
@@ -154,7 +165,7 @@ const typeLabel = computed(() => props.type === 'arc' ? "l'arc" : 'le chapitre')
       class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm"
       @click.self="emit('close')"
     >
-      <div class="bg-white dark:bg-gray-900 rounded-2xl shadow-2xl w-full max-w-lg flex flex-col border border-gray-200 dark:border-gray-700 max-h-[80vh]">
+      <div class="bg-white dark:bg-gray-900 rounded-2xl shadow-2xl w-full max-w-2xl flex flex-col border border-gray-200 dark:border-gray-700 h-[80vh]">
 
         <!-- Header -->
         <div class="flex items-center gap-3 px-5 py-4 border-b border-gray-100 dark:border-gray-800 shrink-0">
@@ -207,10 +218,10 @@ const typeLabel = computed(() => props.type === 'arc' ? "l'arc" : 'le chapitre')
         </div>
 
         <!-- Tab: Résumé -->
-        <div v-if="tab === 'summary'" class="flex flex-col gap-3 p-5 flex-1 overflow-y-auto">
+        <div v-if="tab === 'summary'" class="flex flex-col gap-3 p-5 flex-1 min-h-0">
 
           <!-- Bouton résumé automatique -->
-          <div class="flex items-center gap-2">
+          <div class="flex items-center gap-2 flex-wrap">
             <button
               class="flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-medium transition-colors"
               :class="canGenerateSummary
@@ -230,21 +241,28 @@ const typeLabel = computed(() => props.type === 'arc' ? "l'arc" : 'le chapitre')
               </svg>
               <template v-else>
                 <PremiumLock v-if="!canGenerateSummary" size="xs" />
-                <span v-else>✦</span>
+                <span v-else class="sparkle-stars" aria-hidden="true">
+                  <span class="star star-1">✦</span><span class="star star-2">✦</span><span class="star star-3">✦</span>
+                </span>
               </template>
               {{ summaryGenning ? 'Génération…' : 'Résumé automatique' }}
+              <span v-if="!summaryGenning && canGenerateSummary" class="sparkle-stars" aria-hidden="true">
+                <span class="star star-3">✦</span><span class="star star-2">✦</span><span class="star star-1">✦</span>
+              </span>
             </button>
             <span v-if="!canGenerateSummary" class="text-[11px] text-amber-500">Premium requis</span>
+            <span v-if="generatedAtLabel && canGenerateSummary" class="text-[11px] text-gray-400 dark:text-gray-500 italic">
+              Généré le {{ generatedAtLabel }}
+            </span>
           </div>
 
           <p v-if="summaryError" class="text-xs text-red-500">{{ summaryError }}</p>
 
-          <div class="relative">
+          <div class="relative flex-1 flex flex-col min-h-0">
             <textarea
               v-model="summary"
-              rows="9"
               placeholder="Écris un résumé de cet arc ou utilise le résumé automatique…"
-              class="w-full text-sm rounded-lg border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 text-gray-900 dark:text-gray-100 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-brand-500 resize-none"
+              class="flex-1 w-full text-sm rounded-lg border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 text-gray-900 dark:text-gray-100 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-brand-500 resize-none"
               @input="summaryDirty = true"
               @blur="saveSummary"
             />
@@ -354,3 +372,22 @@ const typeLabel = computed(() => props.type === 'arc' ? "l'arc" : 'le chapitre')
     </div>
   </Teleport>
 </template>
+
+<style scoped>
+@keyframes star-twinkle {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50%       { opacity: 0.3; transform: scale(0.65); }
+}
+
+.sparkle-stars {
+  display: inline-flex;
+  align-items: center;
+  gap: 1px;
+  line-height: 1;
+}
+
+.star { display: inline-block; }
+.star-1 { font-size: 11px; animation: star-twinkle 1.8s ease-in-out infinite 0s; }
+.star-2 { font-size: 7px;  animation: star-twinkle 1.8s ease-in-out infinite 0.5s; }
+.star-3 { font-size: 9px;  animation: star-twinkle 1.8s ease-in-out infinite 1s; }
+</style>

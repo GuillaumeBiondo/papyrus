@@ -34,6 +34,9 @@ use App\Http\Controllers\Api\Admin\AiVerificationController as AdminAiVerificati
 use App\Http\Controllers\Api\Admin\AiStatsController as AdminAiStatsController;
 use App\Http\Controllers\Api\Admin\WorkshopController as AdminWorkshopController;
 use App\Http\Controllers\Api\TodoController;
+use App\Http\Controllers\Api\EditionDocumentController;
+use App\Http\Controllers\Api\EditionSettingsController;
+use App\Http\Controllers\Api\EditionPresetController;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -107,6 +110,18 @@ Route::prefix('v1')->middleware(['auth:sanctum', 'throttle:60,1', 'user_blocked'
     // Rebuild index
     Route::post('projects/{project}/rebuild-index', [ProjectController::class, 'rebuildIndex'])
         ->middleware('throttle:10,1');
+
+    // Édition
+    Route::get('projects/{project}/edition/documents',         [EditionDocumentController::class, 'index']);
+    Route::post('projects/{project}/edition/documents/toggle', [EditionDocumentController::class, 'toggle']);
+    Route::get('edition/documents/{document}',                 [EditionDocumentController::class, 'show']);
+    Route::put('edition/documents/{document}',                 [EditionDocumentController::class, 'update']);
+    Route::get('projects/{project}/edition/settings',          [EditionSettingsController::class, 'show']);
+    Route::put('projects/{project}/edition/settings',          [EditionSettingsController::class, 'update']);
+    Route::get('edition/presets',                              [EditionPresetController::class, 'index']);
+    Route::post('edition/presets',                             [EditionPresetController::class, 'store']);
+    Route::put('edition/presets/{editionPreset}',              [EditionPresetController::class, 'update']);
+    Route::delete('edition/presets/{editionPreset}',           [EditionPresetController::class, 'destroy']);
 
     // Arcs
     Route::get('projects/{project}/arcs', [ArcController::class, 'index']);

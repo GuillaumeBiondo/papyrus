@@ -71,6 +71,11 @@ class User extends Authenticatable
         return $this->hasMany(ChangelogRead::class);
     }
 
+    public function editionPresets(): HasMany
+    {
+        return $this->hasMany(\App\Models\EditionPreset::class);
+    }
+
     public function hasRoleInProject(string $role, Project $project): bool
     {
         return $this->projects()

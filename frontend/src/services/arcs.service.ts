@@ -20,6 +20,6 @@ export const arcsService = {
   saveSummary: (id: string, summary: string | null): Promise<{ summary: string | null }> =>
     api.put(`/arcs/${id}/summary`, { summary }).then((r) => r.data),
 
-  generateSummary: (id: string): Promise<{ summary: string }> =>
+  generateSummary: (id: string): Promise<{ summary: string; summary_generated_at: string | null }> =>
     api.post(`/arcs/${id}/summary/generate`).then((r) => r.data),
 }

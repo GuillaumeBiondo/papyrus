@@ -118,9 +118,12 @@ class ChapterController extends Controller
 
         $summary = $service->summarize($systemPrompt, $fullText, $model);
 
-        $chapter->update(['summary' => $summary]);
+        $chapter->update(['summary' => $summary, 'summary_generated_at' => now()]);
 
-        return response()->json(['summary' => $summary]);
+        return response()->json([
+            'summary'              => $chapter->summary,
+            'summary_generated_at' => $chapter->summary_generated_at?->toIso8601String(),
+        ]);
     }
 
     // ── Todos ─────────────────────────────────────────────────────

@@ -123,9 +123,12 @@ class ArcController extends Controller
 
         $summary = $service->summarize($systemPrompt, $fullText, $model);
 
-        $arc->update(['summary' => $summary]);
+        $arc->update(['summary' => $summary, 'summary_generated_at' => now()]);
 
-        return response()->json(['summary' => $summary]);
+        return response()->json([
+            'summary'              => $arc->summary,
+            'summary_generated_at' => $arc->summary_generated_at?->toIso8601String(),
+        ]);
     }
 
     // ── Todos ─────────────────────────────────────────────────────

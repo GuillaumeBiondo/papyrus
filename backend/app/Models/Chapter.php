@@ -17,13 +17,15 @@ class Chapter extends Model
         'arc_id',
         'title',
         'summary',
+        'summary_generated_at',
         'order',
     ];
 
     protected function casts(): array
     {
         return [
-            'order' => 'integer',
+            'order'                => 'integer',
+            'summary_generated_at' => 'datetime',
         ];
     }
 

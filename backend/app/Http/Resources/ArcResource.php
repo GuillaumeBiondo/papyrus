@@ -13,10 +13,11 @@ class ArcResource extends JsonResource
             'id'         => $this->id,
             'project_id' => $this->project_id,
             'title'      => $this->title,
-            'summary'    => $this->summary,
-            'order'      => $this->order,
-            'chapters'   => ChapterResource::collection($this->whenLoaded('chapters')),
-            'updated_at' => $this->updated_at,
+            'summary'              => $this->summary,
+            'summary_generated_at' => $this->summary_generated_at?->toIso8601String(),
+            'order'                => $this->order,
+            'chapters'             => ChapterResource::collection($this->whenLoaded('chapters')),
+            'updated_at'           => $this->updated_at,
         ];
     }
 }

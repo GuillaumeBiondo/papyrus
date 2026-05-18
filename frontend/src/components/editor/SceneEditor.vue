@@ -4,7 +4,6 @@ import { useEditor, EditorContent } from '@tiptap/vue-3'
 import SelectionToolbar from './SelectionToolbar.vue'
 import StarterKit from '@tiptap/starter-kit'
 import Placeholder from '@tiptap/extension-placeholder'
-import Underline from '@tiptap/extension-underline'
 import { TextStyle, FontSize } from '@tiptap/extension-text-style'
 import { Extension } from '@tiptap/core'
 import { Plugin, PluginKey } from '@tiptap/pm/state'
@@ -100,7 +99,7 @@ const editor = useEditor({
   extensions: [
     StarterKit.configure({ heading: { levels: [1, 2, 3] } }),
     Placeholder.configure({ placeholder: 'Commence à écrire…' }),
-    Underline,
+
     TextStyle,
     FontSize,
     AnnotationDecorations,
