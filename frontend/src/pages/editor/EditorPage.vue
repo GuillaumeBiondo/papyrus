@@ -545,22 +545,22 @@ const rightPanelPt = { root: { class: 'flex flex-col overflow-hidden h-full bord
       <div v-else class="flex-1 overflow-y-auto py-2">
         <draggable v-model="editor.arcs" item-key="id" handle=".drag-arc" :animation="150" ghost-class="opacity-30" @end="editor.reorderArcs()">
           <template #item="{ element: arc }">
-            <div class="mb-2">
-              <div class="flex items-center gap-1 px-2 py-1 group">
+            <div class="mb-4">
+              <div class="flex items-center gap-1 px-2 py-1.5 group">
                 <span class="drag-arc shrink-0 cursor-grab text-gray-400 dark:text-gray-500 md:opacity-0 group-hover:opacity-100 transition-opacity select-none text-base leading-none" title="Déplacer">⠿</span>
                 <input
                   v-if="editingItemId === arc.id"
                   v-focus
                   v-model="editingTitleVal"
                   type="text"
-                  class="flex-1 text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide rounded border border-brand-300 dark:border-brand-600 bg-white dark:bg-gray-800 px-1 py-0 focus:outline-none focus:ring-1 focus:ring-brand-500 min-w-0"
+                  class="flex-1 text-[11px] font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider rounded border border-brand-300 dark:border-brand-600 bg-white dark:bg-gray-800 px-1 py-0 focus:outline-none focus:ring-1 focus:ring-brand-500 min-w-0"
                   @keyup.enter="commitRename('arc', arc.id)"
                   @keyup.escape="cancelRename"
                   @blur="commitRename('arc', arc.id)"
                 />
                 <span
                   v-else
-                  class="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide truncate flex-1 cursor-pointer hover:text-gray-700 dark:hover:text-gray-200 transition-colors"
+                  class="text-[11px] font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider truncate flex-1 cursor-pointer hover:text-gray-700 dark:hover:text-gray-200 transition-colors"
                   @click.stop="openArcDialog(arc)"
                   @mouseenter="arc.summary ? showSummaryTooltip($event, arc.summary) : undefined"
                   @mouseleave="hideSummaryTooltip"
@@ -576,21 +576,21 @@ const rightPanelPt = { root: { class: 'flex flex-col overflow-hidden h-full bord
                 @change="(e: { added?: unknown; moved?: unknown }) => onChapterDragChange(e, arc)">
                 <template #item="{ element: chapter }">
                   <div class="mb-1">
-                    <div class="flex items-center gap-1 px-2 py-0.5 group">
+                    <div class="flex items-center gap-1 px-2 py-1 group">
                       <span class="drag-chapter shrink-0 cursor-grab text-gray-400 dark:text-gray-500 md:opacity-0 group-hover:opacity-100 transition-opacity select-none text-base leading-none">⠿</span>
                       <input
                         v-if="editingItemId === chapter.id"
                         v-focus
                         v-model="editingTitleVal"
                         type="text"
-                        class="flex-1 text-xs text-gray-500 dark:text-gray-400 italic rounded border border-brand-300 dark:border-brand-600 bg-white dark:bg-gray-800 px-1 py-0 focus:outline-none focus:ring-1 focus:ring-brand-500 min-w-0"
+                        class="flex-1 text-xs text-gray-600 dark:text-gray-300 rounded border border-brand-300 dark:border-brand-600 bg-white dark:bg-gray-800 px-1 py-0 focus:outline-none focus:ring-1 focus:ring-brand-500 min-w-0"
                         @keyup.enter="commitRename('chapter', chapter.id)"
                         @keyup.escape="cancelRename"
                         @blur="commitRename('chapter', chapter.id)"
                       />
                       <span
                         v-else
-                        class="text-xs text-gray-500 dark:text-gray-400 italic truncate flex-1 cursor-pointer hover:text-gray-700 dark:hover:text-gray-200 transition-colors"
+                        class="text-xs text-gray-600 dark:text-gray-300 truncate flex-1 cursor-pointer hover:text-gray-900 dark:hover:text-gray-100 transition-colors"
                         @click.stop="openChapterDialog(chapter)"
                         @mouseenter="chapter.summary ? showSummaryTooltip($event, chapter.summary) : undefined"
                         @mouseleave="hideSummaryTooltip"
@@ -606,8 +606,10 @@ const rightPanelPt = { root: { class: 'flex flex-col overflow-hidden h-full bord
                       @change="(e: { added?: unknown; moved?: unknown }) => onSceneDragChange(e, chapter)">
                       <template #item="{ element: scene }">
                         <div
-                          class="flex items-center gap-1 pl-3 pr-2 rounded-md group/scene transition-colors"
-                          :class="editor.activeScene?.id === scene.id ? 'bg-brand-50 dark:bg-brand-900/20' : 'hover:bg-gray-100 dark:hover:bg-gray-800'"
+                          class="flex items-center gap-1 pr-2 rounded-md group/scene transition-all"
+                          :class="editor.activeScene?.id === scene.id
+                            ? 'bg-brand-50 dark:bg-brand-900/20 border-l-2 border-brand-500 pl-2.5'
+                            : 'hover:bg-gray-100 dark:hover:bg-gray-800 border-l-2 border-transparent pl-2.5'"
                         >
                           <span class="drag-scene shrink-0 cursor-grab text-gray-400 dark:text-gray-500 md:opacity-0 group-hover/scene:opacity-100 transition-opacity select-none text-base leading-none">⠿</span>
                           <input
@@ -630,7 +632,7 @@ const rightPanelPt = { root: { class: 'flex flex-col overflow-hidden h-full bord
                               <path stroke-linecap="round" stroke-linejoin="round" :d="STATUS_ICON[scene.status as Scene['status']]" />
                             </svg>
                             <span class="text-xs truncate flex-1">{{ scene.title }}</span>
-                            <span class="text-xs text-gray-400 shrink-0">{{ scene.word_count }}</span>
+                            <span class="text-[10px] shrink-0 px-1.5 py-0.5 rounded-full bg-gray-200/70 dark:bg-gray-700/70 text-gray-500 dark:text-gray-400 tabular-nums">{{ scene.word_count }}</span>
                           </button>
                           <button class="shrink-0 px-1.5 py-0.5 text-xs text-brand-600/70 dark:text-brand-400/70 hover:text-brand-700 dark:hover:text-brand-300 md:opacity-0 group-hover/scene:opacity-100 transition-all" @click.stop="startRename(scene.id, scene.title)">✎</button>
                           <button class="shrink-0 px-1.5 py-0.5 text-xs text-gray-400 dark:text-gray-500 hover:text-red-500 dark:hover:text-red-400 md:opacity-0 group-hover/scene:opacity-100 transition-all" @click="askDeleteScene(scene)">✕</button>
@@ -678,8 +680,15 @@ const rightPanelPt = { root: { class: 'flex flex-col overflow-hidden h-full bord
       </div>
 
       <div v-if="currentAtelier === 'writing'" class="px-3 py-3 border-t border-gray-300 dark:border-gray-700 shrink-0">
-        <button class="w-full text-xs text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 flex items-center gap-1.5 transition-colors" @click="addingArc = true">
-          <span class="text-base leading-none">+</span> Nouvel arc
+        <button
+          class="w-full text-xs text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-100
+                 flex items-center gap-1.5 px-2 py-1.5 rounded-lg hover:bg-gray-200/60 dark:hover:bg-gray-800/60 transition-colors"
+          @click="addingArc = true"
+        >
+          <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
+          </svg>
+          Nouvel arc
         </button>
       </div>
     </aside>
@@ -803,6 +812,10 @@ const rightPanelPt = { root: { class: 'flex flex-col overflow-hidden h-full bord
                 <span>🎞️</span>
                 <span class="hidden md:inline">Timeline</span>
               </button>
+
+              <!-- Séparateur de groupe -->
+              <div class="hidden md:block w-px h-4 bg-gray-200 dark:bg-gray-700 mx-1" />
+
               <button
                 class="flex items-center gap-1.5 text-xs px-2 py-1 rounded-lg transition-colors"
                 :class="spellcheck
@@ -921,11 +934,11 @@ const rightPanelPt = { root: { class: 'flex flex-col overflow-hidden h-full bord
             style="background: var(--editor-bg)"
           >
             <div
-              class="absolute top-0 left-0 right-0 flex justify-center pt-10 pointer-events-none select-none overflow-hidden"
+              class="absolute top-0 left-0 right-0 flex justify-center pt-10 pb-4 pointer-events-none select-none"
               aria-hidden="true"
             >
               <span
-                class="font-bold tracking-tighter leading-none text-center px-8
+                class="font-bold tracking-tighter leading-tight text-center px-8
                        text-gray-200 dark:text-white/[0.04]"
                 style="font-size: clamp(2rem, 8vw, 5.5rem)"
               >{{ editor.currentProject?.title ?? 'Papyrus' }}</span>

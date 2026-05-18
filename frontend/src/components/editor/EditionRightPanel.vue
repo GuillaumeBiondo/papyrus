@@ -78,10 +78,10 @@ watch(() => edition.settings, (s) => {
 }, { immediate: true })
 
 const TEMPLATES = [
-  { key: 'pocket',       label: 'Roman poche',   sub: '11 × 18 cm' },
-  { key: 'large_format', label: 'Grand format',  sub: '15 × 21 cm' },
-  { key: 'a4',           label: 'Format A4',     sub: '21 × 29.7 cm' },
-  { key: 'custom',       label: 'Personnalisé',  sub: 'Dimensions libres' },
+  { key: 'pocket',       label: 'Roman poche',   sub: '11 × 18 cm',     iw: 9,  ih: 15, dashed: false },
+  { key: 'large_format', label: 'Grand format',  sub: '15 × 21 cm',     iw: 11, ih: 15, dashed: false },
+  { key: 'a4',           label: 'Format A4',     sub: '21 × 29.7 cm',   iw: 11, ih: 16, dashed: false },
+  { key: 'custom',       label: 'Personnalisé',  sub: 'Dimensions libres', iw: 12, ih: 14, dashed: true },
 ]
 
 const TEMPLATE_DEFAULTS: Record<string, Partial<EditionSettings['page']>> = {
@@ -140,7 +140,7 @@ watch(settings, scheduleSave, { deep: true })
 </script>
 
 <template>
-  <div class="flex flex-col h-full border-l border-gray-300 dark:border-gray-700">
+  <div class="flex flex-col h-full border-l border-gray-300 dark:border-gray-700 bg-[#f0efe9] dark:bg-[var(--ui-sidebar-bg)]">
     <!-- ── Préréglages ── -->
     <div class="shrink-0 border-b border-gray-300 dark:border-gray-700 px-2 py-1.5">
       <!-- Verrouillé premium -->
@@ -245,7 +245,7 @@ watch(settings, scheduleSave, { deep: true })
 
     <template v-else-if="settings">
       <!-- ══ Mise en page ══ -->
-      <div v-if="activeTab === 'layout'" class="flex-1 overflow-y-auto p-3 space-y-4">
+      <div v-if="activeTab === 'layout'" class="flex-1 overflow-y-auto p-4 space-y-5">
         <!-- Gabarit -->
         <div>
           <p class="field-label">Gabarit</p>
@@ -253,17 +253,30 @@ watch(settings, scheduleSave, { deep: true })
             <button
               v-for="t in TEMPLATES"
               :key="t.key"
-              class="text-left px-2.5 py-2 rounded-md border text-xs transition-colors"
+              class="text-left px-2.5 py-2.5 rounded-lg border text-xs transition-colors"
               :class="settings.template === t.key
                 ? 'border-brand-500 bg-brand-50 dark:bg-brand-900/20 text-brand-700 dark:text-brand-300'
                 : 'border-gray-200 dark:border-gray-700 text-gray-600 dark:text-gray-400 hover:border-gray-300 dark:hover:border-gray-600'"
               @click="applyTemplate(t.key)"
             >
-              <span class="font-medium block">{{ t.label }}</span>
-              <span class="text-gray-400 dark:text-gray-500">{{ t.sub }}</span>
+              <div class="flex items-end gap-2 mb-2">
+                <div
+                  class="shrink-0 rounded-[2px] transition-colors"
+                  :class="[
+                    t.dashed ? 'border-dashed' : 'border-solid',
+                    settings.template === t.key ? 'border-brand-500' : 'border-current opacity-40',
+                    'border-2'
+                  ]"
+                  :style="{ width: t.iw + 'px', height: t.ih + 'px' }"
+                />
+              </div>
+              <span class="font-medium block leading-tight">{{ t.label }}</span>
+              <span class="block mt-0.5 opacity-60 text-[10px]">{{ t.sub }}</span>
             </button>
           </div>
         </div>
+
+        <hr class="border-gray-100 dark:border-gray-800" />
 
         <!-- Dimensions (custom uniquement) -->
         <div v-if="settings.template === 'custom'">
@@ -279,6 +292,8 @@ watch(settings, scheduleSave, { deep: true })
             </div>
           </div>
         </div>
+
+        <hr class="border-gray-100 dark:border-gray-800" />
 
         <!-- Marges -->
         <div>
@@ -302,6 +317,8 @@ watch(settings, scheduleSave, { deep: true })
             </div>
           </div>
         </div>
+
+        <hr class="border-gray-100 dark:border-gray-800" />
 
         <!-- Gouttière -->
         <div>
@@ -335,7 +352,7 @@ watch(settings, scheduleSave, { deep: true })
       </div>
 
       <!-- ══ Typographie ══ -->
-      <div v-else-if="activeTab === 'typography'" class="flex-1 overflow-y-auto p-3 space-y-4">
+      <div v-else-if="activeTab === 'typography'" class="flex-1 overflow-y-auto p-4 space-y-5">
         <!-- Corps de texte -->
         <div>
           <p class="field-label">Corps de texte</p>
@@ -350,6 +367,8 @@ watch(settings, scheduleSave, { deep: true })
             </div>
           </div>
         </div>
+
+        <hr class="border-gray-100 dark:border-gray-800" />
 
         <!-- Titres de chapitres -->
         <div>
@@ -380,6 +399,8 @@ watch(settings, scheduleSave, { deep: true })
           </div>
         </div>
 
+        <hr class="border-gray-100 dark:border-gray-800" />
+
         <!-- Espacement du titre de chapitre -->
         <div>
           <p class="field-label">Espacement du titre</p>
@@ -394,6 +415,8 @@ watch(settings, scheduleSave, { deep: true })
             </div>
           </div>
         </div>
+
+        <hr class="border-gray-100 dark:border-gray-800" />
 
         <!-- Lettrine -->
         <div>
@@ -416,7 +439,7 @@ watch(settings, scheduleSave, { deep: true })
       </div>
 
       <!-- ══ Structure ══ -->
-      <div v-else-if="activeTab === 'structure'" class="flex-1 overflow-y-auto p-3 space-y-4">
+      <div v-else-if="activeTab === 'structure'" class="flex-1 overflow-y-auto p-4 space-y-5">
         <!-- Numérotation des chapitres -->
         <div>
           <label class="field-label">Numérotation des chapitres</label>
@@ -427,6 +450,8 @@ watch(settings, scheduleSave, { deep: true })
             <option value="text">En lettres (Un, Deux…)</option>
           </select>
         </div>
+
+        <hr class="border-gray-100 dark:border-gray-800" />
 
         <!-- Début de chapitre -->
         <div>
@@ -448,6 +473,8 @@ watch(settings, scheduleSave, { deep: true })
           </div>
         </div>
 
+        <hr class="border-gray-100 dark:border-gray-800" />
+
         <!-- Page de partie (arc) -->
         <div class="flex items-center justify-between">
           <div>
@@ -463,6 +490,8 @@ watch(settings, scheduleSave, { deep: true })
               :class="settings.structure.part_page ? 'translate-x-4' : 'translate-x-0'" />
           </button>
         </div>
+
+        <hr class="border-gray-100 dark:border-gray-800" />
 
         <!-- Séparateur de scène -->
         <div>
@@ -493,6 +522,8 @@ watch(settings, scheduleSave, { deep: true })
           </div>
         </div>
 
+        <hr v-if="settings.structure.scene_separator !== 'none'" class="border-gray-100 dark:border-gray-800" />
+
         <!-- Espacement du séparateur -->
         <div v-if="settings.structure.scene_separator !== 'none'">
           <p class="field-label">Espacement du séparateur</p>
@@ -510,7 +541,7 @@ watch(settings, scheduleSave, { deep: true })
       </div>
 
       <!-- ══ En-têtes / Pieds ══ -->
-      <div v-else-if="activeTab === 'headers'" class="flex-1 overflow-y-auto p-3 space-y-4">
+      <div v-else-if="activeTab === 'headers'" class="flex-1 overflow-y-auto p-4 space-y-5">
         <!-- Convention : gauche = verso, droite = recto -->
         <p class="text-xs text-gray-400 dark:text-gray-500 italic leading-relaxed">
           Convention éditoriale : page gauche (verso) = titre du roman, page droite (recto) = titre du chapitre.
@@ -542,6 +573,8 @@ watch(settings, scheduleSave, { deep: true })
           </div>
         </div>
 
+        <hr class="border-gray-100 dark:border-gray-800" />
+
         <!-- Espacement des filets -->
         <div>
           <p class="field-label">Espacement des filets (pt)</p>
@@ -557,6 +590,8 @@ watch(settings, scheduleSave, { deep: true })
           </div>
         </div>
 
+        <hr class="border-gray-100 dark:border-gray-800" />
+
         <div>
           <label class="field-label">Page gauche (verso)</label>
           <select v-model="settings.headers.left_field" class="field-input">
@@ -570,6 +605,8 @@ watch(settings, scheduleSave, { deep: true })
             <option v-for="f in HEADER_FIELDS" :key="f.key" :value="f.key">{{ f.label }}</option>
           </select>
         </div>
+
+        <hr class="border-gray-100 dark:border-gray-800" />
 
         <div>
           <label class="field-label">Position du folio</label>
@@ -587,6 +624,8 @@ watch(settings, scheduleSave, { deep: true })
             </button>
           </div>
         </div>
+
+        <hr class="border-gray-100 dark:border-gray-800" />
 
         <!-- Affichage du folio par type de page -->
         <div>
@@ -624,12 +663,17 @@ watch(settings, scheduleSave, { deep: true })
 @reference "@/assets/main.css";
 
 .field-label {
-  @apply text-xs font-semibold text-gray-600 dark:text-gray-400 mb-1.5 block;
+  @apply text-xs font-semibold text-gray-600 dark:text-gray-400 mb-1.5 block uppercase tracking-wide;
 }
 .field-sublabel {
-  @apply text-xs text-gray-500 dark:text-gray-500 mb-1 block;
+  @apply text-[10px] text-gray-400 dark:text-gray-500 mb-1 block uppercase tracking-wide;
 }
 .field-input {
-  @apply w-full text-xs rounded-md border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 text-gray-800 dark:text-gray-200 px-2 py-1.5 focus:outline-none focus:ring-1 focus:ring-brand-500 focus:border-brand-500 transition-colors;
+  @apply w-full text-xs rounded-lg
+         border border-gray-300/60 dark:border-gray-700
+         bg-white dark:bg-gray-800/60
+         text-gray-800 dark:text-gray-200 px-2.5 py-1.5
+         focus:outline-none focus:border-brand-500 focus:ring-1 focus:ring-brand-500/30
+         transition-all;
 }
 </style>

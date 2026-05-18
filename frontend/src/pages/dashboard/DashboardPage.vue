@@ -7,7 +7,6 @@ import { useThemeStore } from '@/stores/theme.store'
 import { useAppConfigStore } from '@/stores/appConfig.store'
 import { ACCENT_PALETTES } from '@/utils/accentColors'
 import ProjectSettingsDialog from '@/components/dashboard/ProjectSettingsDialog.vue'
-import PremiumLock from '@/components/common/PremiumLock.vue'
 import type { Project } from '@/types'
 
 const router = useRouter()
@@ -141,23 +140,31 @@ function onProjectDeleted(id: string) {
   <div class="p-6 max-w-6xl mx-auto">
 
     <!-- Barre de recherche & tri ─────────────────── -->
-    <div class="flex items-center gap-3 mb-6">
-      <input
-        v-model="search"
-        type="text"
-        placeholder="Rechercher…"
-        class="w-44 text-sm rounded-lg border border-gray-300 dark:border-gray-700
-               bg-white dark:bg-gray-900 text-gray-700 dark:text-gray-300
-               px-3 py-1.5 focus:outline-none focus:ring-2 focus:ring-brand-500"
-      />
-      <div class="ml-auto flex items-center gap-1">
+    <div class="flex items-center gap-3 mb-8">
+      <div class="relative">
+        <svg class="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-gray-400 pointer-events-none"
+             fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
+        </svg>
+        <input
+          v-model="search"
+          type="text"
+          placeholder="Rechercher…"
+          class="w-52 pl-8 pr-3 py-1.5 text-sm rounded-lg shadow-sm
+                 border border-gray-200 dark:border-gray-700
+                 bg-white dark:bg-gray-900 text-gray-700 dark:text-gray-300
+                 focus:outline-none focus:ring-2 focus:ring-brand-500"
+        />
+      </div>
+      <div class="ml-auto flex items-center bg-gray-100 dark:bg-gray-800 rounded-lg p-0.5">
         <button
           v-for="(label, key) in ({ recent: 'Récent', title: 'Titre', progress: 'Progression' } as const)"
           :key="key"
-          class="text-sm px-3 py-1.5 rounded-lg transition-colors"
+          class="text-xs px-3 py-1 rounded-md transition-all"
           :class="sort === key
-            ? 'bg-gray-900 dark:bg-gray-100 text-white dark:text-gray-900 font-medium'
-            : 'text-gray-500 hover:bg-gray-100 dark:hover:bg-gray-800'"
+            ? 'bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 shadow-sm font-medium'
+            : 'text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200'"
           @click="sort = key"
         >{{ label }}</button>
       </div>
@@ -166,137 +173,106 @@ function onProjectDeleted(id: string) {
     <!-- Grille de projets ───────────────────────── -->
     <div v-if="projects.loading" class="text-sm text-gray-400 py-16 text-center">Chargement…</div>
 
-    <div v-else class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+    <div v-else class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
 
       <!-- Card projet ─────────────────────────────── -->
       <div
         v-for="p in filtered"
         :key="p.id"
-        class="relative rounded-xl overflow-hidden border border-gray-200 dark:border-gray-700
-               bg-white dark:bg-gray-900 shadow-sm hover:shadow-md transition-shadow flex flex-col"
+        class="rounded-xl border border-gray-200 dark:border-gray-700
+               bg-white dark:bg-gray-900 shadow-sm hover:shadow-md transition-all flex flex-col"
+        :style="{ borderTop: `3px solid ${cardColor(p)}` }"
       >
-        <!-- Header coloré -->
-        <div
-          class="flex"
-          :style="{ background: hexRgba(cardColor(p), 0.08) }"
-        >
-          <!-- Bouton paramètres (coin haut droit) -->
+        <!-- Header ──────────────────────────────── -->
+        <div class="px-4 pt-4 pb-3 flex items-start gap-2">
+          <div class="flex-1 min-w-0">
+            <span
+              class="inline-flex items-center text-[10px] font-semibold uppercase tracking-wider px-2 py-0.5 rounded-full mb-2"
+              :style="{ background: hexRgba(STATUS_COLOR[p.status].bg, 0.12), color: STATUS_COLOR[p.status].bg }"
+            >{{ STATUS_LABEL[p.status] }}</span>
+            <h2 class="font-semibold text-[15px] leading-tight truncate text-gray-900 dark:text-gray-100">
+              {{ p.title }}
+            </h2>
+            <p class="text-xs text-gray-400 mt-0.5">{{ p.genre ?? '—' }}</p>
+          </div>
           <button
-            class="absolute top-1 right-1 p-1.5 rounded-xl opacity-50 hover:opacity-100 transition-opacity z-10"
-            :style="{ color: cardColor(p) }"
+            class="shrink-0 mt-0.5 p-1.5 rounded-lg text-gray-400 hover:text-gray-600 dark:hover:text-gray-200
+                   hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
             title="Paramètres du roman"
             @click.stop="settingsProject = p"
           >
-            <svg class="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"
                 d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/>
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
             </svg>
           </button>
-
-          <!-- Statut vertical -->
-          <div
-            class="flex items-center justify-center w-7 shrink-0 py-3"
-            :style="{ background: STATUS_COLOR[p.status].bg }"
-          >
-            <span
-              class="text-[9px] font-bold uppercase tracking-widest select-none"
-              :style="{
-                color: STATUS_COLOR[p.status].text,
-                writingMode: 'vertical-rl',
-                transform: 'rotate(180deg)',
-              }"
-            >{{ STATUS_LABEL[p.status] }}</span>
-          </div>
-
-          <!-- Contenu header -->
-          <div class="flex-1 min-w-0 px-4 pt-4 pb-3">
-            <div class="mb-1 pr-8">
-              <h2
-                class="font-semibold text-base leading-tight truncate"
-                :style="{ color: cardColor(p) }"
-              >{{ p.title }}</h2>
-            </div>
-            <p class="text-xs" :style="{ color: cardColor(p), opacity: 0.7 }">
-              {{ p.genre ?? '—' }}
-            </p>
-          </div>
         </div>
 
-        <!-- Stats ────────────────────────────────── -->
-        <div class="px-4 py-3 flex-1 space-y-2.5">
+        <!-- Stats ───────────────────────────────── -->
+        <div class="px-4 py-3 flex-1 space-y-3 border-t border-gray-100 dark:border-gray-800">
           <!-- Mots -->
           <div v-if="p.target_words">
-            <div class="flex justify-between text-xs text-gray-500 dark:text-gray-400 mb-1">
-              <span>Mots</span>
-              <span :style="{ color: cardColor(p) }" class="font-medium">{{ wordPct(p) }}%</span>
+            <div class="flex justify-between text-xs mb-1">
+              <span class="text-gray-500 dark:text-gray-400">Mots</span>
+              <span class="font-medium" :style="{ color: cardColor(p) }">{{ wordPct(p) }}%</span>
             </div>
-            <div class="h-1.5 bg-gray-100 dark:bg-gray-800 rounded-full overflow-hidden">
-              <div
-                class="h-full rounded-full transition-all"
-                :style="{ width: wordPct(p) + '%', background: cardColor(p) }"
-              />
+            <div class="h-1 bg-gray-100 dark:bg-gray-800 rounded-full overflow-hidden">
+              <div class="h-full rounded-full transition-all"
+                   :style="{ width: wordPct(p) + '%', background: cardColor(p) }"/>
             </div>
-            <p class="text-xs text-gray-400 mt-0.5">
-              {{ p.word_count.toLocaleString('fr-FR') }} / {{ p.target_words.toLocaleString('fr-FR') }}
+            <p class="text-xs text-gray-400 mt-1">
+              {{ p.word_count.toLocaleString('fr-FR') }} / {{ p.target_words.toLocaleString('fr-FR') }} mots
             </p>
           </div>
-          <div v-else class="text-xs text-gray-400">
+          <div v-else class="text-xs text-gray-500 dark:text-gray-400">
             {{ p.word_count.toLocaleString('fr-FR') }} mot{{ p.word_count !== 1 ? 's' : '' }}
           </div>
 
           <!-- Scènes -->
           <div v-if="p.target_scenes">
-            <div class="flex justify-between text-xs text-gray-500 dark:text-gray-400 mb-1">
-              <span>Scènes</span>
-              <span class="text-gray-600 dark:text-gray-400">{{ p.scene_count }}/{{ p.target_scenes }}</span>
+            <div class="flex justify-between text-xs mb-1">
+              <span class="text-gray-500 dark:text-gray-400">Scènes</span>
+              <span class="text-gray-500 dark:text-gray-400">{{ p.scene_count }}/{{ p.target_scenes }}</span>
             </div>
-            <div class="h-1.5 bg-gray-100 dark:bg-gray-800 rounded-full overflow-hidden">
-              <div
-                class="h-full rounded-full transition-all"
-                :style="{ width: scenePct(p) + '%', background: cardColor(p), opacity: 0.6 }"
-              />
+            <div class="h-1 bg-gray-100 dark:bg-gray-800 rounded-full overflow-hidden">
+              <div class="h-full rounded-full transition-all"
+                   :style="{ width: scenePct(p) + '%', background: cardColor(p), opacity: 0.5 }"/>
             </div>
           </div>
 
-          <!-- Fiches & date -->
-          <div class="flex items-center justify-between text-xs text-gray-400 pt-1">
+          <!-- Meta -->
+          <div class="flex items-center justify-between text-xs text-gray-400 pt-0.5">
             <span>{{ p.cards_count }} fiche{{ p.cards_count !== 1 ? 's' : '' }}</span>
-            <span>modifié {{ relativeDate(p.updated_at) }}</span>
+            <span>{{ relativeDate(p.updated_at) }}</span>
           </div>
 
           <!-- Dernière scène -->
-          <p v-if="p.last_scene_title" class="text-xs text-gray-400">
-            Dernière scène : <span class="italic text-gray-600 dark:text-gray-400">{{ p.last_scene_title }}</span>
+          <p v-if="p.last_scene_title" class="text-xs text-gray-400 truncate">
+            <span class="italic">{{ p.last_scene_title }}</span>
           </p>
         </div>
 
-        <!-- Footer ────────────────────────────────── -->
-        <div class="px-4 py-3 border-t border-gray-200 dark:border-gray-800 flex items-center justify-between">
-          <!-- Avatars membres -->
+        <!-- Footer ──────────────────────────────── -->
+        <div class="px-4 py-3 border-t border-gray-100 dark:border-gray-800 flex items-center justify-between gap-2">
           <div class="flex -space-x-1.5">
             <div
               v-for="m in (p.members ?? []).slice(0, 4)"
               :key="m.id"
-              class="w-7 h-7 rounded-full flex items-center justify-center
-                     text-xs font-semibold text-white ring-2 ring-white dark:ring-gray-900"
+              class="w-6 h-6 rounded-full flex items-center justify-center
+                     text-[10px] font-semibold text-white ring-2 ring-white dark:ring-gray-900"
               :style="{ background: cardColor(p) }"
               :title="m.name"
             >{{ initials(m.name) }}</div>
           </div>
-
-          <div class="flex gap-2">
+          <div class="flex gap-1.5">
             <button
-              class="text-xs px-3 py-1.5 rounded-lg border transition-colors
-                     text-gray-500 dark:text-gray-400 border-gray-300 dark:border-gray-700
-                     hover:bg-gray-50 dark:hover:bg-gray-800"
+              class="text-xs px-3 py-1.5 rounded-lg transition-colors
+                     text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800"
             >Accès</button>
             <button
-              class="text-xs px-3 py-1.5 rounded-lg border font-medium transition-colors"
-              :style="{
-                borderColor: cardColor(p),
-                color: cardColor(p),
-              }"
+              class="text-xs px-3 py-1.5 rounded-lg font-medium text-white transition-opacity hover:opacity-90"
+              :style="{ background: cardColor(p) }"
               @click="router.push({ name: 'editor', params: { projectId: p.id } })"
             >Ouvrir</button>
           </div>
@@ -305,18 +281,47 @@ function onProjectDeleted(id: string) {
 
       <!-- Card "+ Nouveau roman" ──────────────────── -->
       <button
-        class="rounded-xl border-2 border-dashed transition-colors
-               flex flex-col items-center justify-center gap-2 min-h-48 py-8"
-        :class="atProjectLimit
-          ? 'border-amber-300 dark:border-amber-800 text-amber-500 cursor-not-allowed'
-          : 'border-gray-300 dark:border-gray-700 hover:border-brand-300 dark:hover:border-brand-600 text-gray-400 hover:text-brand-600'"
-        :title="atProjectLimit ? `Limite de ${projectLimit} projet(s) atteinte — passez en premium` : 'Créer un nouveau projet'"
-        @click="atProjectLimit ? null : showNewForm = true"
+        v-if="!atProjectLimit"
+        class="rounded-xl border-2 border-dashed border-gray-200 dark:border-gray-700
+               hover:border-brand-300 dark:hover:border-brand-600 transition-colors
+               flex flex-col items-center justify-center gap-3 min-h-48 py-8
+               text-gray-400 hover:text-brand-600 dark:hover:text-brand-400"
+        title="Créer un nouveau projet"
+        @click="showNewForm = true"
       >
-        <PremiumLock v-if="atProjectLimit" size="md" />
-        <span v-else class="text-2xl leading-none">+</span>
-        <span class="text-sm">{{ atProjectLimit ? 'Premium requis' : 'Nouveau roman' }}</span>
+        <div class="w-10 h-10 rounded-full border-2 border-current flex items-center justify-center">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
+          </svg>
+        </div>
+        <span class="text-sm font-medium">Nouveau roman</span>
       </button>
+
+      <!-- Card premium requis ─────────────────────── -->
+      <div
+        v-else
+        class="rounded-xl border border-gray-200 dark:border-gray-700
+               bg-gray-50 dark:bg-gray-800/50
+               flex flex-col items-center justify-center gap-3 min-h-48 py-8 px-6 text-center"
+      >
+        <div class="w-10 h-10 rounded-full bg-amber-100 dark:bg-amber-900/30
+                    flex items-center justify-center">
+          <svg class="w-5 h-5 text-amber-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                  d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/>
+          </svg>
+        </div>
+        <div>
+          <p class="text-sm font-medium text-gray-700 dark:text-gray-300">Limite atteinte</p>
+          <p class="text-xs text-gray-400 mt-0.5 leading-relaxed">
+            Passez premium pour créer<br>des projets supplémentaires
+          </p>
+        </div>
+        <button
+          class="text-xs px-4 py-1.5 rounded-lg bg-amber-500 hover:bg-amber-600
+                 text-white font-medium transition-colors"
+        >Passer premium</button>
+      </div>
     </div>
 
     <!-- Dialog paramètres roman ─────────────────── -->

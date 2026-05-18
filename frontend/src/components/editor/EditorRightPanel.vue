@@ -281,7 +281,7 @@ function relativeTime(dateStr: string) {
 </script>
 
 <template>
-  <div class="flex flex-col h-full overflow-hidden bg-white dark:bg-gray-900">
+  <div class="flex flex-col h-full overflow-hidden bg-[#f0efe9] dark:bg-[var(--ui-sidebar-bg)]">
 
     <!-- Onglets + bouton fermer -->
     <div class="flex items-center border-b border-gray-300 dark:border-gray-700 shrink-0">
@@ -332,7 +332,7 @@ function relativeTime(dateStr: string) {
             <div
               v-for="ann in editor.annotationSearchResults"
               :key="ann.id"
-              class="rounded-lg border border-gray-200 dark:border-gray-700 p-2.5"
+              class="rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 shadow-sm p-2.5"
               :style="ann.type === 'inline' ? { borderLeftWidth: '3px', borderLeftColor: ann.color } : {}"
             >
               <div class="flex items-start justify-between gap-1 mb-1.5">
@@ -392,7 +392,7 @@ function relativeTime(dateStr: string) {
               v-for="ann in editor.annotations"
               :id="`ann-${ann.id}`"
               :key="ann.id"
-              class="rounded-lg border p-2.5 group relative transition-all duration-300"
+              class="rounded-lg border p-2.5 group relative transition-all duration-300 bg-white dark:bg-gray-800 shadow-sm"
               :class="highlightedAnnotationId === ann.id ? 'ring-2 scale-[1.01]' : 'border-gray-200 dark:border-gray-700'"
               :style="highlightedAnnotationId === ann.id
                 ? { borderColor: ann.color, background: ann.color + '15' }
@@ -480,7 +480,7 @@ function relativeTime(dateStr: string) {
       </div>
 
       <div class="flex-1 overflow-y-auto p-3 space-y-2">
-        <div v-for="note in editor.projectNotes" :key="note.id" class="rounded-lg border border-gray-200 dark:border-gray-700 p-2.5 group relative">
+        <div v-for="note in editor.projectNotes" :key="note.id" class="rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 shadow-sm p-2.5 group relative">
           <template v-if="editingNoteId === note.id">
             <textarea v-model="editingNoteBody" rows="4" v-focus
               class="w-full text-xs rounded border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-800 dark:text-gray-200 p-1.5 resize-none focus:outline-none focus:ring-1 focus:ring-brand-500" />
@@ -531,10 +531,15 @@ function relativeTime(dateStr: string) {
         <div v-else class="flex-1 overflow-y-auto p-3 space-y-1">
           <div v-if="editor.cardsLoading" class="text-xs text-gray-400 text-center py-6">Chargement…</div>
           <template v-else>
-            <div v-for="card in filteredSceneCards" :key="card.id" class="rounded-lg overflow-hidden">
+            <div
+              v-for="card in filteredSceneCards" :key="card.id"
+              class="rounded-xl overflow-hidden border transition-all"
+              :class="expandedCardId === card.id
+                ? 'border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 shadow-sm'
+                : 'border-transparent hover:border-gray-200 dark:hover:border-gray-700 hover:bg-white/70 dark:hover:bg-gray-800/40'"
+            >
               <div
-                class="w-full text-left flex items-center gap-2 px-2 py-1.5 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors group cursor-pointer"
-                :class="expandedCardId === card.id ? 'bg-gray-50 dark:bg-gray-800/60' : ''"
+                class="w-full text-left flex items-center gap-2 px-2.5 py-2 transition-colors group cursor-pointer"
                 @click="toggleCardExpand(card.id)"
               >
                 <svg class="w-3 h-3 text-gray-400 shrink-0 transition-transform duration-150" :class="expandedCardId === card.id ? 'rotate-90' : ''" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -552,9 +557,9 @@ function relativeTime(dateStr: string) {
                     {{ initials(card.title) }}
                   </div>
                 </template>
-                <span class="flex-1 text-xs text-gray-800 dark:text-gray-200 truncate">{{ card.title }}</span>
+                <span class="flex-1 text-xs font-medium text-gray-800 dark:text-gray-200 truncate">{{ card.title }}</span>
                 <button
-                  class="opacity-0 group-hover:opacity-100 transition-opacity p-0.5 rounded hover:bg-gray-200 dark:hover:bg-gray-700 shrink-0"
+                  class="opacity-0 group-hover:opacity-100 transition-opacity p-0.5 rounded hover:bg-gray-100 dark:hover:bg-gray-700 shrink-0"
                   title="Éditer"
                   @click.stop="emit('card-selected', card.id)"
                 >
@@ -574,19 +579,24 @@ function relativeTime(dateStr: string) {
         <div class="flex-1 overflow-y-auto p-3 space-y-1">
           <div v-if="editor.cardsLoading" class="text-xs text-gray-400 text-center py-6">Chargement…</div>
           <template v-else>
-            <div v-for="card in filteredProjectCards" :key="card.id" class="rounded-lg overflow-hidden">
+            <div
+              v-for="card in filteredProjectCards" :key="card.id"
+              class="rounded-xl overflow-hidden border transition-all"
+              :class="expandedCardId === card.id
+                ? 'border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 shadow-sm'
+                : 'border-transparent hover:border-gray-200 dark:hover:border-gray-700 hover:bg-white/70 dark:hover:bg-gray-800/40'"
+            >
               <div
-                class="w-full text-left flex items-center gap-2 px-2 py-1.5 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors group cursor-pointer"
-                :class="expandedCardId === card.id ? 'bg-gray-50 dark:bg-gray-800/60' : ''"
+                class="w-full text-left flex items-center gap-2 px-2.5 py-2 transition-colors group cursor-pointer"
                 @click="toggleCardExpand(card.id)"
               >
                 <svg class="w-3 h-3 text-gray-400 shrink-0 transition-transform duration-150" :class="expandedCardId === card.id ? 'rotate-90' : ''" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
                 </svg>
                 <span class="w-2 h-2 rounded-full shrink-0" :style="{ background: cardTypeColor(card.type) }" />
-                <span class="flex-1 text-xs text-gray-800 dark:text-gray-200 truncate">{{ card.title }}</span>
+                <span class="flex-1 text-xs font-medium text-gray-800 dark:text-gray-200 truncate">{{ card.title }}</span>
                 <button
-                  class="opacity-0 group-hover:opacity-100 transition-opacity p-0.5 rounded hover:bg-gray-200 dark:hover:bg-gray-700 shrink-0"
+                  class="opacity-0 group-hover:opacity-100 transition-opacity p-0.5 rounded hover:bg-gray-100 dark:hover:bg-gray-700 shrink-0"
                   title="Éditer"
                   @click.stop="emit('card-selected', card.id)"
                 >
