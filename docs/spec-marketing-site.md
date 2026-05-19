@@ -1,227 +1,424 @@
 # Papyrus — Specs Marketing Site
 
-> Brainstorm initial — à affiner
+> Version 2 — conseils techniques détaillés
 
 ---
 
-## Vision
+## 1. Architecture — Un container de plus, pas d'accès DB direct
 
-Papyrus est une application d'écriture assistée pour auteurs. Le cœur, c'est l'app. Mais comme tout bon outil SaaS, il lui faut un espace public séparé qui joue plusieurs rôles à la fois :
+### Ce qu'on ajoute
 
-- **Vitrine** : convaincre un visiteur inconnu en moins de 10 secondes
-- **Acquisition** : attirer du trafic organique (SEO, Instagram, bouche à oreille)
-- **Éducation** : montrer comment on utilise l'outil, inspirer les auteurs
-- **Conversion** : transformer le visiteur en compte payant
-- **Lien** : rediriger vers l'app et en assurer la continuité
+```
+┌─────────────────────────────────────────────────────┐
+│  Raspberry Pi (Nginx)                               │
+│                                                     │
+│  app.papyrus.io        → Vue.js (dist static)       │
+│  papyrus.io            → Nuxt 3 (nouveau)  ← NEW    │
+│  api.papyrus.io        → Laravel (existant)         │
+│                              │                      │
+│                         PostgreSQL                  │
+└─────────────────────────────────────────────────────┘
+```
+
+**Recommandation : le site marketing ne touche jamais directement la DB.**
+
+Ta logique "API pour les users, direct pour le reste" est compréhensible mais risquée :
+- La DB devient une interface publique implicite → tout changement de schéma casse les deux projets en même temps
+- Les credentials DB dans un deuxième container = surface d'attaque supplémentaire
+- Laravel a déjà toute la logique de validation, autorisation, et transformation
+
+**Ce qu'on fait à la place :** ajouter des routes dédiées dans le backend Laravel existant, prefixées `/api/site/` (ou `/api/web/`). Le site Nuxt parle uniquement à ces endpoints. C'est 2-3 controllers de plus, pas un projet séparé.
+
+```
+Nuxt (marketing site)
+    ↕ HTTP/JSON
+Laravel (backend existant) — nouvelles routes /api/site/*
+    ↕
+PostgreSQL
+```
+
+### Stack recommandée pour le site marketing
+
+**Nuxt 3** — cohérent avec Vue.js déjà maîtrisé, SSR pour le SEO, markdown natif avec `@nuxt/content`.
+
+```
+marketing/              ← nouveau dossier dans le repo (ou repo séparé)
+  nuxt.config.ts
+  content/              ← articles markdown
+    articles/
+      mon-article.md
+  pages/
+    index.vue           ← landing page
+    tarifs.vue
+    tutoriels/
+    blog/
+  components/
+  server/               ← API routes Nuxt si besoin de proxy
+```
+
+### Mode maintenance indépendant
+
+Dans le backend Laravel, un middleware `SiteMaintenanceMiddleware` vérifie un flag en cache/config.
+Le site Nuxt retourne une page 503 dédiée sans toucher l'app principale.
+
+```php
+// Route Laravel
+Route::middleware('site.maintenance')->prefix('api/site')->group(function () {
+    Route::get('/articles', [SiteArticleController::class, 'index']);
+    // ...
+});
+```
+
+Un toggle dans le panel admin suffit (`config('site.maintenance') → true`).
 
 ---
 
-## Les 5 espaces du site
+## 2. Rôle Webmaster
 
-### 1. Page d'accueil (Landing page)
+### Intégration avec spatie/laravel-permission
 
-La porte d'entrée. Elle doit répondre à une seule question : *"Pourquoi Papyrus plutôt que Word ?"*
+Tu as déjà `owner`, `co_author`, `beta_reader` (rôles par projet). Le rôle `webmaster` est un **rôle global système**, pas par projet.
 
-**Sections envisagées :**
-- Hero : accroche forte + CTA "Essayer gratuitement" + visuel de l'interface
-- Problème → Solution : l'auteur qui galère vs l'auteur avec Papyrus
-- Fonctionnalités clés (6 max, avec icône + phrase) :
-  - Correcteur orthographique et stylistique
-  - Détection des répétitions
-  - Reformulation assistée
-  - Analyse des chapitres (synopsis auto, statistiques)
-  - Ratios de présence des personnages
-  - Support roman / théâtre / scénario
-- Proof : témoignages, nombre d'auteurs, extraits de textes améliorés
-- CTA final : créer un compte
+```php
+// Migration
+// spatie permet les rôles globaux (sans guard spécifique)
+Role::create(['name' => 'webmaster', 'guard_name' => 'web']);
 
-**Questions ouvertes :**
-- Faut-il une démo interactive ou un screenshot tour ?
-- Quel est le bénéfice numéro 1 à mettre en avant ? (gain de temps ? qualité du texte ? structure ?)
+// Dans le panel admin : toggle
+$user->assignRole('webmaster');
+$user->removeRole('webmaster');
+```
 
----
+### Ce qu'un webmaster peut faire
 
-### 2. Blog / Contenu
-
-L'espace qui donne de la valeur sans friction — et qui peut vivre sur Instagram en parallèle.
-
-**Angle éditorial :**
-- Conseils de craft d'écriture (structure narrative, personnages, rythme)
-- Coulisses de Papyrus (comment une fonctionnalité a été conçue)
-- Interviews d'auteurs
-- Fiches pratiques (comment écrire un synopsis, comment gérer l'acte 2, etc.)
-
-**Format dual Instagram/Blog :**
-- Article long sur le site (800–1500 mots, bon pour le SEO)
-- Version condensée "carousel" ou "caption" prête pour Instagram (3–5 points clés)
-- Idée : chaque article a un champ "version Instagram" dans son frontmatter
-
-**Stack blog :**
-
-| Option | Avantages | Inconvénients |
+| Action | Webmaster | Admin |
 |---|---|---|
-| Markdown local (ex: Astro Content Collections) | Simple, dans le repo, versioning git | Écrire en markdown pas naturel pour tout le monde |
-| CMS headless (Notion, Sanity, Contentful) | Interface agréable, collaboration | Complexité d'intégration, coût |
-| Notion comme CMS | Tu écris dans Notion, API sync vers le site | API Notion fragile, pagination complexe |
+| Créer / modifier un article | ✓ | ✓ |
+| Publier / dépublier | ✓ | ✓ |
+| Gérer les images | ✓ | ✓ |
+| Mode maintenance du site | ✗ | ✓ |
+| Gérer les tarifs & promos | ✗ | ✓ |
+| Gérer les tokens | ✗ | ✓ |
+| Gérer les utilisateurs | ✗ | ✓ |
 
-**Recommandation provisoire :** Markdown local avec un frontmatter bien structuré, et un script d'export Instagram. Si le volume d'articles augmente → migrer vers un CMS.
+```php
+// Policy article
+class SiteArticlePolicy
+{
+    public function create(User $user): bool
+    {
+        return $user->hasRole(['admin', 'webmaster']);
+    }
 
----
-
-### 3. Tarifs & Souscription
-
-La page qui convertit. Elle doit être claire, honnête, et lever les objections.
-
-**Structure de prix à définir (options) :**
-
-```
-Option A — Freemium
-  - Gratuit : X projets, X corrections/mois
-  - Pro : illimité + fonctionnalités avancées (analyse chapitres, stats)
-  - (Futur) Équipe : partage de projets
-
-Option B — Essai gratuit 14 jours → abonnement
-  - Un seul plan Pro (mensuel / annuel avec réduction)
-  - Pas de version gratuite permanente
-
-Option C — Pay-as-you-go
-  - Paiement à l'usage (crédits d'analyse)
-  - Adapté si usage irrégulier des auteurs
-```
-
-**Questions à trancher :**
-- Quel est le prix cible ? (10€/mois ? 5€/mois ? 15€/mois ?)
-- Freemium ou trial only ? (freemium = plus d'acquisition, trial = plus simple à gérer)
-- L'inscription se fait sur le marketing site ou directement dans l'app ?
-
-**Éléments de la page Tarifs :**
-- Tableau comparatif des plans
-- FAQ (annulation, données, compatibilité)
-- Garantie (ex: satisfait ou remboursé 30 jours)
-- Témoignage court d'un auteur ayant souscrit
-
----
-
-### 4. Tutoriels
-
-L'espace qui réduit le "time to value" — l'auteur doit réussir quelque chose en moins de 5 minutes.
-
-**Types de contenu :**
-- Guides de démarrage ("Créer mon premier projet")
-- Guides par fonctionnalité ("Comment utiliser le correcteur de style")
-- Guides par format ("Écrire un scénario avec Papyrus")
-
-**Format :**
-- Texte + screenshots annotés (rapide à produire)
-- Vidéos courtes < 3 min (fort impact, plus lourd à maintenir)
-- GIFs pour les interactions clés
-
-**Structure proposée :**
-```
-Tutoriels/
-  Démarrage rapide
-  Fonctionnalités/
-    Correction orthographique
-    Correction de style
-    Analyse des répétitions
-    Reformulation
-    Analyse de chapitres
-    Statistiques personnages
-  Par format/
-    Roman
-    Pièce de théâtre
-    Scénario
+    public function publish(User $user, Article $article): bool
+    {
+        return $user->hasRole(['admin', 'webmaster']);
+    }
+}
 ```
 
 ---
 
-### 5. Création de compte / Portail
+## 3. Paiement — Stripe + Laravel Cashier
 
-Le pont entre le site public et l'app.
+### Pourquoi Stripe
 
-**Flux utilisateur :**
+Comparatif pour 9€/mois, marché français/EU :
+
+| | Stripe | Paddle | Lemon Squeezy |
+|---|---|---|---|
+| Frais par transaction | 1.4% + 0.25€ (EU) → ~0.38€ | 5% + 0.50€ → ~0.95€ | 5% + 0.50€ → ~0.95€ |
+| Sur 9€/mois | **perd ~4.2%** | perd ~10.5% | perd ~10.5% |
+| Gestion TVA/VAT EU | Via Stripe Tax (addon) | Inclus (MoR) | Inclus (MoR) |
+| Intégration Laravel | **Laravel Cashier** (officiel) | Manuel | Manuel |
+| Export compta | CSV, FEC, Pennylane | Basique | Basique |
+| Codes promo natifs | ✓ | ✓ | ✓ |
+| Portal client (annulation self-service) | ✓ | ✓ | ✓ |
+
+**Verdict : Stripe.**
+- Les frais sont 2.5× inférieurs à Paddle
+- Laravel Cashier (`laravel/cashier-stripe`) gère les abonnements, les portals clients, les webhooks, les trials — tout est documenté et maintenu par Laravel
+- Stripe Tax gère la TVA EU automatiquement (sinon tu dois facturer la TVA du pays de l'acheteur — obligation légale depuis 2015)
+
+### Modèle de prix à 9€ TTC
+
 ```
-Landing page
-  → CTA "Commencer gratuitement"
-    → Page inscription (email + mot de passe)
-      → Email de confirmation
-        → Onboarding dans l'app (choix du type de projet)
-```
-
-**Questions :**
-- Auth gérée par le backend Papyrus existant ou service externe (Clerk, Auth0) ?
-- Page "Se connecter" sur le marketing site ou redirect vers l'app ?
-- Gestion des abonnements : Stripe intégré directement ?
-
----
-
-## Architecture technique
-
-### Deux approches possibles
-
-**Option A — Site séparé (recommandé)**
-- Un repo (ou sous-dossier) dédié au site marketing
-- Stack : **Astro** (SSG, excellent pour SEO + blog markdown) ou **Nuxt** (cohérent avec Vue.js de l'app)
-- Domaine : `papyrus.io` (marketing) + `app.papyrus.io` (application)
-- Indépendant : peut être déployé et mis à jour sans toucher à l'app
-
-**Option B — Intégré dans le repo Papyrus**
-- Pages publiques ajoutées au frontend Vue.js existant
-- Moins de maintenance de repo, mais couplage fort
-- Déploiement unique mais risque de ralentir le site public
-
-**Recommandation :** Option A avec **Nuxt** pour rester dans l'écosystème Vue.js déjà maîtrisé, générer du HTML statique pour le SEO, et partager éventuellement un design system.
-
----
-
-## Workflow contenu Instagram
-
-Pour chaque article de blog :
-
-1. Rédiger l'article complet en markdown (site)
-2. Extraire les 5 points clés → texte du carousel Instagram
-3. Créer le visuel (Canva, Figma template) avec la "une" de l'article
-4. Publier dans l'ordre : site d'abord → Instagram 24h après (évite le contenu dupliqué)
-
-**Frontmatter d'article (proposition) :**
-```yaml
----
-title: "Comment structurer l'acte 2 de votre roman"
-date: 2026-06-01
-category: craft
-tags: [structure, roman, acte]
-excerpt: "L'acte 2 est le cimetière de tous les romans non terminés. Voici comment s'en sortir."
-instagram_version: |
-  5 conseils pour survivre à l'acte 2 :
-  1. ...
-  2. ...
-  3. ...
-  4. ...
-  5. ...
-published: true
----
+9€ TTC/mois   = 7.50€ HT (TVA 20%)
+85€ TTC/an    = 70.83€ HT  → équivaut à 7.08€/mois (-21%, soit ~2.5 mois offerts)
 ```
 
+### Ce que Stripe gère nativement (sans code custom)
+
+- Abonnements mensuels / annuels
+- Codes promo (% ou montant fixe, durée limitée, usage max)
+- Périodes de réduction (ex: -50% pendant 3 mois)
+- Trials (ex: 14 jours gratuits avant débit)
+- Portal client (l'utilisateur gère lui-même : annulation, changement de plan, téléchargement des factures)
+- Webhooks → Laravel écoute et met à jour le statut abonnement en DB
+
+### Installation
+
+```bash
+composer require laravel/cashier
+php artisan vendor:publish --tag="cashier-migrations"
+php artisan migrate
+```
+
+```php
+// User model
+use Laravel\Cashier\Billable;
+
+class User extends Authenticatable
+{
+    use Billable;
+}
+```
+
+### Données à collecter pour la transaction
+
+Stripe demande très peu côté client : juste l'email + le moyen de paiement (géré par Stripe.js / Stripe Elements dans le browser, les numéros de carte ne transitent jamais par ton serveur).
+
+Pour la facture conforme :
+- Prénom / Nom ou Raison sociale
+- Adresse (pour TVA EU)
+- Numéro de TVA (si B2B, pour autoliquidation)
+
 ---
 
-## Ce qu'il faut décider avant de commencer
+## 4. Section Admin — Gestion des tarifs & promos
 
-| Décision | Options | Urgence |
+### Ce que l'admin peut faire
+
+```
+Panel Admin → Abonnements
+  ├── Plans actifs (synchronisés avec Stripe Products/Prices)
+  │     ├── Modifier le prix affiché (cosmétique) → màj Stripe via API
+  │     └── Activer / désactiver un plan
+  ├── Promotions
+  │     ├── Créer un code promo → POST /stripe/coupons
+  │     │     - Type : % ou montant fixe
+  │     │     - Durée : once / repeating (N mois) / forever
+  │     │     - Date d'expiration
+  │     │     - Nombre d'utilisations max
+  │     └── Liste des codes actifs / consommés
+  └── Abonnés
+        ├── Liste avec statut Stripe (active, past_due, canceled)
+        └── Actions : annuler, offrir extension, changer de plan
+```
+
+**Important :** les prix "réels" vivent dans Stripe. L'admin Papyrus appelle l'API Stripe pour les créer/modifier. Ne jamais dupliquer les prix uniquement en DB locale — Stripe est la source de vérité.
+
+```php
+// Créer un coupon depuis l'admin
+$stripe->coupons->create([
+    'percent_off'       => 20,
+    'duration'          => 'repeating',
+    'duration_in_months'=> 3,
+    'max_redemptions'   => 100,
+    'redeem_by'         => strtotime('2026-12-31'),
+]);
+```
+
+---
+
+## 5. Tokens d'accès temporaires (Agents Hermes)
+
+### Ce que c'est
+
+Un système de tokens API à durée de vie configurable, créés depuis l'admin, pour des agents automatisés (tests, scripts, agents IA Hermes) qui doivent s'authentifier sans compte utilisateur.
+
+### Implémentation avec Sanctum
+
+Sanctum supporte déjà les tokens API (mode token, distinct du mode SPA cookie).
+
+```php
+// Migration complémentaire
+Schema::table('personal_access_tokens', function (Blueprint $table) {
+    // Sanctum a déjà expires_at depuis Laravel 10
+    // On ajoute juste des métadonnées
+    $table->string('description')->nullable();
+    $table->foreignId('created_by')->nullable()->constrained('users');
+});
+```
+
+```php
+// Dans l'admin : créer un token
+$token = $targetUser->createToken(
+    name: $request->description,
+    abilities: ['site:read', 'api:agent'],
+    expiresAt: now()->addDays($request->validity_days)
+);
+// Afficher $token->plainTextToken UNE SEULE FOIS à l'admin
+```
+
+### Panel admin — gestion des tokens
+
+```
+Admin → Tokens Hermes
+  ├── Créer un token
+  │     - Description (ex: "Agent test staging")
+  │     - Validité (jours) — valeur par défaut configurable dans les settings
+  │     - Abilities (cases à cocher)
+  ├── Liste des tokens actifs (description, expiration, dernier usage)
+  └── Révoquer un token
+```
+
+### Paramètre global configurable
+
+```php
+// Dans la table settings ou config/site.php
+'hermes_token_default_validity_days' => 30,
+```
+
+Modifiable depuis le panel admin sans déploiement.
+
+---
+
+## 6. Blog — Éditeur Markdown avec gestion des images
+
+### Éditeur recommandé : Toast UI Editor
+
+**Pourquoi :** vrai éditeur markdown (pas juste un textarea), double vue (édition + preview), gestion d'images native, léger, bien maintenu, licence MIT.
+
+Alternatives :
+- **TipTap** : plus puissant, peut écrire du markdown, excellent si tu veux du WYSIWYG pur — mais plus complexe à configurer pour du markdown natif
+- **EasyMDE** : simple et efficace si tu veux rester proche du markdown brut
+
+### Gestion des images
+
+Les images s'uploadent via un endpoint Laravel dédié, stockées localement (ou S3-compatible/MinIO si tu veux du cloud self-hosted).
+
+```php
+// Route
+Route::post('/api/site/articles/upload-image', [SiteImageController::class, 'store'])
+    ->middleware(['auth:sanctum', 'role:admin|webmaster']);
+
+// Controller
+public function store(Request $request): JsonResponse
+{
+    $path = $request->file('image')->store('site/articles', 'public');
+    return response()->json(['url' => Storage::url($path)]);
+}
+```
+
+L'éditeur Toast UI appelle cet endpoint au drop/paste d'image et insère le markdown `![alt](url)` automatiquement.
+
+### Structure d'un article en DB
+
+```sql
+CREATE TABLE site_articles (
+    id              BIGSERIAL PRIMARY KEY,
+    author_id       BIGINT REFERENCES users(id),
+    slug            VARCHAR(255) UNIQUE NOT NULL,
+    title           VARCHAR(500) NOT NULL,
+    excerpt         TEXT,
+    body            TEXT NOT NULL,            -- markdown brut
+    body_html       TEXT,                     -- compilé au save (cache)
+    cover_image     VARCHAR(500),
+    category        VARCHAR(100),
+    tags            JSONB DEFAULT '[]',
+    instagram_text  TEXT,                     -- version condensée Instagram
+    status          VARCHAR(20) DEFAULT 'draft',  -- draft | published | archived
+    published_at    TIMESTAMP,
+    created_at      TIMESTAMP DEFAULT NOW(),
+    updated_at      TIMESTAMP DEFAULT NOW()
+);
+```
+
+### Mode maintenance du blog indépendant
+
+```php
+// settings table (clé/valeur générique)
+// site_blog_maintenance = true/false
+
+// Middleware
+class BlogMaintenanceMiddleware
+{
+    public function handle(Request $request, Closure $next): Response
+    {
+        if (Setting::get('site_blog_maintenance') && !auth()->user()?->hasRole('admin|webmaster')) {
+            return response()->json(['message' => 'Blog en maintenance'], 503);
+        }
+        return $next($request);
+    }
+}
+```
+
+---
+
+## 7. Freemium — Définir les limites
+
+La question clé : qu'est-ce qui est gratuit vs payant ?
+
+**Proposition :**
+
+| Fonctionnalité | Gratuit | Pro (9€/mois) |
 |---|---|---|
-| Modèle de pricing | Freemium / Trial / Pay-as-you-go | Haute |
-| Stack technique | Astro / Nuxt / intégré | Haute |
-| CMS ou markdown | Local / Notion / Sanity | Moyenne |
-| Domaine | papyrus.io / autre | Haute |
-| Passerelle auth | Backend existant / Clerk / Auth0 | Moyenne |
-| Gestion paiements | Stripe / Paddle / autre | Haute |
+| Projets | 1 | Illimité |
+| Corrections ortho/style | 20/mois | Illimité |
+| Reformulation IA | 5/mois | Illimité |
+| Analyse répétitions | ✓ | ✓ |
+| Analyse chapitres (synopsis auto) | ✗ | ✓ |
+| Stats personnages | ✗ | ✓ |
+| Export | ✗ | ✓ |
+| Support | ✗ | Email prioritaire |
+
+**Principe :** le gratuit doit être suffisant pour qu'un auteur débutant ou occasionnel s'en satisfasse, et frustrant juste assez pour qu'un auteur sérieux upgrade.
 
 ---
 
-## Prochaines étapes suggérées
+## 8. Schéma des nouvelles routes Laravel
 
-1. **Trancher le modèle de pricing** — tout découle de là
-2. **Choisir la stack** (Nuxt recommandé pour la cohérence)
-3. **Définir l'accroche principale** de la landing page (1 phrase, 1 bénéfice)
-4. **Créer un template d'article** et rédiger le premier post
-5. **Intégrer Stripe** dans le backend existant (ou valider que c'est déjà prévu)
-6. **Wireframes** des 3 pages principales (landing, tarifs, tutos)
+```
+POST   /api/auth/*                          existant (Sanctum)
+
+GET    /api/site/articles                   liste publique
+GET    /api/site/articles/{slug}            article public
+POST   /api/site/articles                   [webmaster|admin] créer
+PUT    /api/site/articles/{id}              [webmaster|admin] modifier
+DELETE /api/site/articles/{id}              [admin] supprimer
+POST   /api/site/articles/upload-image      [webmaster|admin] upload image
+
+GET    /api/site/pricing                    plans publics
+GET    /api/admin/pricing                   [admin] gestion plans Stripe
+POST   /api/admin/coupons                   [admin] créer coupon
+GET    /api/admin/coupons                   [admin] liste coupons
+DELETE /api/admin/coupons/{id}              [admin] révoquer coupon
+
+GET    /api/admin/tokens                    [admin] liste tokens Hermes
+POST   /api/admin/tokens                    [admin] créer token
+DELETE /api/admin/tokens/{id}              [admin] révoquer token
+
+POST   /api/billing/subscribe               créer abonnement Stripe
+POST   /api/billing/portal                  redirect portal Stripe
+POST   /api/billing/webhook                 webhook Stripe (non authentifié, signé)
+
+PUT    /api/admin/settings                  [admin] paramètres globaux (maintenance, validity_days, etc.)
+```
+
+---
+
+## 9. Décisions actées
+
+| Sujet | Décision |
+|---|---|
+| Architecture | Container Nuxt 3 séparé, API Laravel uniquement (pas d'accès DB direct) |
+| Rôles | Rôle `webmaster` global via spatie/laravel-permission |
+| Paiement | **Stripe + Laravel Cashier** |
+| Prix | 9€ TTC/mois · 85€ TTC/an |
+| Éditeur blog | Toast UI Editor (ou TipTap) |
+| Tokens | Sanctum token API + champ `expires_at` natif |
+| Images | Upload Laravel → stockage local ou MinIO |
+| Maintenance blog | Middleware + toggle dans table settings |
+
+---
+
+## 10. Ordre d'implémentation suggéré
+
+1. **DB** : migrations `site_articles`, `settings`, rôle `webmaster`
+2. **Backend Laravel** : routes `/api/site/*` + `/api/admin/*` + policies
+3. **Stripe** : installer Cashier, configurer webhooks, créer les Products/Prices
+4. **Admin panel** : section abonnements, codes promo, tokens Hermes, toggle maintenance
+5. **Nuxt** : landing page, blog (lecture articles via API), tarifs
+6. **Éditeur blog** : intégrer Toast UI Editor dans le panel admin existant
+7. **Auth cross-site** : SSO ou lien direct `app.papyrus.io` depuis le site marketing
