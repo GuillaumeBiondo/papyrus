@@ -346,24 +346,141 @@ class BlogMaintenanceMiddleware
 
 ---
 
-## 7. Freemium — Définir les limites
+## 7. Freemium — Architecture configurable (sans redéploiement)
 
-La question clé : qu'est-ce qui est gratuit vs payant ?
+### Principe fondamental
 
-**Proposition :**
+La maille freemium va changer souvent avant le lancement. Les limites ne doivent donc **jamais être codées en dur** dans la logique métier. Elles vivent en base de données, éditables depuis l'admin sans toucher au code.
 
-| Fonctionnalité | Gratuit | Pro (9€/mois) |
+### Structure en DB
+
+```sql
+-- Un plan = une ligne Stripe Product + une ligne locale avec ses features
+CREATE TABLE plans (
+    id           BIGSERIAL PRIMARY KEY,
+    stripe_price_id_monthly  VARCHAR(100),   -- ex: price_xxxxx
+    stripe_price_id_yearly   VARCHAR(100),
+    name         VARCHAR(100) NOT NULL,      -- "Gratuit", "Pro"
+    slug         VARCHAR(50) UNIQUE NOT NULL, -- "free", "pro"
+    features     JSONB NOT NULL DEFAULT '{}',
+    is_active    BOOLEAN DEFAULT TRUE,
+    created_at   TIMESTAMP DEFAULT NOW(),
+    updated_at   TIMESTAMP DEFAULT NOW()
+);
+```
+
+### Le JSON `features` — toutes les limites en un seul endroit
+
+```json
+{
+  "projects_max":           1,        // -1 = illimité
+  "spell_check_per_month":  20,       // -1 = illimité
+  "style_check_per_month":  20,
+  "rewrite_per_month":      5,
+  "repetition_analysis":    true,
+  "chapter_analysis":       false,
+  "character_stats":        false,
+  "export":                 false,
+  "priority_support":       false
+}
+```
+
+Pour changer une limite : l'admin modifie ce JSON dans le panel → aucun déploiement.
+
+### Le service qui vérifie les droits
+
+```php
+class PlanFeatureService
+{
+    public function can(User $user, string $feature): bool
+    {
+        $plan = $this->getPlan($user);
+        $value = data_get($plan->features, $feature);
+
+        if (is_bool($value)) return $value;
+        if ($value === -1)   return true;   // illimité
+
+        // Pour les quotas mensuels : comparer à l'usage du mois courant
+        $used = $this->getMonthlyUsage($user, $feature);
+        return $used < $value;
+    }
+
+    public function remaining(User $user, string $feature): int|null
+    {
+        $plan = $this->getPlan($user);
+        $limit = data_get($plan->features, $feature);
+        if ($limit === -1) return null; // null = illimité
+        return max(0, $limit - $this->getMonthlyUsage($user, $feature));
+    }
+}
+```
+
+### Usage dans un controller
+
+```php
+// Dans SpellCheckController
+public function check(Request $request)
+{
+    if (!$this->planFeatures->can($request->user(), 'spell_check_per_month')) {
+        return response()->json([
+            'error' => 'quota_exceeded',
+            'upgrade_url' => route('billing.upgrade'),
+        ], 403);
+    }
+
+    // ... logique de correction
+    $this->planFeatures->incrementUsage($request->user(), 'spell_check_per_month');
+}
+```
+
+### Suivi de l'usage mensuel
+
+```sql
+CREATE TABLE feature_usage (
+    id         BIGSERIAL PRIMARY KEY,
+    user_id    BIGINT REFERENCES users(id),
+    feature    VARCHAR(100) NOT NULL,
+    month      CHAR(7) NOT NULL,   -- ex: "2026-06"
+    count      INT DEFAULT 0,
+    UNIQUE(user_id, feature, month)
+);
+```
+
+`UPSERT` à chaque utilisation, reset automatique car la clé inclut le mois.
+
+### Panel admin — gestion des plans
+
+```
+Admin → Plans & Limites
+  ├── Plan Gratuit
+  │     └── [Formulaire structuré sur chaque feature du JSON]
+  │           - Projets max : [input number, -1 = illimité]
+  │           - Corrections ortho/mois : [input number, -1 = illimité]
+  │           - Analyse chapitres : [toggle]
+  │           ...
+  └── Plan Pro
+        └── [idem]
+```
+
+Le formulaire admin génère et sauvegarde le JSON. Pas besoin d'éditer du JSON brut.
+
+### Catalogue des features connues à ce jour
+
+À titre indicatif — tout peut changer sans déploiement :
+
+| Clé feature | Type | Description |
 |---|---|---|
-| Projets | 1 | Illimité |
-| Corrections ortho/style | 20/mois | Illimité |
-| Reformulation IA | 5/mois | Illimité |
-| Analyse répétitions | ✓ | ✓ |
-| Analyse chapitres (synopsis auto) | ✗ | ✓ |
-| Stats personnages | ✗ | ✓ |
-| Export | ✗ | ✓ |
-| Support | ✗ | Email prioritaire |
+| `projects_max` | nombre | Nb de projets actifs |
+| `spell_check_per_month` | nombre | Corrections ortho/mois |
+| `style_check_per_month` | nombre | Corrections style/mois |
+| `rewrite_per_month` | nombre | Reformulations IA/mois |
+| `repetition_analysis` | booléen | Analyse des répétitions |
+| `chapter_analysis` | booléen | Synopsis auto + stats chapitre |
+| `character_stats` | booléen | Ratios de présence personnages |
+| `export` | booléen | Export du projet |
+| `priority_support` | booléen | Support email prioritaire |
 
-**Principe :** le gratuit doit être suffisant pour qu'un auteur débutant ou occasionnel s'en satisfasse, et frustrant juste assez pour qu'un auteur sérieux upgrade.
+Ajouter une nouvelle feature = ajouter une clé dans le JSON des deux plans + un contrôle dans le code. **Pas de migration, pas de déploiement de config.**
 
 ---
 
