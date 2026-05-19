@@ -87,14 +87,14 @@ watch(
     if (!editor.value) return
 
     if (!doc || !doc.id) {
-      editor.value.commands.setContent('', false)
+      editor.value.commands.setContent('', { emitUpdate: false })
       return
     }
 
     // Contenu déjà dans le store ?
     const cached = editionStore.documentContents[doc.id]
     if (cached !== undefined) {
-      editor.value.commands.setContent(cached, false)
+      editor.value.commands.setContent(cached, { emitUpdate: false })
       editorReady = false
       setTimeout(() => { editorReady = true }, 0)
       return
@@ -105,7 +105,7 @@ watch(
       const { data } = await editionService.getDocument(doc.id)
       const content = data.content ?? ''
       editionStore.updateDocumentContent(doc.id, content)
-      editor.value.commands.setContent(content, false)
+      editor.value.commands.setContent(content, { emitUpdate: false })
       editorReady = false
       setTimeout(() => { editorReady = true }, 0)
     } finally {

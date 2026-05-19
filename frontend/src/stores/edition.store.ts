@@ -45,7 +45,7 @@ export const useEditionStore = defineStore('edition', () => {
   async function patchSettings(patch: Partial<EditionSettings>) {
     if (!settings.value || !loadedProjectId.value) return
     // Mise à jour optimiste
-    settings.value = deepMerge(settings.value, patch) as EditionSettings
+    settings.value = deepMerge(settings.value, patch) as unknown as EditionSettings
     await editionService.updateSettings(loadedProjectId.value, patch)
   }
 
