@@ -466,6 +466,29 @@ export interface AiDailyStat {
   calls: number
 }
 
+export interface VoiceModelStat {
+  model: string
+  calls: number
+  total_seconds: number
+  total_minutes: number
+  estimated_cost: number
+}
+
+export interface VoiceSourceStat {
+  source: string
+  calls: number
+  total_seconds: number
+}
+
+export interface VoiceUserStat {
+  user_id: string
+  name: string
+  email: string
+  calls: number
+  total_seconds: number
+  last_used_at: string | null
+}
+
 export interface AiStats {
   totals: {
     calls: number
@@ -476,6 +499,17 @@ export interface AiStats {
   by_revision: AiRevisionStat[]
   by_user: AiUserStat[]
   daily: AiDailyStat[]
+  voice: {
+    totals: {
+      calls: number
+      total_seconds: number
+      total_minutes: number
+      estimated_cost: number
+    }
+    by_model: VoiceModelStat[]
+    by_source: VoiceSourceStat[]
+    by_user: VoiceUserStat[]
+  }
 }
 
 export interface AiEnrichType {

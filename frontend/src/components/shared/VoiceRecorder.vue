@@ -5,6 +5,8 @@ import { transcriptionService } from '@/services/transcription.service'
 const CHUNK_SECONDS = 25
 const MAX_SECONDS    = 120
 
+const props = withDefaults(defineProps<{ source?: string }>(), { source: 'notebook' })
+
 const emit = defineEmits<{ chunk: [text: string] }>()
 
 const isRecording    = ref(false)
@@ -73,8 +75,10 @@ async function processAndTranscribe(blobs: Blob[]): Promise<void> {
     const samplesPerChunk = CHUNK_SECONDS * WHISPER_SAMPLE_RATE
 
     for (let start = 0; start < mono.length; start += samplesPerChunk) {
-      const wav  = encodeWav(mono.slice(start, start + samplesPerChunk), WHISPER_SAMPLE_RATE)
-      const text = await transcriptionService.transcribe(wav)
+      const chunkSamples  = Math.min(samplesPerChunk, mono.length - start)
+      const chunkDuration = chunkSamples / WHISPER_SAMPLE_RATE
+      const wav  = encodeWav(mono.slice(start, start + chunkSamples), WHISPER_SAMPLE_RATE)
+      const text = await transcriptionService.transcribe(wav, chunkDuration, props.source)
       if (text) emit('chunk', text)
     }
   } catch (e: unknown) {

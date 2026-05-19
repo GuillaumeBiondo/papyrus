@@ -98,6 +98,35 @@ class OpenAiService
         return $parsed['items'] ?? [];
     }
 
+    public function transcribe(
+        string $filePath,
+        string $mimeType,
+        string $model = 'whisper-1',
+        string $language = 'fr'
+    ): string {
+        if (empty($this->apiKey)) {
+            throw new \RuntimeException('OpenAI API key is not configured (OPENAI_API_KEY missing).');
+        }
+
+        $response = Http::withHeaders([
+            'Authorization' => 'Bearer ' . $this->apiKey,
+        ])->timeout(60)->attach(
+            'file',
+            file_get_contents($filePath),
+            'audio.wav',
+            ['Content-Type' => $mimeType]
+        )->post($this->baseUrl . '/audio/transcriptions', [
+            'model'    => $model,
+            'language' => $language,
+        ]);
+
+        if ($response->failed()) {
+            throw new \RuntimeException('OpenAI Whisper error: ' . $response->status() . ' ' . $response->body());
+        }
+
+        return trim($response->json('text', ''));
+    }
+
     public function summarize(
         string $systemPrompt,
         string $userPrompt,
