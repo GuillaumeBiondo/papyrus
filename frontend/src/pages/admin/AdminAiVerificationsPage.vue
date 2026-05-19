@@ -424,6 +424,117 @@ onMounted(async () => {
           <p v-else class="px-4 py-6 text-sm text-gray-400 text-center">Aucune donnée.</p>
         </div>
 
+        <!-- ── Dictée vocale ── -->
+        <div class="mt-2">
+          <h2 class="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-3">Dictée vocale (OpenAI Whisper)</h2>
+
+          <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-4">
+            <div class="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-xl p-4">
+              <p class="text-xs text-gray-500 dark:text-gray-400">Transcriptions</p>
+              <p class="text-2xl font-bold text-gray-900 dark:text-gray-100 mt-1">{{ formatNumber(stats.voice.totals.calls) }}</p>
+            </div>
+            <div class="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-xl p-4">
+              <p class="text-xs text-gray-500 dark:text-gray-400">Minutes audio</p>
+              <p class="text-2xl font-bold text-gray-900 dark:text-gray-100 mt-1">{{ formatNumber(Math.round(stats.voice.totals.total_minutes)) }}</p>
+              <p class="text-xs text-gray-400 mt-0.5">{{ formatNumber(Math.round(stats.voice.totals.total_seconds)) }} s</p>
+            </div>
+            <div class="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-xl p-4">
+              <p class="text-xs text-gray-500 dark:text-gray-400">Coût estimé</p>
+              <p class="text-2xl font-bold text-gray-900 dark:text-gray-100 mt-1">{{ formatCost(stats.voice.totals.estimated_cost) }}</p>
+              <p class="text-xs text-gray-400 mt-0.5">$0,006 / min</p>
+            </div>
+            <div class="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-xl p-4">
+              <p class="text-xs text-gray-500 dark:text-gray-400">Coût / min moy.</p>
+              <p class="text-2xl font-bold text-gray-900 dark:text-gray-100 mt-1">
+                {{ stats.voice.totals.total_minutes ? formatCost(stats.voice.totals.estimated_cost / stats.voice.totals.total_minutes) : '—' }}
+              </p>
+            </div>
+          </div>
+
+          <!-- Par modèle -->
+          <div class="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-xl overflow-hidden mb-3">
+            <div class="px-4 py-3 border-b border-gray-100 dark:border-gray-800">
+              <p class="text-sm font-medium text-gray-900 dark:text-gray-100">Par modèle</p>
+            </div>
+            <div v-if="stats.voice.by_model.length" class="divide-y divide-gray-100 dark:divide-gray-800">
+              <div v-for="m in stats.voice.by_model" :key="m.model" class="px-4 py-3 flex items-center gap-4">
+                <div class="flex-1 min-w-0">
+                  <p class="text-sm font-mono text-gray-900 dark:text-gray-100">{{ m.model }}</p>
+                </div>
+                <div class="flex items-center gap-6 text-right shrink-0">
+                  <div>
+                    <p class="text-sm font-semibold text-gray-900 dark:text-gray-100">{{ formatNumber(m.calls) }}</p>
+                    <p class="text-xs text-gray-400">appels</p>
+                  </div>
+                  <div>
+                    <p class="text-sm font-semibold text-gray-900 dark:text-gray-100">{{ formatNumber(Math.round(m.total_minutes)) }} min</p>
+                    <p class="text-xs text-gray-400">audio</p>
+                  </div>
+                  <div>
+                    <p class="text-sm font-semibold text-gray-900 dark:text-gray-100">{{ formatCost(m.estimated_cost) }}</p>
+                    <p class="text-xs text-gray-400">coût</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <p v-else class="px-4 py-6 text-sm text-gray-400 text-center">Aucune transcription.</p>
+          </div>
+
+          <!-- Par source -->
+          <div v-if="stats.voice.by_source.length > 1" class="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-xl overflow-hidden mb-3">
+            <div class="px-4 py-3 border-b border-gray-100 dark:border-gray-800">
+              <p class="text-sm font-medium text-gray-900 dark:text-gray-100">Par source</p>
+            </div>
+            <div class="divide-y divide-gray-100 dark:divide-gray-800">
+              <div v-for="s in stats.voice.by_source" :key="s.source" class="px-4 py-3 flex items-center gap-4">
+                <div class="flex-1 min-w-0">
+                  <p class="text-sm font-mono text-gray-900 dark:text-gray-100">{{ s.source }}</p>
+                </div>
+                <div class="flex items-center gap-6 text-right shrink-0">
+                  <div>
+                    <p class="text-sm font-semibold text-gray-900 dark:text-gray-100">{{ formatNumber(s.calls) }}</p>
+                    <p class="text-xs text-gray-400">appels</p>
+                  </div>
+                  <div>
+                    <p class="text-sm font-semibold text-gray-900 dark:text-gray-100">{{ formatNumber(Math.round(s.total_seconds / 60)) }} min</p>
+                    <p class="text-xs text-gray-400">audio</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Par utilisateur (voice) -->
+          <div class="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-xl overflow-hidden">
+            <div class="px-4 py-3 border-b border-gray-100 dark:border-gray-800">
+              <p class="text-sm font-medium text-gray-900 dark:text-gray-100">Par utilisateur <span class="text-xs text-gray-400 font-normal">(top 50)</span></p>
+            </div>
+            <div v-if="stats.voice.by_user.length" class="divide-y divide-gray-100 dark:divide-gray-800">
+              <div v-for="(u, i) in stats.voice.by_user" :key="u.user_id" class="px-4 py-3 flex items-center gap-4">
+                <span class="text-xs text-gray-400 w-5 text-right shrink-0">{{ i + 1 }}</span>
+                <div class="flex-1 min-w-0">
+                  <p class="text-sm font-medium text-gray-900 dark:text-gray-100 truncate">{{ u.name }}</p>
+                  <p class="text-xs text-gray-400 truncate">{{ u.email }}</p>
+                </div>
+                <div class="flex items-center gap-6 text-right shrink-0">
+                  <div>
+                    <p class="text-sm font-semibold text-gray-900 dark:text-gray-100">{{ formatNumber(u.calls) }}</p>
+                    <p class="text-xs text-gray-400">appels</p>
+                  </div>
+                  <div>
+                    <p class="text-sm font-semibold text-gray-900 dark:text-gray-100">{{ formatNumber(Math.round(u.total_seconds / 60)) }} min</p>
+                    <p class="text-xs text-gray-400">audio</p>
+                  </div>
+                  <div>
+                    <p class="text-xs text-gray-400">{{ formatDate(u.last_used_at) }}</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <p v-else class="px-4 py-6 text-sm text-gray-400 text-center">Aucune donnée.</p>
+          </div>
+        </div>
+
         <p class="text-xs text-gray-400">
           Estimation du coût basée sur les tokens d'entrée uniquement (chars / 4).
           Les tokens de sortie représentent généralement 20–40% supplémentaires selon la quantité de suggestions.
