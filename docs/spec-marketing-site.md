@@ -10,13 +10,13 @@
 
 ```
 ┌─────────────────────────────────────────────────────┐
-│  Raspberry Pi (Nginx)                               │
+│  VPS (Docker + Nginx reverse proxy)                 │
 │                                                     │
-│  app.papyrus.io        → Vue.js (dist static)       │
-│  papyrus.io            → Nuxt 3 (nouveau)  ← NEW    │
-│  api.papyrus.io        → Laravel (existant)         │
+│  app.papyrus.io   → container Vue.js (dist static)  │
+│  papyrus.io       → container Nuxt 3       ← NEW    │
+│  api.papyrus.io   → container Laravel               │
 │                              │                      │
-│                         PostgreSQL                  │
+│                    container PostgreSQL             │
 └─────────────────────────────────────────────────────┘
 ```
 
@@ -726,27 +726,364 @@ PUT    /api/admin/gdpr/requests/{id}    [admin] mettre à jour le statut
 
 ---
 
-## 10. Décisions actées
+## 10. Emails transactionnels
+
+### Prestataire recommandé : Brevo (ex-Sendinblue)
+
+Comparatif pour un SaaS en phase de lancement :
+
+| | Brevo | Resend | Postmark | Mailgun |
+|---|---|---|---|---|
+| Free tier | 300 emails/jour | 3 000/mois | 100/mois | 100/jour |
+| Emails marketing | ✓ (intégré) | ✗ | ✗ | Partiel |
+| Désabonnement auto | ✓ | ✗ | ✗ | ✗ |
+| Entreprise française | ✓ (EU, RGPD) | US | US | US |
+| Templates visuels | ✓ | Basique | ✓ | Basique |
+| Prix après free | ~8€/mois (20k) | ~20$/mois | ~15$/mois | ~15$/mois |
+
+**Brevo** gère les deux cas en une seule plateforme : emails transactionnels (via API/SMTP) et emails marketing (newsletter, blog updates) avec gestion des désabonnements conforme CNIL. Être une société française et stocker les données en EU n'est pas négligeable pour la conformité RGPD.
+
+Intégration Laravel : driver SMTP ou package `sendinblue/api-v3-sdk`.
+
+---
+
+### Catalogue des emails à implémenter
+
+#### Emails déclenchés par l'utilisateur
+
+| Email | Déclencheur | Priorité |
+|---|---|---|
+| Vérification d'email | Inscription | Critique |
+| Réinitialisation mot de passe | Demande reset | Critique |
+| Confirmation changement d'email | Changement email | Critique |
+| Bienvenue | Email vérifié | Haute |
+| Export données prêt | Demande RGPD terminée | Haute |
+| Confirmation suppression compte | Demande suppression | Haute |
+| Annulation suppression compte | Lien d'annulation cliqué | Haute |
+
+#### Emails déclenchés par Stripe (via webhook)
+
+| Email | Déclencheur Stripe | Priorité |
+|---|---|---|
+| Confirmation d'abonnement | `customer.subscription.created` | Critique |
+| Renouvellement réussi + facture | `invoice.payment_succeeded` | Haute |
+| Échec de paiement (1ère tentative) | `invoice.payment_failed` | Critique |
+| Rappel avant expiration carte | `customer.source.expiring` | Moyenne |
+| Abonnement annulé | `customer.subscription.deleted` | Haute |
+| Période d'essai se termine dans 3 jours | `customer.subscription.trial_will_end` | Moyenne |
+
+#### Emails marketing (opt-in uniquement)
+
+| Email | Fréquence | Outil |
+|---|---|---|
+| Nouvel article de blog | À chaque publication | Brevo campaign |
+| Newsletter mensuelle | 1x/mois | Brevo campaign |
+
+---
+
+### Structure d'un email transactionnel
+
+Tous les emails transactionnels doivent :
+- Avoir un footer avec lien vers CGU, politique de confidentialité
+- Pour les emails marketing : lien de désabonnement **en clair** dans le footer
+- Être envoyés depuis `noreply@papyrus.io` (transactionnel) ou `bonjour@papyrus.io` (marketing)
+- Avoir un équivalent texte brut (accessibilité + anti-spam)
+
+```php
+// Exemple — Email d'échec de paiement
+class PaymentFailedMail extends Mailable
+{
+    public function envelope(): Envelope
+    {
+        return new Envelope(
+            subject: 'Un problème avec votre paiement Papyrus',
+        );
+    }
+
+    public function content(): Content
+    {
+        return new Content(
+            markdown: 'emails.billing.payment-failed',
+            with: [
+                'retryUrl'  => route('billing.portal'),
+                'amount'    => $this->invoice->amount_due,
+                'nextRetry' => $this->invoice->next_payment_attempt,
+            ],
+        );
+    }
+}
+```
+
+---
+
+### Gestion de l'échec de paiement (dunning)
+
+Stripe réessaie automatiquement (configurable dans le dashboard Stripe) :
+```
+J+0  : échec → email 1 "problème de paiement, mettre à jour la carte"
+J+3  : 2ème tentative Stripe
+J+5  : échec → email 2 "votre abonnement va être suspendu"
+J+7  : 3ème tentative Stripe
+J+10 : échec → suspension du compte (statut = past_due → canceled)
+       email 3 "abonnement suspendu, réactiver"
+```
+
+Le compte suspendu passe en mode lecture seule (accès aux projets, pas aux features IA).
+
+---
+
+## 11. Onboarding utilisateur
+
+### Objectif
+
+Mener l'utilisateur de la création de compte à **sa première vraie action utile** le plus vite possible. Pour Papyrus : créer un premier projet et voir une correction fonctionner.
+
+Le taux de conversion free → paid dépend largement de l'onboarding : un utilisateur qui ne comprend pas l'outil dans les 5 premières minutes ne reviendra pas.
+
+---
+
+### Flux complet
+
+```
+[Site marketing]
+  → CTA "Commencer gratuitement"
+    → /inscription (email + mot de passe + consentement marketing opt-in)
+      → Email de vérification envoyé
+        → Clic sur le lien
+          → Redirect vers app.papyrus.io/onboarding
+            → Étape 1 : Quel type d'auteur es-tu ?
+            → Étape 2 : Crée ton premier projet
+            → Étape 3 : Colle un extrait de texte
+            → → Dashboard avec le projet ouvert
+```
+
+---
+
+### Étapes d'onboarding dans l'app (3 max)
+
+**Étape 1 — Profil rapide** (personnalisation, pas bloquante)
+```
+"Bienvenue ! Qu'est-ce que vous écrivez ?"
+  ○ Roman
+  ○ Scénario
+  ○ Pièce de théâtre
+  ○ Je découvre
+
+→ Adapte les suggestions de la landing et les tutos mis en avant
+→ Stocké sur le user : onboarding_type
+```
+
+**Étape 2 — Créer un projet** (valeur immédiate)
+```
+"Donnez un nom à votre premier projet"
+  [input : titre du projet]
+  [sélecteur : type — Roman / Scénario / Théâtre]
+
+→ Crée le projet, redirige vers l'éditeur
+```
+
+**Étape 3 — Premier contact avec la correction** (aha moment)
+```
+Dans l'éditeur, si le chapitre est vide :
+  État vide actif : "Collez un extrait de votre texte pour voir la correction en action"
+  → L'utilisateur colle du texte
+  → Bouton "Analyser ce chapitre" mis en avant (tooltip pulsant)
+  → Il voit les corrections → c'est le moment "ah, ça marche vraiment"
+```
+
+---
+
+### Indicateur de progression (optionnel, non bloquant)
+
+Petite checklist dans le dashboard, disparaît une fois complétée :
+
+```
+Bien démarrer avec Papyrus
+  ✓ Compte créé
+  ✓ Projet créé
+  □ Premier chapitre analysé
+  □ Profil complété
+  □ Inviter un co-auteur   ← (si tu implémentes la collaboration)
+```
+
+---
+
+### Email de bienvenue (J+0)
+
+Envoyé juste après la vérification d'email. **Pas un email générique** — pointer vers une ressource utile selon le type sélectionné à l'étape 1.
+
+```
+Objet : Votre premier projet vous attend
+
+Bonjour [prénom],
+
+Votre compte Papyrus est prêt.
+
+→ [Ouvrir mon projet] (bouton principal)
+
+Pour bien démarrer :
+• Tuto : Comment analyser un chapitre (2 min)
+• Guide : Écrire un roman avec Papyrus
+
+L'équipe Papyrus
+```
+
+---
+
+### Email J+3 (si l'utilisateur n'a pas analysé de texte)
+
+```
+Objet : Vous n'avez pas encore essayé l'analyse de style
+
+[Courte démo GIF ou screenshot animé]
+→ [Tester maintenant]
+```
+
+Un seul email de relance — pas de séquence agressive.
+
+---
+
+## 12. SEO technique
+
+### Avantage natif de Nuxt 3
+
+Nuxt génère du HTML côté serveur (SSR) ou au build (SSG). Les moteurs d'indexation voient du contenu réel, pas une page blanche en attente de JavaScript — c'est la base du SEO pour un site marketing.
+
+Les pages statiques (landing, tarifs, tutos) peuvent être pre-rendues au build (`nuxt generate`). Les pages avec contenu dynamique (articles de blog) utilisent le SSR.
+
+---
+
+### Métadonnées par page
+
+```typescript
+// pages/index.vue
+useHead({
+  title: 'Papyrus — L\'outil d\'écriture pour auteurs sérieux',
+  meta: [
+    { name: 'description', content: 'Correcteur de style, analyse de chapitres, statistiques personnages. Écrivez mieux, plus vite.' },
+    // Open Graph (partage réseaux sociaux)
+    { property: 'og:title',       content: 'Papyrus — Écriture assistée' },
+    { property: 'og:description', content: '...' },
+    { property: 'og:image',       content: 'https://papyrus.io/og-image.jpg' },
+    { property: 'og:type',        content: 'website' },
+    // Twitter/X
+    { name: 'twitter:card',       content: 'summary_large_image' },
+  ],
+})
+```
+
+Chaque article de blog génère ses propres métadonnées depuis les champs `title`, `excerpt`, `cover_image` de la DB.
+
+---
+
+### Sitemap
+
+Package `nuxtjs/sitemap` génère automatiquement `/sitemap.xml` en incluant toutes les routes statiques et les URLs des articles depuis l'API.
+
+```typescript
+// nuxt.config.ts
+sitemap: {
+  sources: ['/api/__sitemap__/urls'],  // endpoint Laravel qui liste les articles publiés
+  defaults: {
+    changefreq: 'weekly',
+    priority: 0.8,
+  },
+}
+```
+
+---
+
+### Données structurées (Schema.org)
+
+Pour les articles de blog → Google peut afficher un rich snippet (date, auteur, image) dans les résultats.
+
+```typescript
+// pages/blog/[slug].vue
+useSchemaOrg([
+  defineArticle({
+    headline:      article.title,
+    description:   article.excerpt,
+    datePublished: article.published_at,
+    dateModified:  article.updated_at,
+    author: { name: article.author_name },
+    image: article.cover_image,
+  }),
+])
+```
+
+---
+
+### Performance (Core Web Vitals)
+
+Google utilise LCP, CLS, FID comme signal de ranking.
+
+Points à surveiller avec Nuxt :
+- Images : utiliser le composant `<NuxtImg>` (lazy loading + formats WebP automatiques)
+- Polices : `font-display: swap` + préchargement des polices critiques
+- CSS : pas de CSS non utilisé en production (Tailwind purge automatiquement)
+- Pas de scripts tiers bloquants (analytics Plausible est async et léger)
+
+Outil de référence : PageSpeed Insights (Google) — viser > 90 sur mobile.
+
+---
+
+### Structure d'URL (SEO-friendly)
+
+```
+papyrus.io/                          ← landing
+papyrus.io/tarifs                    ← pricing
+papyrus.io/blog                      ← liste articles
+papyrus.io/blog/comment-ecrire-acte-2  ← article (slug depuis DB)
+papyrus.io/tutoriels                 ← index tutos
+papyrus.io/tutoriels/correction-style  ← tuto individuel
+```
+
+Règles :
+- Slugs en minuscules, tirets, sans accents
+- Pas de dates dans les URLs (les articles peuvent être mis à jour sans changer l'URL)
+- Canonical tag sur chaque page pour éviter le duplicate content
+
+---
+
+### robots.txt
+
+```
+User-agent: *
+Allow: /
+Disallow: /api/
+Disallow: /admin/
+
+Sitemap: https://papyrus.io/sitemap.xml
+```
+
+---
+
+## 13. Décisions actées
 
 | Sujet | Décision |
 |---|---|
+| Infrastructure | VPS, containers Docker, Nginx reverse proxy |
 | Architecture | Container Nuxt 3 séparé, API Laravel uniquement (pas d'accès DB direct) |
 | Rôles | Rôle `webmaster` global via spatie/laravel-permission |
-| Paiement | **Stripe + Laravel Cashier** |
+| Paiement | Stripe + Laravel Cashier |
 | Prix | 9€ TTC/mois · 85€ TTC/an |
 | Éditeur blog | Toast UI Editor (ou TipTap) |
 | Tokens | Sanctum token API + champ `expires_at` natif |
 | Images | Upload Laravel → stockage local ou MinIO |
 | Maintenance blog | Middleware + toggle dans table settings |
+| Emails | Brevo (transactionnel + marketing en une plateforme, EU) |
+| Analytics | Plausible (auto-hébergé, conforme CNIL sans bandeau) |
+| SEO | Nuxt SSR/SSG + nuxtjs/sitemap + Schema.org |
 
 ---
 
-## 10. Ordre d'implémentation suggéré
+## 14. Ordre d'implémentation suggéré
 
-1. **DB** : migrations `site_articles`, `settings`, rôle `webmaster`
+1. **DB** : migrations `site_articles`, `settings`, `plans`, `feature_usage`, `gdpr_requests`, rôle `webmaster`
 2. **Backend Laravel** : routes `/api/site/*` + `/api/admin/*` + policies
 3. **Stripe** : installer Cashier, configurer webhooks, créer les Products/Prices
-4. **Admin panel** : section abonnements, codes promo, tokens Hermes, toggle maintenance
-5. **Nuxt** : landing page, blog (lecture articles via API), tarifs
-6. **Éditeur blog** : intégrer Toast UI Editor dans le panel admin existant
-7. **Auth cross-site** : SSO ou lien direct `app.papyrus.io` depuis le site marketing
+4. **Brevo** : configurer les templates emails transactionnels
+5. **Admin panel** : abonnements, codes promo, tokens Hermes, plans & limites, RGPD, toggle maintenance
+6. **Nuxt** : landing page, blog, tarifs, tutos — avec SEO natif dès le départ
+7. **Éditeur blog** : Toast UI Editor dans le panel admin
+8. **Onboarding** : flow 3 étapes + emails J+0 et J+3
