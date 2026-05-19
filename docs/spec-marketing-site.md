@@ -515,7 +515,218 @@ PUT    /api/admin/settings                  [admin] paramètres globaux (mainten
 
 ---
 
-## 9. Décisions actées
+## 9. RGPD — Conformité
+
+### Pourquoi c'est critique pour Papyrus en particulier
+
+Papyrus est un outil d'écriture. Les utilisateurs y stockent des manuscrits, des journaux intimes, des scénarios non publiés — **du contenu créatif hautement personnel**. En plus des données personnelles classiques (email, paiement), tu es dépositaire d'œuvres qui peuvent représenter des années de travail. Ça impose des obligations de sécurité et de transparence plus fortes que pour un simple outil SaaS.
+
+Points spécifiques à clarifier publiquement :
+- Le contenu de l'utilisateur lui appartient entièrement
+- Le contenu **n'est pas utilisé pour entraîner des modèles d'IA**
+- En cas de fermeture du service, l'utilisateur peut récupérer toutes ses données
+
+---
+
+### Registre des traitements (obligatoire RGPD Art. 30)
+
+Document interne (pas public) qui liste chaque traitement. À tenir à jour.
+
+| Traitement | Données | Base légale | Durée de conservation |
+|---|---|---|---|
+| Création de compte | Email, nom, mot de passe hashé | Contrat | Durée du compte + 3 ans |
+| Contenu écrit | Textes, chapitres, projets | Contrat | Durée du compte + export possible |
+| Abonnement & facturation | Nom, adresse, statut abonnement | Contrat + obligation légale | 10 ans (comptabilité) |
+| Usage des features | Compteurs anonymisés par feature/mois | Intérêt légitime | 12 mois glissants |
+| Logs de connexion | IP, date, user-agent | Intérêt légitime (sécurité) | 12 mois |
+| Newsletter / blog | Email + consentement horodaté | Consentement | Jusqu'au désabonnement |
+| Données IA (corrections) | Extraits de texte envoyés au modèle | Contrat | Non conservés (transit uniquement) |
+
+---
+
+### Droits des utilisateurs à implémenter (Art. 15–22)
+
+Chaque droit doit avoir un endpoint API + une UI dans le profil utilisateur.
+
+#### Droit d'accès & portabilité (Art. 15 & 20)
+```
+GET /api/user/data-export
+→ génère un ZIP en tâche de fond (Laravel Job)
+→ contient : profil, projets, chapitres, scènes, historique d'abonnement
+→ notifie par email avec lien de téléchargement (valable 48h)
+```
+
+Format du ZIP :
+```
+export-papyrus-2026-06-01/
+  profil.json             ← email, nom, date d'inscription, plan
+  projets/
+    mon-roman/
+      projet.json         ← métadonnées
+      chapitres/
+        01-chapitre.md    ← contenu brut en markdown
+  facturation.json        ← historique des paiements (sans données carte)
+```
+
+#### Droit à l'effacement (Art. 17) — "Supprimer mon compte"
+
+C'est le plus complexe. Deux niveaux :
+
+```php
+// 1. Soft delete immédiat (compte désactivé, accès impossible)
+$user->delete(); // Laravel soft delete
+
+// 2. Hard delete différé après 30 jours (configurable dans settings)
+// Un Job planifié via Laravel Scheduler purge les comptes soft-deleted > 30j
+// Les données de facturation NE sont PAS supprimées (obligation légale 10 ans)
+// → on anonymise : email → anon_xxxxx@deleted.papyrus.io, nom → "[Supprimé]"
+```
+
+Ce que l'utilisateur voit dans son profil :
+```
+[Supprimer mon compte]
+  → Modal : "Vos projets seront supprimés dans 30 jours.
+             Téléchargez vos données avant.
+             Vos factures restent archivées 10 ans (obligation légale)."
+  → Confirmation par email avec lien d'annulation (pendant 30 jours)
+```
+
+#### Droit de rectification (Art. 16)
+L'utilisateur peut modifier email, nom depuis son profil — déjà prévu.
+Si l'email change → re-vérification obligatoire.
+
+#### Droit d'opposition au marketing (Art. 21)
+- Case à décocher à l'inscription : "Recevoir les articles du blog et les nouveautés"
+- Lien de désabonnement dans **chaque email marketing** (obligatoire)
+- Géré via un champ `marketing_consent` + `marketing_consent_at` sur le user
+
+---
+
+### Cookies & consentement
+
+Le site marketing (Nuxt) aura probablement Google Analytics ou équivalent.
+
+**Règle CNIL :** les cookies non essentiels nécessitent un consentement **avant** leur dépôt — pas une simple bannière "en continuant vous acceptez".
+
+```
+Cookies strictement nécessaires (pas de consentement requis) :
+  - Session / auth (Sanctum)
+  - Préférences (langue, thème)
+  - Panier / checkout Stripe
+
+Cookies nécessitant consentement :
+  - Analytics (Google Analytics, Plausible*, Matomo*)
+  - Publicité (si un jour)
+
+* Plausible et Matomo auto-hébergé sont exemptés de consentement
+  si correctement configurés (CNIL délibération 2022)
+```
+
+**Recommandation :** utiliser **Plausible** (auto-hébergeable, conforme CNIL sans bandeau, open source) plutôt que Google Analytics. Ça évite tout le problème du bandeau cookies pour les analytics.
+
+---
+
+### Sous-traitants (Art. 28) — DPA à signer
+
+Pour chaque prestataire qui traite des données personnelles pour ton compte :
+
+| Prestataire | Données transmises | DPA disponible | Localisation |
+|---|---|---|---|
+| Stripe | Nom, email, adresse, statut paiement | ✓ (accepté aux CGU) | US + clauses SCCs EU |
+| Prestataire IA (corrections) | Extraits de texte | À vérifier selon le choix | Variable |
+| Hébergeur (OVH/Raspberry) | Toutes | N/A (auto-hébergé Pi) ou DPA OVH | FR/EU |
+
+**Point critique sur l'IA :** si tu envoies des textes utilisateurs à un modèle externe (OpenAI, Anthropic, etc.) pour les corrections de style / reformulation, tu dois :
+1. Le mentionner explicitement dans la politique de confidentialité
+2. Préciser que les textes ne sont pas stockés ni utilisés pour l'entraînement
+3. Vérifier que le prestataire IA a signé un DPA valable EU (OpenAI et Anthropic l'ont)
+
+---
+
+### Pages légales à créer sur le site marketing
+
+| Page | Contenu minimum | Obligatoire |
+|---|---|---|
+| Politique de confidentialité | Registre synthétisé, droits, contacts, cookies | ✓ RGPD |
+| CGU / CGV | Conditions d'utilisation, abonnement, remboursement | ✓ Loi française |
+| Mentions légales | Éditeur, hébergeur, SIRET | ✓ LCEN (loi française) |
+| Politique cookies | Types, durée, opt-out | ✓ CNIL |
+
+Ces pages doivent être **accessibles depuis le footer** de chaque page.
+
+Lien de contact RGPD dans la politique : une adresse email dédiée (`privacy@papyrus.io`) ou un formulaire de contact.
+
+---
+
+### Ce qu'on ajoute en DB
+
+```sql
+-- Sur la table users
+ALTER TABLE users ADD COLUMN marketing_consent     BOOLEAN DEFAULT FALSE;
+ALTER TABLE users ADD COLUMN marketing_consent_at  TIMESTAMP;
+ALTER TABLE users ADD COLUMN deletion_requested_at TIMESTAMP;  -- soft delete demandé
+ALTER TABLE users ADD COLUMN anonymized_at         TIMESTAMP;  -- hard delete effectué
+
+-- Journal des demandes RGPD (pour preuve de traitement)
+CREATE TABLE gdpr_requests (
+    id           BIGSERIAL PRIMARY KEY,
+    user_id      BIGINT REFERENCES users(id),
+    type         VARCHAR(50) NOT NULL,  -- 'export' | 'deletion' | 'rectification' | 'opposition'
+    status       VARCHAR(50) DEFAULT 'pending',  -- pending | processing | completed
+    requested_at TIMESTAMP DEFAULT NOW(),
+    completed_at TIMESTAMP,
+    notes        TEXT
+);
+```
+
+---
+
+### Ce qu'on ajoute dans l'admin
+
+```
+Admin → RGPD
+  ├── Demandes en attente
+  │     ├── Exports à traiter (statut + téléchargement)
+  │     └── Suppressions planifiées (avec possibilité de bloquer si litige)
+  ├── Purge des comptes supprimés
+  │     └── Liste des comptes en attente de hard delete + date prévue
+  └── Paramètres
+        └── Délai avant hard delete (défaut : 30 jours)
+```
+
+---
+
+### Nouvelles routes Laravel
+
+```
+GET    /api/user/data-export            demander un export (génère un Job)
+GET    /api/user/data-export/download   télécharger le ZIP (token signé, 48h)
+DELETE /api/user/account                demander la suppression du compte
+PUT    /api/user/consents               mettre à jour les consentements marketing
+
+GET    /api/admin/gdpr/requests         [admin] liste des demandes RGPD
+PUT    /api/admin/gdpr/requests/{id}    [admin] mettre à jour le statut
+```
+
+---
+
+### Checklist avant lancement
+
+- [ ] Politique de confidentialité rédigée et publiée
+- [ ] CGU / CGV rédigées et publiées
+- [ ] Mentions légales complètes (SIRET requis → micro-entreprise ou société)
+- [ ] Endpoint export données opérationnel
+- [ ] Flux suppression compte (soft → hard delete après X jours)
+- [ ] Consentement marketing à l'inscription (case opt-in, pas opt-out)
+- [ ] Lien désabonnement dans tous les emails marketing
+- [ ] Analytics CNIL-compatible (Plausible recommandé)
+- [ ] DPA Stripe vérifié
+- [ ] DPA prestataire IA vérifié
+- [ ] Adresse email privacy@ fonctionnelle
+
+---
+
+## 10. Décisions actées
 
 | Sujet | Décision |
 |---|---|
