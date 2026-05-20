@@ -31,6 +31,8 @@ class AiVerificationController extends Controller
             'allowed_card_types'      => ['nullable', 'array'],
             'allowed_card_types.*'    => ['string', 'max:50'],
             'allow_multiple_cards'    => ['sometimes', 'boolean'],
+            'include_card_lore'       => ['sometimes', 'boolean'],
+            'include_card_links'      => ['sometimes', 'boolean'],
             'is_premium'              => ['sometimes', 'boolean'],
         ]);
 
@@ -56,6 +58,8 @@ class AiVerificationController extends Controller
             'allowed_card_types'      => ['nullable', 'array'],
             'allowed_card_types.*'    => ['string', 'max:50'],
             'allow_multiple_cards'    => ['sometimes', 'boolean'],
+            'include_card_lore'       => ['sometimes', 'boolean'],
+            'include_card_links'      => ['sometimes', 'boolean'],
             'is_premium'              => ['sometimes', 'boolean'],
         ]);
 

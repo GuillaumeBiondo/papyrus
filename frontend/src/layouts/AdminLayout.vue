@@ -248,7 +248,7 @@ async function logout() {
     </aside>
 
     <!-- Main content -->
-    <main class="flex-1 overflow-y-auto pt-12 md:pt-0">
+    <main class="flex-1 overflow-y-auto pt-12 md:pt-0 pb-16 md:pb-0">
       <RouterView />
     </main>
 

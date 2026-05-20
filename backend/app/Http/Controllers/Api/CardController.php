@@ -139,24 +139,45 @@ class CardController extends Controller
 
         $request->validate(['note_id' => ['required', 'uuid']]);
 
+        $card->loadMissing(['attributes', 'links.linkedCard']);
         $note = $card->notes()->findOrFail($request->note_id);
 
         $openAi = app(OpenAiService::class);
 
         $systemPrompt = <<<'PROMPT'
-Tu es un assistant pour un auteur de roman. Tu vas enrichir le lore (biographie/description narrative) d'un personnage en y intégrant de manière fluide et naturelle les informations contenues dans une note.
+Tu es un assistant d'écriture minimaliste. Ta seule tâche est d'insérer le contenu d'une note dans un lore existant.
 
-Règles :
-- Retourne uniquement le nouveau texte du lore, sans introduction, sans balise, sans explication.
-- Le ton doit rester littéraire et cohérent.
-- Si le lore actuel est vide, crée un texte narratif à partir de la note.
-- Intègre toutes les informations de la note sans en perdre aucune.
+RÈGLES ABSOLUES — toute violation est une erreur :
+1. Retourne uniquement le texte du lore résultant, sans introduction, sans balise, sans commentaire.
+2. N'invente RIEN. Chaque phrase du résultat doit provenir mot pour mot de la note ou du lore existant. Aucun détail supplémentaire, aucune métaphore, aucun remplissage.
+3. Si le lore est vide : reformule la note en français correct et fluide — chaque information de la note doit apparaître, et rien d'autre.
+4. Si le lore n'est pas vide : insère les informations de la note à l'endroit le plus cohérent du lore, en modifiant seulement la liaison syntaxique (une virgule, un "et", une nouvelle phrase). Ne réécris pas les parties existantes du lore.
+5. Ne supprime aucune information existante du lore.
+6. Le contexte de la fiche (nom, type, attributs) est fourni pour aider le placement — pas pour inventer du contenu.
 PROMPT;
 
-        $currentLore = $card->lore ?? '';
-        $userPrompt  = "=== Lore actuel ===\n{$currentLore}\n\n=== Note à intégrer ===\n{$note->body}";
+        // Build card context
+        $cardContext = "=== Fiche : {$card->title} ({$card->type}) ===\n";
+        foreach ($card->attributes as $attr) {
+            $val = is_string($attr->value) ? $attr->value : json_encode($attr->value);
+            $val = strip_tags($val);
+            if ($val !== '' && $val !== 'null') {
+                $cardContext .= "- {$attr->key} : {$val}\n";
+            }
+        }
+        foreach ($card->links as $link) {
+            $linkedTitle = $link->linkedCard?->title ?? '?';
+            $cardContext .= "- Liaison : {$linkedTitle}";
+            if (!empty($link->label)) {
+                $cardContext .= " ({$link->label})";
+            }
+            $cardContext .= "\n";
+        }
 
-        $newLore = $openAi->summarize($systemPrompt, $userPrompt, 'gpt-4o-mini', 2000);
+        $currentLore = $card->lore ?? '';
+        $userPrompt  = "{$cardContext}\n=== Lore actuel ===\n{$currentLore}\n\n=== Note à intégrer ===\n{$note->body}";
+
+        $newLore = $openAi->summarize($systemPrompt, $userPrompt, 'gpt-4o-mini', 2000, 0.1);
 
         $card->update(['lore' => $newLore]);
         $note->delete();

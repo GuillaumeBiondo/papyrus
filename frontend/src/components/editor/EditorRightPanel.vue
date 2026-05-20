@@ -432,10 +432,10 @@ function relativeTime(dateStr: string) {
                   <span class="text-xs text-gray-400">{{ ann.user?.name }}</span>
                   <div class="flex items-center gap-2">
                     <span class="text-xs text-gray-400">{{ relativeTime(ann.updated_at) }}</span>
-                    <button class="opacity-0 group-hover:opacity-100 text-gray-400 hover:text-brand-500 transition-opacity p-0.5" @click="startEditAnnotation(ann)">
+                    <button class="md:opacity-0 md:group-hover:opacity-100 text-gray-400 hover:text-brand-500 transition-opacity p-0.5" @click="startEditAnnotation(ann)">
                       <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg>
                     </button>
-                    <button class="opacity-0 group-hover:opacity-100 text-gray-400 hover:text-red-400 transition-opacity p-0.5 text-sm leading-none" @click="editor.removeAnnotation(ann.id)">✕</button>
+                    <button class="md:opacity-0 md:group-hover:opacity-100 text-gray-400 hover:text-red-400 transition-opacity p-0.5 text-sm leading-none" @click="editor.removeAnnotation(ann.id)">✕</button>
                   </div>
                 </div>
               </template>
@@ -491,10 +491,10 @@ function relativeTime(dateStr: string) {
             <div class="flex items-center justify-between mt-1.5">
               <span class="text-xs text-gray-400">{{ relativeTime(note.updated_at) }}</span>
               <div class="flex items-center gap-2">
-                <button class="opacity-0 group-hover:opacity-100 text-gray-400 hover:text-brand-500 transition-opacity p-0.5" @click="startEditNote(note)">
+                <button class="md:opacity-0 md:group-hover:opacity-100 text-gray-400 hover:text-brand-500 transition-opacity p-0.5" @click="startEditNote(note)">
                   <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg>
                 </button>
-                <button class="opacity-0 group-hover:opacity-100 text-gray-400 hover:text-red-400 transition-opacity p-0.5 text-sm leading-none" @click="editor.removeNote(note.id)">✕</button>
+                <button class="md:opacity-0 md:group-hover:opacity-100 text-gray-400 hover:text-red-400 transition-opacity p-0.5 text-sm leading-none" @click="editor.removeNote(note.id)">✕</button>
               </div>
             </div>
           </template>
@@ -556,7 +556,7 @@ function relativeTime(dateStr: string) {
                 </template>
                 <span class="flex-1 text-xs font-medium text-gray-800 dark:text-gray-200 truncate">{{ card.title }}</span>
                 <button
-                  class="opacity-0 group-hover:opacity-100 transition-opacity p-0.5 rounded hover:bg-gray-100 dark:hover:bg-gray-700 shrink-0"
+                  class="md:opacity-0 md:group-hover:opacity-100 transition-opacity p-0.5 rounded hover:bg-gray-100 dark:hover:bg-gray-700 shrink-0"
                   title="Éditer"
                   @click.stop="emit('card-selected', card.id)"
                 >
@@ -593,7 +593,7 @@ function relativeTime(dateStr: string) {
                 <span class="w-2 h-2 rounded-full shrink-0" :style="{ background: cardTypeColor(card.type) }" />
                 <span class="flex-1 text-xs font-medium text-gray-800 dark:text-gray-200 truncate">{{ card.title }}</span>
                 <button
-                  class="opacity-0 group-hover:opacity-100 transition-opacity p-0.5 rounded hover:bg-gray-100 dark:hover:bg-gray-700 shrink-0"
+                  class="md:opacity-0 md:group-hover:opacity-100 transition-opacity p-0.5 rounded hover:bg-gray-100 dark:hover:bg-gray-700 shrink-0"
                   title="Éditer"
                   @click.stop="emit('card-selected', card.id)"
                 >
@@ -687,7 +687,7 @@ function relativeTime(dateStr: string) {
           />
           <span class="flex-1 text-xs text-gray-800 dark:text-gray-200 leading-relaxed">{{ todo.text }}</span>
           <button
-            class="shrink-0 p-0.5 opacity-0 group-hover:opacity-100 text-gray-400 hover:text-red-500 transition-opacity"
+            class="shrink-0 p-0.5 md:opacity-0 md:group-hover:opacity-100 text-gray-400 hover:text-red-500 transition-opacity"
             @click="deleteSidebarTodo(todo, todosScope)"
           >
             <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -716,7 +716,7 @@ function relativeTime(dateStr: string) {
             </button>
             <span class="flex-1 text-xs text-gray-400 dark:text-gray-500 line-through leading-relaxed">{{ todo.text }}</span>
             <button
-              class="shrink-0 p-0.5 opacity-0 group-hover:opacity-100 text-gray-400 hover:text-red-500 transition-opacity"
+              class="shrink-0 p-0.5 md:opacity-0 md:group-hover:opacity-100 text-gray-400 hover:text-red-500 transition-opacity"
               @click="deleteSidebarTodo(todo, todosScope)"
             >
               <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">

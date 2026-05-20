@@ -24,17 +24,23 @@ defineProps<{
         </div>
       </div>
 
+      <!-- Lore -->
+      <div v-if="card.lore" class="px-3 py-2.5 border-t border-gray-100 dark:border-gray-700/50">
+        <p class="text-[10px] font-semibold uppercase tracking-wider text-gray-400 mb-2">Lore</p>
+        <p class="text-gray-600 dark:text-gray-300 whitespace-pre-wrap leading-relaxed">{{ card.lore }}</p>
+      </div>
+
       <!-- Liaisons -->
       <div v-if="card.links?.length" class="px-3 py-2.5 border-t border-gray-100 dark:border-gray-700/50">
         <p class="text-[10px] font-semibold uppercase tracking-wider text-gray-400 mb-2">Liaisons</p>
-        <div class="flex flex-wrap gap-1">
-          <span
-            v-for="link in card.links" :key="link.id"
-            class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-gray-100 dark:bg-gray-700/60 text-gray-600 dark:text-gray-300 text-[11px]"
-          >
-            {{ link.linked_card.title }}
-            <span v-if="link.label" class="text-gray-400 italic">· {{ link.label }}</span>
-          </span>
+        <div class="space-y-1.5">
+          <div v-for="link in card.links" :key="link.id">
+            <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-gray-100 dark:bg-gray-700/60 text-gray-600 dark:text-gray-300 text-[11px]">
+              {{ link.linked_card.title }}
+              <span v-if="link.label" class="text-gray-400 italic">· {{ link.label }}</span>
+            </span>
+            <p v-if="link.description" class="mt-0.5 pl-2 text-gray-500 dark:text-gray-400 italic leading-relaxed">{{ link.description }}</p>
+          </div>
         </div>
       </div>
 
@@ -46,7 +52,7 @@ defineProps<{
 
       <!-- Vide -->
       <div
-        v-if="!card.attributes?.length && !card.links?.length && !card.notes?.length"
+        v-if="!card.attributes?.length && !card.lore && !card.links?.length && !card.notes?.length"
         class="py-4 text-center text-gray-400 italic"
       >Fiche vide</div>
 
