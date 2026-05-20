@@ -10,6 +10,12 @@ const auth = useAuthStore()
 const theme = useThemeStore()
 
 const mobileMenuOpen = ref(false)
+const sidebarCollapsed = ref(false)
+const showDrawer = ref(false)
+
+function isActive(name: string): boolean {
+  return route.name === name
+}
 
 const nav = [
   { name: 'admin-dashboard',        label: 'Tableau de bord',  short: 'Accueil',    icon: 'chart' },
