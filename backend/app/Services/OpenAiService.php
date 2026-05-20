@@ -130,7 +130,8 @@ class OpenAiService
     public function summarize(
         string $systemPrompt,
         string $userPrompt,
-        string $model = 'gpt-4o-mini'
+        string $model = 'gpt-4o-mini',
+        int $maxTokens = 400
     ): string {
         if (empty($this->apiKey)) {
             throw new \RuntimeException('OpenAI API key is not configured (OPENAI_API_KEY missing).');
@@ -146,7 +147,7 @@ class OpenAiService
                 ['role' => 'user',   'content' => $userPrompt],
             ],
             'temperature' => 0.5,
-            'max_tokens'  => 400,
+            'max_tokens'  => $maxTokens,
         ]);
 
         if ($response->failed()) {

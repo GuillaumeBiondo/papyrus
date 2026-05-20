@@ -14,6 +14,7 @@ class CardResource extends JsonResource
             'project_id' => $this->project_id,
             'type'       => $this->type,
             'title'      => $this->title,
+            'lore'       => $this->lore,
             'attributes' => CardAttributeResource::collection($this->whenLoaded('attributes')),
             'links'      => CardLinkResource::collection($this->whenLoaded('links')),
             'keywords'   => CardKeywordResource::collection($this->whenLoaded('keywords')),

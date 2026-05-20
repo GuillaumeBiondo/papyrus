@@ -6,7 +6,9 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\Card\StoreCardLinkRequest;
 use App\Http\Requests\Card\StoreCardRequest;
 use App\Http\Requests\Card\UpdateAttributesRequest;
+use App\Http\Requests\Card\UpdateCardLinkRequest;
 use App\Http\Requests\Card\UpdateCardRequest;
+use App\Services\OpenAiService;
 use App\Http\Resources\CardLinkResource;
 use App\Http\Resources\CardResource;
 use App\Models\Card;
@@ -113,6 +115,15 @@ class CardController extends Controller
             ->setStatusCode(201);
     }
 
+    public function updateLink(UpdateCardLinkRequest $request, Card $card, CardLink $link): CardLinkResource
+    {
+        $this->authorize('update', $card);
+
+        $link->update($request->validated());
+
+        return new CardLinkResource($link->load('linkedCard'));
+    }
+
     public function destroyLink(Card $card, CardLink $link): JsonResponse
     {
         $this->authorize('update', $card);
@@ -120,6 +131,37 @@ class CardController extends Controller
         $link->delete();
 
         return response()->json(null, 204);
+    }
+
+    public function integrateLoreNote(Request $request, Card $card): JsonResponse
+    {
+        $this->authorize('update', $card);
+
+        $request->validate(['note_id' => ['required', 'uuid']]);
+
+        $note = $card->notes()->findOrFail($request->note_id);
+
+        $openAi = app(OpenAiService::class);
+
+        $systemPrompt = <<<'PROMPT'
+Tu es un assistant pour un auteur de roman. Tu vas enrichir le lore (biographie/description narrative) d'un personnage en y intégrant de manière fluide et naturelle les informations contenues dans une note.
+
+Règles :
+- Retourne uniquement le nouveau texte du lore, sans introduction, sans balise, sans explication.
+- Le ton doit rester littéraire et cohérent.
+- Si le lore actuel est vide, crée un texte narratif à partir de la note.
+- Intègre toutes les informations de la note sans en perdre aucune.
+PROMPT;
+
+        $currentLore = $card->lore ?? '';
+        $userPrompt  = "=== Lore actuel ===\n{$currentLore}\n\n=== Note à intégrer ===\n{$note->body}";
+
+        $newLore = $openAi->summarize($systemPrompt, $userPrompt, 'gpt-4o-mini', 2000);
+
+        $card->update(['lore' => $newLore]);
+        $note->delete();
+
+        return response()->json(['lore' => $newLore]);
     }
 
     // --- Scène ↔ Fiche ---

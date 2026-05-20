@@ -14,6 +14,7 @@ class CardLinkResource extends JsonResource
             'card_id'     => $this->card_id,
             'linked_card' => new CardResource($this->whenLoaded('linkedCard')),
             'label'       => $this->label,
+            'description' => $this->description,
         ];
     }
 }

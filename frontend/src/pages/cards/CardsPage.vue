@@ -49,12 +49,15 @@ const filteredCards = computed(() => {
 })
 
 // ── Sélection ─────────────────────────────────────────────
-const activeTab = ref<'attributs' | 'liaisons' | 'referentiel'>('attributs')
+const activeTab = ref<'attributs' | 'liaisons' | 'lore' | 'referentiel'>('attributs')
 
 async function selectCard(card: typeof cards.cards[0]) {
   activeTab.value = 'attributs'
   editMode.value = false
   confirmDelete.value = false
+  expandedLinkId.value = null
+  cancelEditLink()
+  resetLinkForm()
   await cards.loadCard(card.id)
 }
 
@@ -124,8 +127,14 @@ async function switchToReferentiel() {
 // ── Notes de fiche ────────────────────────────────────────
 const cardNotes = ref<Note[]>([])
 const newNoteBody = ref('')
+const editingNoteId = ref<string | null>(null)
+const editingNoteBody = ref('')
+const showNoteForm = ref(false)
+const integratingNoteId = ref<string | null>(null)
 
 watch(() => cards.activeCard?.id, async (id) => {
+  cardNotes.value = []
+  editingNoteId.value = null
   if (!id) return
   const res = await notesService.indexForCard(id)
   cardNotes.value = res.data
@@ -136,11 +145,146 @@ async function addCardNote() {
   const note = await notesService.storeForCard(cards.activeCard.id, { body: newNoteBody.value.trim() })
   cardNotes.value.unshift(note)
   newNoteBody.value = ''
+  showNoteForm.value = false
 }
 
 async function removeCardNote(id: string) {
   await notesService.destroy(id)
   cardNotes.value = cardNotes.value.filter(n => n.id !== id)
+}
+
+function startEditNote(note: { id: string; body: string }) {
+  editingNoteId.value = note.id
+  editingNoteBody.value = note.body
+}
+
+async function saveEditNote() {
+  if (!editingNoteId.value || !editingNoteBody.value.trim()) return
+  const updated = await notesService.update(editingNoteId.value, { body: editingNoteBody.value.trim() })
+  const idx = cardNotes.value.findIndex(n => n.id === editingNoteId.value)
+  if (idx !== -1) cardNotes.value[idx] = updated
+  editingNoteId.value = null
+  editingNoteBody.value = ''
+}
+
+async function integrateNoteIntoLore(noteId: string) {
+  integratingNoteId.value = noteId
+  try {
+    const newLore = await cards.integrateLoreNote(noteId)
+    loreText.value = newLore
+    cardNotes.value = cardNotes.value.filter(n => n.id !== noteId)
+    activeTab.value = 'lore'
+  } finally {
+    integratingNoteId.value = null
+  }
+}
+
+// ── Lore ──────────────────────────────────────────────────
+const loreText = ref('')
+const loreSaving = ref(false)
+let loreSaveTimer: ReturnType<typeof setTimeout> | null = null
+
+watch(() => cards.activeCard?.lore, (val) => {
+  loreText.value = val ?? ''
+}, { immediate: true })
+
+function onLoreInput() {
+  if (loreSaveTimer) clearTimeout(loreSaveTimer)
+  loreSaveTimer = setTimeout(saveLore, 1500)
+}
+
+async function saveLore() {
+  if (!cards.activeCard) return
+  loreSaving.value = true
+  try {
+    await cards.updateCard({ lore: loreText.value })
+  } finally {
+    loreSaving.value = false
+  }
+}
+
+async function saveLoreNow() {
+  if (loreSaveTimer) { clearTimeout(loreSaveTimer); loreSaveTimer = null }
+  await saveLore()
+}
+
+// ── Liaisons ──────────────────────────────────────────────
+const expandedLinkId = ref<string | null>(null)
+const editingLinkId = ref<string | null>(null)
+const editingLinkLabel = ref('')
+const editingLinkDescription = ref('')
+const savingLinkId = ref<string | null>(null)
+const showLinkForm = ref(false)
+const linkSearch = ref('')
+const linkSearchResults = ref<typeof cards.cards>([])
+const linkSearchLoading = ref(false)
+const selectedLinkCard = ref<typeof cards.cards[0] | null>(null)
+const linkLabel = ref('')
+let linkSearchTimer: ReturnType<typeof setTimeout> | null = null
+
+async function onLinkSearch() {
+  if (linkSearchTimer) clearTimeout(linkSearchTimer)
+  if (!linkSearch.value.trim()) { linkSearchResults.value = []; return }
+  linkSearchTimer = setTimeout(async () => {
+    linkSearchLoading.value = true
+    try {
+      const { cardsService } = await import('@/services/cards.service')
+      const res = await cardsService.index(projectId, { q: linkSearch.value, per_page: 20 })
+      linkSearchResults.value = res.data.filter(c => c.id !== cards.activeCard?.id)
+    } finally {
+      linkSearchLoading.value = false
+    }
+  }, 300)
+}
+
+function selectLinkCard(card: typeof cards.cards[0]) {
+  selectedLinkCard.value = card
+  linkSearch.value = card.title
+  linkSearchResults.value = []
+}
+
+async function submitLink() {
+  if (!selectedLinkCard.value) return
+  await cards.addLink(selectedLinkCard.value.id, linkLabel.value.trim() || null)
+  resetLinkForm()
+}
+
+function resetLinkForm() {
+  showLinkForm.value = false
+  linkSearch.value = ''
+  linkLabel.value = ''
+  selectedLinkCard.value = null
+  linkSearchResults.value = []
+}
+
+function expandLink(linkId: string) {
+  expandedLinkId.value = expandedLinkId.value === linkId ? null : linkId
+  if (expandedLinkId.value !== linkId) cancelEditLink()
+}
+
+function startEditLink(link: { id: string; label: string | null; description: string | null }) {
+  editingLinkId.value = link.id
+  editingLinkLabel.value = link.label ?? ''
+  editingLinkDescription.value = link.description ?? ''
+}
+
+function cancelEditLink() {
+  editingLinkId.value = null
+  editingLinkLabel.value = ''
+  editingLinkDescription.value = ''
+}
+
+async function saveEditLink(linkId: string) {
+  savingLinkId.value = linkId
+  try {
+    await cards.updateLink(linkId, {
+      label: editingLinkLabel.value.trim() || null,
+      description: editingLinkDescription.value.trim() || null,
+    })
+    cancelEditLink()
+  } finally {
+    savingLinkId.value = null
+  }
 }
 
 // ── Création ──────────────────────────────────────────────
@@ -372,23 +516,30 @@ onMounted(() => cards.fetchForProject(projectId))
         </div>
 
         <!-- Tabs -->
-        <div class="flex gap-1 border-b border-gray-200 dark:border-gray-700 mb-5">
+        <div class="flex gap-1 border-b border-gray-200 dark:border-gray-700 mb-5 overflow-x-auto">
           <button
-            class="pb-2 px-1 text-sm border-b-2 transition-colors"
+            class="pb-2 px-1 text-sm border-b-2 transition-colors whitespace-nowrap"
             :class="activeTab === 'attributs'
               ? 'border-brand-500 text-brand-600 dark:text-brand-400 font-medium'
               : 'border-transparent text-gray-500 hover:text-gray-700 dark:hover:text-gray-300'"
             @click="activeTab = 'attributs'; editMode = false"
           >Attributs</button>
           <button
-            class="pb-2 px-1 ml-4 text-sm border-b-2 transition-colors"
+            class="pb-2 px-1 ml-4 text-sm border-b-2 transition-colors whitespace-nowrap"
             :class="activeTab === 'liaisons'
               ? 'border-brand-500 text-brand-600 dark:text-brand-400 font-medium'
               : 'border-transparent text-gray-500 hover:text-gray-700 dark:hover:text-gray-300'"
             @click="activeTab = 'liaisons'; editMode = false"
           >Liaisons</button>
           <button
-            class="pb-2 px-1 ml-4 text-sm border-b-2 transition-colors"
+            class="pb-2 px-1 ml-4 text-sm border-b-2 transition-colors whitespace-nowrap"
+            :class="activeTab === 'lore'
+              ? 'border-brand-500 text-brand-600 dark:text-brand-400 font-medium'
+              : 'border-transparent text-gray-500 hover:text-gray-700 dark:hover:text-gray-300'"
+            @click="activeTab = 'lore'; editMode = false"
+          >Lore</button>
+          <button
+            class="pb-2 px-1 ml-4 text-sm border-b-2 transition-colors whitespace-nowrap"
             :class="activeTab === 'referentiel'
               ? 'border-brand-500 text-brand-600 dark:text-brand-400 font-medium'
               : 'border-transparent text-gray-500 hover:text-gray-700 dark:hover:text-gray-300'"
@@ -463,6 +614,118 @@ onMounted(() => cards.fetchForProject(projectId))
                 >+ mot-clé</button>
               </div>
             </div>
+
+            <!-- Notes -->
+            <div class="mt-8 border-t border-gray-200 dark:border-gray-700 pt-5">
+              <p class="text-xs font-semibold uppercase tracking-wide text-gray-400 dark:text-gray-500 mb-3">
+                Notes
+              </p>
+              <div class="space-y-2 mb-3">
+                <div
+                  v-for="note in cardNotes"
+                  :key="note.id"
+                  class="rounded-lg border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800/50"
+                >
+                  <!-- Mode édition note -->
+                  <div v-if="editingNoteId === note.id" class="p-3">
+                    <textarea
+                      v-model="editingNoteBody"
+                      rows="4"
+                      class="w-full text-sm rounded-lg border border-gray-300 dark:border-gray-600
+                             bg-white dark:bg-gray-800 text-gray-800 dark:text-gray-200
+                             px-3 py-2 focus:outline-none focus:ring-1 focus:ring-brand-500 resize-none"
+                    />
+                    <div class="flex gap-2 mt-2">
+                      <button
+                        :disabled="!editingNoteBody.trim()"
+                        class="flex-1 bg-brand-600 hover:bg-brand-800 disabled:opacity-40 text-white text-sm rounded-lg py-1.5 transition-colors"
+                        @click="saveEditNote"
+                      >Enregistrer</button>
+                      <button
+                        class="text-sm text-gray-400 hover:text-gray-600 px-3"
+                        @click="editingNoteId = null"
+                      >Annuler</button>
+                    </div>
+                  </div>
+
+                  <!-- Mode lecture note -->
+                  <div v-else class="p-3">
+                    <p class="text-sm text-gray-700 dark:text-gray-300 leading-relaxed whitespace-pre-wrap mb-2">
+                      {{ note.body }}
+                    </p>
+                    <div class="flex items-center justify-between gap-2">
+                      <span class="text-xs text-gray-400">{{ relativeTime(note.updated_at) }}</span>
+                      <div class="flex items-center gap-1">
+                        <button
+                          class="flex items-center gap-1 text-xs text-brand-500 hover:text-brand-700 dark:hover:text-brand-300 transition-colors px-2 py-1 rounded-md hover:bg-brand-50 dark:hover:bg-brand-900/20 disabled:opacity-40"
+                          :disabled="integratingNoteId === note.id"
+                          title="Intégrer au lore via IA"
+                          @click="integrateNoteIntoLore(note.id)"
+                        >
+                          <svg v-if="integratingNoteId !== note.id" class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 3l14 9-14 9V3z"/>
+                          </svg>
+                          <svg v-else class="w-3.5 h-3.5 animate-spin" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 12a8 8 0 018-8v8H4z"/>
+                          </svg>
+                          {{ integratingNoteId === note.id ? '…' : 'Lore' }}
+                        </button>
+                        <button
+                          class="text-gray-400 hover:text-brand-500 transition-colors p-1.5 rounded-md hover:bg-gray-100 dark:hover:bg-gray-700"
+                          title="Modifier"
+                          @click="startEditNote(note)"
+                        >
+                          <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                  d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/>
+                          </svg>
+                        </button>
+                        <button
+                          class="text-gray-400 hover:text-red-400 transition-colors p-1.5 rounded-md hover:bg-gray-100 dark:hover:bg-gray-700"
+                          title="Supprimer"
+                          @click="removeCardNote(note.id)"
+                        >
+                          <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+                          </svg>
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+                <p v-if="!cardNotes.length" class="text-sm text-gray-400">Aucune note.</p>
+              </div>
+
+              <template v-if="showNoteForm">
+                <textarea
+                  v-model="newNoteBody"
+                  rows="3"
+                  placeholder="Nouvelle note…"
+                  autofocus
+                  class="w-full text-sm rounded-lg border border-gray-300 dark:border-gray-600
+                         bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300
+                         px-3 py-2 focus:outline-none focus:ring-1 focus:ring-brand-500 resize-none"
+                />
+                <div class="flex gap-2 mt-2">
+                  <button
+                    :disabled="!newNoteBody.trim()"
+                    class="flex-1 bg-brand-600 hover:bg-brand-800 disabled:opacity-40 text-white text-sm rounded-lg py-1.5 transition-colors"
+                    @click="addCardNote"
+                  >Ajouter</button>
+                  <button
+                    class="text-sm text-gray-400 hover:text-gray-600 px-2"
+                    @click="showNoteForm = false; newNoteBody = ''"
+                  >Annuler</button>
+                </div>
+              </template>
+              <button
+                v-else
+                class="w-full border border-dashed border-gray-300 dark:border-gray-700 rounded-lg
+                       py-1.5 text-sm text-gray-400 hover:text-brand-600 hover:border-brand-400
+                       transition-colors"
+                @click="showNoteForm = true"
+              >+ note</button>
+            </div>
           </template>
 
           <!-- Mode édition -->
@@ -526,33 +789,190 @@ onMounted(() => cards.fetchForProject(projectId))
             v-if="!cards.activeCard.links?.length"
             class="text-sm text-gray-400 py-4"
           >Aucune liaison définie.</div>
-          <div v-else class="space-y-2">
+          <div v-else class="space-y-2 mb-4">
             <div
               v-for="link in cards.activeCard.links"
               :key="link.id"
-              class="flex items-center gap-3 p-3 rounded-lg border border-gray-200 dark:border-gray-700
-                     bg-white dark:bg-gray-800"
+              class="rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 overflow-hidden"
             >
-              <div
-                class="w-8 h-8 rounded-full flex items-center justify-center text-xs font-medium text-white shrink-0"
-                :class="{
-                  'bg-brand-500': link.linked_card.type === 'personnage',
-                  'bg-emerald-500': link.linked_card.type === 'lieu',
-                  'bg-amber-500': link.linked_card.type === 'evenement',
-                  'bg-gray-400': !['personnage','lieu','evenement'].includes(link.linked_card.type),
-                }"
-              >{{ initials(link.linked_card.title) }}</div>
-              <div class="flex-1 min-w-0">
-                <p class="text-sm font-medium text-gray-800 dark:text-gray-100">
-                  {{ link.linked_card.title }}
-                </p>
-                <p class="text-xs text-gray-400">
-                  {{ typeConfig(link.linked_card.type).label.replace(/s$/, '') }}
-                  <template v-if="link.label"> · {{ link.label }}</template>
-                </p>
+              <!-- En-tête -->
+              <div class="flex items-center gap-3 p-3">
+                <div
+                  class="w-8 h-8 rounded-full flex items-center justify-center text-xs font-medium text-white shrink-0"
+                  :class="{
+                    'bg-brand-500': link.linked_card.type === 'personnage',
+                    'bg-emerald-500': link.linked_card.type === 'lieu',
+                    'bg-amber-500': link.linked_card.type === 'evenement',
+                    'bg-gray-400': !['personnage','lieu','evenement'].includes(link.linked_card.type),
+                  }"
+                >{{ initials(link.linked_card.title) }}</div>
+                <div class="flex-1 min-w-0">
+                  <p class="text-sm font-medium text-gray-800 dark:text-gray-100">
+                    {{ link.linked_card.title }}
+                  </p>
+                  <p class="text-xs text-gray-400">
+                    {{ typeConfig(link.linked_card.type).label.replace(/s$/, '') }}
+                    <template v-if="link.label"> · <em>{{ link.label }}</em></template>
+                  </p>
+                </div>
+                <div class="flex items-center gap-1 shrink-0">
+                  <button
+                    class="p-1.5 rounded-md text-gray-400 hover:text-brand-500 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
+                    :title="expandedLinkId === link.id ? 'Masquer' : 'Développer / modifier'"
+                    @click="expandLink(link.id)"
+                  >
+                    <svg
+                      class="w-3.5 h-3.5 transition-transform"
+                      :class="expandedLinkId === link.id ? 'rotate-180' : ''"
+                      fill="none" stroke="currentColor" viewBox="0 0 24 24"
+                    >
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
+                    </svg>
+                  </button>
+                  <button
+                    class="p-1.5 rounded-md text-gray-300 hover:text-red-400 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
+                    title="Supprimer la liaison"
+                    @click="cards.removeLink(link.id)"
+                  >
+                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+                    </svg>
+                  </button>
+                </div>
+              </div>
+
+              <!-- Zone description -->
+              <div v-if="expandedLinkId === link.id" class="border-t border-gray-100 dark:border-gray-700 px-3 pb-3 pt-2 bg-gray-50 dark:bg-gray-800/50">
+                <template v-if="editingLinkId === link.id">
+                  <div class="space-y-2">
+                    <input
+                      v-model="editingLinkLabel"
+                      type="text"
+                      placeholder="Relation (ami, ennemi, mentor…)"
+                      class="w-full text-sm rounded-lg border border-gray-300 dark:border-gray-600
+                             bg-white dark:bg-gray-800 text-gray-800 dark:text-gray-200
+                             px-3 py-1.5 focus:outline-none focus:ring-1 focus:ring-brand-500"
+                    />
+                    <textarea
+                      v-model="editingLinkDescription"
+                      rows="4"
+                      placeholder="Décris cette relation, son histoire, son évolution…"
+                      class="w-full text-sm rounded-lg border border-gray-300 dark:border-gray-600
+                             bg-white dark:bg-gray-800 text-gray-800 dark:text-gray-200
+                             px-3 py-2 focus:outline-none focus:ring-1 focus:ring-brand-500 resize-none"
+                    />
+                    <div class="flex gap-2">
+                      <button
+                        :disabled="savingLinkId === link.id"
+                        class="flex-1 bg-brand-600 hover:bg-brand-800 disabled:opacity-40 text-white text-sm rounded-lg py-1.5 transition-colors"
+                        @click="saveEditLink(link.id)"
+                      >{{ savingLinkId === link.id ? '…' : 'Enregistrer' }}</button>
+                      <button
+                        class="text-sm text-gray-400 hover:text-gray-600 px-3"
+                        @click="cancelEditLink"
+                      >Annuler</button>
+                    </div>
+                  </div>
+                </template>
+                <template v-else>
+                  <p
+                    v-if="link.description"
+                    class="text-sm text-gray-600 dark:text-gray-300 leading-relaxed whitespace-pre-wrap mb-2"
+                  >{{ link.description }}</p>
+                  <p v-else class="text-sm text-gray-400 italic mb-2">Aucune description.</p>
+                  <button
+                    class="text-xs text-brand-600 dark:text-brand-400 hover:underline"
+                    @click="startEditLink(link)"
+                  >Modifier</button>
+                </template>
               </div>
             </div>
           </div>
+
+          <!-- Formulaire nouvelle liaison -->
+          <div v-if="showLinkForm" class="rounded-xl border border-gray-200 dark:border-gray-700 p-4 space-y-3">
+            <p class="text-xs font-semibold uppercase tracking-wide text-gray-400">Nouvelle liaison</p>
+            <div class="relative">
+              <input
+                v-model="linkSearch"
+                type="text"
+                placeholder="Chercher une fiche…"
+                autofocus
+                class="w-full text-sm rounded-lg border border-gray-300 dark:border-gray-600
+                       bg-white dark:bg-gray-800 text-gray-800 dark:text-gray-200
+                       px-3 py-2 focus:outline-none focus:ring-1 focus:ring-brand-500"
+                @input="onLinkSearch"
+              />
+              <div
+                v-if="linkSearchResults.length"
+                class="absolute top-full left-0 right-0 mt-1 bg-white dark:bg-gray-800
+                       border border-gray-200 dark:border-gray-700 rounded-lg shadow-lg z-10
+                       max-h-48 overflow-y-auto"
+              >
+                <button
+                  v-for="card in linkSearchResults"
+                  :key="card.id"
+                  class="w-full flex items-center gap-2 px-3 py-2 text-left hover:bg-gray-50
+                         dark:hover:bg-gray-700 transition-colors"
+                  @click="selectLinkCard(card)"
+                >
+                  <span class="w-2 h-2 rounded-full shrink-0" :class="typeConfig(card.type).dot" />
+                  <span class="text-sm text-gray-800 dark:text-gray-200 flex-1 truncate">{{ card.title }}</span>
+                  <span class="text-xs text-gray-400 shrink-0">{{ typeConfig(card.type).label.replace(/s$/, '') }}</span>
+                </button>
+              </div>
+            </div>
+            <input
+              v-model="linkLabel"
+              type="text"
+              placeholder="Relation (ami, ennemi, mentor)…"
+              class="w-full text-sm rounded-lg border border-gray-300 dark:border-gray-600
+                     bg-white dark:bg-gray-800 text-gray-800 dark:text-gray-200
+                     px-3 py-2 focus:outline-none focus:ring-1 focus:ring-brand-500"
+            />
+            <div class="flex gap-2">
+              <button
+                :disabled="!selectedLinkCard"
+                class="flex-1 bg-brand-600 hover:bg-brand-800 disabled:opacity-40 text-white
+                       text-sm rounded-lg py-2 transition-colors"
+                @click="submitLink"
+              >Ajouter</button>
+              <button
+                class="text-sm text-gray-400 hover:text-gray-600 px-3"
+                @click="resetLinkForm"
+              >Annuler</button>
+            </div>
+          </div>
+          <button
+            v-else
+            class="w-full border border-dashed border-gray-300 dark:border-gray-700 rounded-lg
+                   py-2 text-sm text-gray-400 hover:text-brand-600 hover:border-brand-400 transition-colors"
+            @click="showLinkForm = true"
+          >+ nouvelle liaison</button>
+        </div>
+
+        <!-- ── Tab Lore ───────────────────────────────── -->
+        <div v-else-if="activeTab === 'lore'" class="flex flex-col gap-3">
+          <div class="flex items-center justify-between">
+            <p class="text-xs font-semibold uppercase tracking-wide text-gray-400 dark:text-gray-500">
+              Lore — biographie &amp; histoire
+            </p>
+            <span v-if="loreSaving" class="text-xs text-gray-400 animate-pulse">Sauvegarde…</span>
+          </div>
+          <textarea
+            v-model="loreText"
+            placeholder="Écris ici tout ce que tu sais sur ce personnage : son histoire, sa psychologie, ses secrets, ses contradictions…"
+            class="w-full text-sm rounded-xl border border-gray-200 dark:border-gray-700
+                   bg-white dark:bg-gray-800 text-gray-800 dark:text-gray-200
+                   px-4 py-3 focus:outline-none focus:ring-2 focus:ring-brand-400
+                   resize-none leading-relaxed"
+            style="min-height: 400px"
+            @input="onLoreInput"
+            @blur="saveLoreNow"
+          />
+          <p class="text-xs text-gray-400">
+            Sauvegarde automatique. Tu peux aussi intégrer des notes depuis l'onglet Attributs.
+          </p>
         </div>
 
         <!-- ── Tab Référentiel ───────────────────────── -->

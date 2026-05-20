@@ -108,12 +108,29 @@ export const useCardsStore = defineStore('cards', () => {
     return link
   }
 
+  async function updateLink(linkId: string, payload: { label?: string | null; description?: string | null }): Promise<CardLink> {
+    if (!activeCard.value) throw new Error('No active card')
+    const updated = await cardsService.updateLink(activeCard.value.id, linkId, payload)
+    if (activeCard.value.links) {
+      const idx = activeCard.value.links.findIndex((l) => l.id === linkId)
+      if (idx !== -1) activeCard.value.links[idx] = updated
+    }
+    return updated
+  }
+
   async function removeLink(linkId: string) {
     if (!activeCard.value) return
     await cardsService.destroyLink(activeCard.value.id, linkId)
     if (activeCard.value.links) {
       activeCard.value.links = activeCard.value.links.filter((l) => l.id !== linkId)
     }
+  }
+
+  async function integrateLoreNote(noteId: string): Promise<string> {
+    if (!activeCard.value) throw new Error('No active card')
+    const { lore } = await cardsService.integrateLoreNote(activeCard.value.id, noteId)
+    activeCard.value.lore = lore
+    return lore
   }
 
   async function uploadImage(file: File): Promise<CardImage> {
@@ -152,7 +169,7 @@ export const useCardsStore = defineStore('cards', () => {
     fetchForProject, loadCard, createCard, updateCard, deleteCard, updateAttributes,
     addKeyword, removeKeyword, openKeywordForm,
     rebuildIndex, loadOccurrences,
-    addLink, removeLink,
+    addLink, updateLink, removeLink, integrateLoreNote,
     uploadImage, removeImage, setAvatarImage,
   }
 })

@@ -169,7 +169,9 @@ Route::prefix('v1')->middleware(['auth:sanctum', 'throttle:60,1', 'user_blocked'
     Route::put('cards/{card}/attributes', [CardController::class, 'updateAttributes']);
     Route::get('cards/{card}/links', [CardController::class, 'links']);
     Route::post('cards/{card}/links', [CardController::class, 'storeLink']);
+    Route::put('cards/{card}/links/{link}', [CardController::class, 'updateLink']);
     Route::delete('cards/{card}/links/{link}', [CardController::class, 'destroyLink']);
+    Route::post('cards/{card}/integrate-note', [CardController::class, 'integrateLoreNote']);
 
     // Card images
     Route::get('cards/{card}/images', [CardImageController::class, 'index']);

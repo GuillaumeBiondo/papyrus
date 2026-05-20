@@ -26,11 +26,17 @@ export const cardsService = {
   updateAttributes: (id: string, attributes: { key: string; value: unknown }[]): Promise<Card> =>
     api.put(`/cards/${id}/attributes`, { attributes }).then((r) => r.data.data),
 
-  storeLink: (cardId: string, payload: { linked_card_id: string; label?: string }): Promise<CardLink> =>
+  storeLink: (cardId: string, payload: { linked_card_id: string; label?: string; description?: string }): Promise<CardLink> =>
     api.post(`/cards/${cardId}/links`, payload).then((r) => r.data.data),
+
+  updateLink: (cardId: string, linkId: string, payload: { label?: string | null; description?: string | null }): Promise<CardLink> =>
+    api.put(`/cards/${cardId}/links/${linkId}`, payload).then((r) => r.data.data),
 
   destroyLink: (cardId: string, linkId: string): Promise<void> =>
     api.delete(`/cards/${cardId}/links/${linkId}`),
+
+  integrateLoreNote: (cardId: string, noteId: string): Promise<{ lore: string }> =>
+    api.post(`/cards/${cardId}/integrate-note`, { note_id: noteId }).then((r) => r.data),
 
   indexImages: (cardId: string): Promise<{ data: CardImage[] }> =>
     api.get(`/cards/${cardId}/images`).then((r) => r.data),

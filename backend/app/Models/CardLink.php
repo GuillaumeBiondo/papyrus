@@ -8,14 +8,13 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class CardLink extends Model
 {
-    public $timestamps = false;
-
     use HasUuids;
 
     protected $fillable = [
         'card_id',
         'linked_card_id',
         'label',
+        'description',
     ];
 
     public function card(): BelongsTo
