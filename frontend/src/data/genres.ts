@@ -20,9 +20,9 @@ export const GENRE_CATEGORIES: GenreCategory[] = [
   {
     id: 'noire',
     name: 'Littérature noire',
-    color: '#818cf8',
-    lightColor: '#eef2ff',
-    textColor: '#4338ca',
+    color: '#7c3141',
+    lightColor: '#fdf1f3',
+    textColor: '#581829',
     adjacentCategories: ['blanche'],
     genres: [
       { id: 'polar', name: 'Polar' },
