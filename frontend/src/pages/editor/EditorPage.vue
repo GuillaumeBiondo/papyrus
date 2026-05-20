@@ -1025,28 +1025,32 @@ const rightPanelPt = { root: { class: 'flex flex-col overflow-hidden h-full bord
     </Splitter>
 
     <!-- ══ Drawer mobile droit (bottom sheet) ══ -->
-    <Transition name="slide-up">
-      <div
-        v-if="rightSidebarOpen && isMobile"
-        class="fixed inset-x-0 bottom-0 z-40 flex flex-col bg-white dark:bg-gray-900 rounded-t-2xl shadow-2xl overflow-hidden border-t border-gray-200 dark:border-gray-700"
-        style="height: 70dvh"
-      >
-        <!-- Indicateur de glissement -->
-        <div class="flex justify-center pt-2 pb-1 shrink-0">
-          <div class="w-10 h-1 rounded-full bg-gray-300 dark:bg-gray-600" />
+    <Teleport to="body">
+      <Transition name="slide-up">
+        <div
+          v-if="rightSidebarOpen && isMobile"
+          class="fixed inset-x-0 bottom-0 z-40 flex flex-col bg-white dark:bg-gray-900 rounded-t-2xl shadow-2xl overflow-hidden border-t border-gray-200 dark:border-gray-700"
+          style="height: 70vh; height: 70dvh"
+        >
+          <!-- Indicateur de glissement -->
+          <div class="flex justify-center pt-2 pb-1 shrink-0">
+            <div class="w-10 h-1 rounded-full bg-gray-300 dark:bg-gray-600" />
+          </div>
+          <div class="flex-1 min-h-0">
+            <EditorRightPanel
+              v-model:tab="rightTab"
+              :pending-selection="pendingSelection"
+              :highlighted-annotation-id="highlightedAnnotationId"
+              :get-anchor-text="getAnchorText"
+              @close="rightSidebarOpen = false"
+              @card-selected="selectedCardId = $event"
+              @focus-annotation="(as, ae) => focusAnnotation(as, ae)"
+              @discard-selection="pendingSelection = null"
+            />
+          </div>
         </div>
-        <EditorRightPanel
-          v-model:tab="rightTab"
-          :pending-selection="pendingSelection"
-          :highlighted-annotation-id="highlightedAnnotationId"
-          :get-anchor-text="getAnchorText"
-          @close="rightSidebarOpen = false"
-          @card-selected="selectedCardId = $event"
-          @focus-annotation="(as, ae) => focusAnnotation(as, ae)"
-          @discard-selection="pendingSelection = null"
-        />
-      </div>
-    </Transition>
+      </Transition>
+    </Teleport>
 
   </div>
 
