@@ -135,7 +135,7 @@ async function onImageSelected(e: Event) {
 </script>
 
 <template>
-  <div class="p-8">
+  <div class="p-4 md:p-8">
     <div class="flex items-center justify-between mb-6">
       <h1 class="text-xl font-semibold text-gray-900 dark:text-gray-100">Journaux de bord</h1>
       <button class="px-3 py-1.5 text-sm rounded-md bg-brand-600 text-white hover:bg-brand-700 transition-colors" @click="openCreate">
@@ -145,59 +145,96 @@ async function onImageSelected(e: Event) {
 
     <div v-if="loading" class="text-gray-400 text-sm">Chargement…</div>
 
-    <div v-else class="bg-white dark:bg-gray-900 rounded-lg border border-gray-200 dark:border-gray-800 overflow-hidden">
-      <table class="w-full text-sm">
-        <thead>
-          <tr class="border-b border-gray-100 dark:border-gray-800 text-left">
-            <th class="th">Version</th>
-            <th class="th">Titre</th>
-            <th class="th">Statut</th>
-            <th class="th">Date pub.</th>
-            <th class="th text-right">Vus par</th>
-            <th class="th"></th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr
-            v-for="cl in changelogs"
-            :key="cl.id"
-            class="border-b border-gray-50 dark:border-gray-800/50 last:border-0"
-          >
-            <td class="td">
-              <code v-if="cl.version" class="text-xs bg-gray-100 dark:bg-gray-800 px-1.5 py-0.5 rounded">{{ cl.version }}</code>
-              <span v-else class="text-gray-400">—</span>
-            </td>
-            <td class="td font-medium text-gray-900 dark:text-gray-100">{{ cl.title }}</td>
-            <td class="td">
-              <span class="inline-block px-2 py-0.5 rounded text-xs font-medium"
-                    :class="{
-                      'bg-green-100 text-green-700 dark:bg-green-950 dark:text-green-300': publishLabel(cl) === 'Publié',
-                      'bg-yellow-100 text-yellow-700 dark:bg-yellow-950 dark:text-yellow-300': publishLabel(cl) === 'Planifié',
-                      'bg-gray-100 text-gray-600 dark:bg-gray-800 dark:text-gray-400': publishLabel(cl) === 'Brouillon',
-                    }">
-                {{ publishLabel(cl) }}
-              </span>
-            </td>
-            <td class="td text-gray-500">{{ formatDate(cl.published_at) }}</td>
-            <td class="td text-right text-gray-500">{{ cl.reads_count ?? 0 }}</td>
-            <td class="td flex items-center gap-3 justify-end">
-              <button class="text-xs text-brand-600 dark:text-brand-400 hover:underline" @click="openEdit(cl)">Éditer</button>
-              <button class="text-xs text-red-500 hover:underline" :disabled="deleting === cl.id" @click="remove(cl)">
-                {{ deleting === cl.id ? '…' : 'Supprimer' }}
-              </button>
-            </td>
-          </tr>
-          <tr v-if="changelogs.length === 0">
-            <td colspan="6" class="td text-center text-gray-400 py-8">Aucun journal.</td>
-          </tr>
-        </tbody>
-      </table>
-    </div>
+    <template v-else>
+      <!-- Mobile: cards -->
+      <div class="md:hidden space-y-3">
+        <div
+          v-for="cl in changelogs"
+          :key="cl.id"
+          class="bg-white dark:bg-gray-900 rounded-lg border border-gray-200 dark:border-gray-800 p-4"
+        >
+          <div class="flex items-start justify-between gap-2 mb-2">
+            <div class="flex flex-wrap items-center gap-2 min-w-0">
+              <code v-if="cl.version" class="text-xs bg-gray-100 dark:bg-gray-800 px-1.5 py-0.5 rounded shrink-0">{{ cl.version }}</code>
+              <span class="font-medium text-gray-900 dark:text-gray-100 text-sm">{{ cl.title }}</span>
+            </div>
+            <span
+              class="inline-block px-2 py-0.5 rounded text-xs font-medium shrink-0"
+              :class="{
+                'bg-green-100 text-green-700 dark:bg-green-950 dark:text-green-300': publishLabel(cl) === 'Publié',
+                'bg-yellow-100 text-yellow-700 dark:bg-yellow-950 dark:text-yellow-300': publishLabel(cl) === 'Planifié',
+                'bg-gray-100 text-gray-600 dark:bg-gray-800 dark:text-gray-400': publishLabel(cl) === 'Brouillon',
+              }"
+            >
+              {{ publishLabel(cl) }}
+            </span>
+          </div>
+          <p class="text-xs text-gray-400 mb-3">{{ formatDate(cl.published_at) }} · {{ cl.reads_count ?? 0 }} vue(s)</p>
+          <div class="flex gap-4">
+            <button class="text-xs text-brand-600 dark:text-brand-400 hover:underline font-medium" @click="openEdit(cl)">Éditer</button>
+            <button class="text-xs text-red-500 hover:underline" :disabled="deleting === cl.id" @click="remove(cl)">
+              {{ deleting === cl.id ? '…' : 'Supprimer' }}
+            </button>
+          </div>
+        </div>
+        <p v-if="changelogs.length === 0" class="text-center text-gray-400 text-sm py-8">Aucun journal.</p>
+      </div>
+
+      <!-- Desktop: table -->
+      <div class="hidden md:block bg-white dark:bg-gray-900 rounded-lg border border-gray-200 dark:border-gray-800 overflow-hidden">
+        <table class="w-full text-sm">
+          <thead>
+            <tr class="border-b border-gray-100 dark:border-gray-800 text-left">
+              <th class="th">Version</th>
+              <th class="th">Titre</th>
+              <th class="th">Statut</th>
+              <th class="th">Date pub.</th>
+              <th class="th text-right">Vus par</th>
+              <th class="th"></th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr
+              v-for="cl in changelogs"
+              :key="cl.id"
+              class="border-b border-gray-50 dark:border-gray-800/50 last:border-0"
+            >
+              <td class="td">
+                <code v-if="cl.version" class="text-xs bg-gray-100 dark:bg-gray-800 px-1.5 py-0.5 rounded">{{ cl.version }}</code>
+                <span v-else class="text-gray-400">—</span>
+              </td>
+              <td class="td font-medium text-gray-900 dark:text-gray-100">{{ cl.title }}</td>
+              <td class="td">
+                <span class="inline-block px-2 py-0.5 rounded text-xs font-medium"
+                      :class="{
+                        'bg-green-100 text-green-700 dark:bg-green-950 dark:text-green-300': publishLabel(cl) === 'Publié',
+                        'bg-yellow-100 text-yellow-700 dark:bg-yellow-950 dark:text-yellow-300': publishLabel(cl) === 'Planifié',
+                        'bg-gray-100 text-gray-600 dark:bg-gray-800 dark:text-gray-400': publishLabel(cl) === 'Brouillon',
+                      }">
+                  {{ publishLabel(cl) }}
+                </span>
+              </td>
+              <td class="td text-gray-500">{{ formatDate(cl.published_at) }}</td>
+              <td class="td text-right text-gray-500">{{ cl.reads_count ?? 0 }}</td>
+              <td class="td flex items-center gap-3 justify-end">
+                <button class="text-xs text-brand-600 dark:text-brand-400 hover:underline" @click="openEdit(cl)">Éditer</button>
+                <button class="text-xs text-red-500 hover:underline" :disabled="deleting === cl.id" @click="remove(cl)">
+                  {{ deleting === cl.id ? '…' : 'Supprimer' }}
+                </button>
+              </td>
+            </tr>
+            <tr v-if="changelogs.length === 0">
+              <td colspan="6" class="td text-center text-gray-400 py-8">Aucun journal.</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </template>
 
     <!-- Form modal -->
     <Transition name="modal">
-      <div v-if="showForm" class="fixed inset-0 z-50 flex items-center justify-center bg-black/40" @click.self="showForm = false">
-        <div class="bg-white dark:bg-gray-900 rounded-xl shadow-xl w-full max-w-3xl p-6 border border-gray-200 dark:border-gray-800 max-h-[90vh] overflow-y-auto">
+      <div v-if="showForm" class="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/40 p-0 sm:p-4" @click.self="showForm = false">
+        <div class="bg-white dark:bg-gray-900 rounded-t-2xl sm:rounded-xl shadow-xl w-full sm:max-w-3xl p-4 sm:p-6 border border-gray-200 dark:border-gray-800 max-h-[92vh] overflow-y-auto">
           <div class="flex items-center justify-between mb-4">
             <h2 class="text-base font-semibold text-gray-900 dark:text-gray-100">
               {{ editTarget ? 'Modifier' : 'Nouveau journal' }}
@@ -219,11 +256,18 @@ async function onImageSelected(e: Event) {
               >
                 {{ preview ? 'Éditer' : 'Aperçu' }}
               </button>
+              <button
+                type="button"
+                class="text-xs px-2 py-1 rounded border text-gray-500 border-gray-300 dark:border-gray-700 hover:bg-gray-100 dark:hover:bg-gray-800 sm:hidden"
+                @click="showForm = false"
+              >
+                ✕
+              </button>
             </div>
           </div>
 
           <form class="space-y-4" @submit.prevent="save">
-            <div class="grid grid-cols-2 gap-4">
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
                 <label class="admin-label">Version</label>
                 <input v-model="form.version" class="admin-input" type="text" placeholder="ex. 1.2.0" />
