@@ -18,6 +18,7 @@ import CardEditDialog from '@/components/editor/CardEditDialog.vue'
 import SceneTimelineDrawer from '@/components/editor/SceneTimelineDrawer.vue'
 import SnapshotManualModal from '@/components/editor/SnapshotManualModal.vue'
 import ArcChapterDialog from '@/components/editor/ArcChapterDialog.vue'
+import VoiceRecorder from '@/components/shared/VoiceRecorder.vue'
 import Splitter from 'primevue/splitter'
 import SplitterPanel from 'primevue/splitterpanel'
 import draggable from 'vuedraggable'
@@ -241,6 +242,15 @@ function onAnnotationClick(id: string) {
 // ── TipTap / SceneEditor ──────────────────────────────────────
 const sceneEditorRef = ref<InstanceType<typeof SceneEditor> | null>(null)
 function tiptap() { return sceneEditorRef.value?.editor }
+
+function onEditorVoiceChunk(text: string) {
+  const ed = tiptap()
+  if (!ed) return
+  const { from } = ed.state.selection
+  const textBefore = from > 1 ? ed.state.doc.textBetween(Math.max(0, from - 1), from) : ''
+  const sep = textBefore && textBefore !== ' ' && textBefore !== '\n' ? ' ' : ''
+  ed.chain().focus().insertContent(sep + text).run()
+}
 
 function focusAnnotation(anchorStart: number, anchorEnd: number) {
   sceneEditorRef.value?.focusAnnotation(anchorStart, anchorEnd)
@@ -956,7 +966,7 @@ const rightPanelPt = { root: { class: 'flex flex-col overflow-hidden h-full bord
             </div>
           </div>
 
-          <div v-else class="flex-1 flex flex-col overflow-hidden">
+          <div v-else class="flex-1 flex flex-col overflow-hidden relative">
             <div
               class="flex-1 overflow-y-auto px-4 md:px-8 py-6 editor-viewport"
               style="background: var(--editor-bg)"
@@ -979,6 +989,10 @@ const rightPanelPt = { root: { class: 'flex flex-col overflow-hidden h-full bord
               />
             </div>
             <SuggestionPanel :editor="tiptap()" />
+            <!-- Bouton dictée vocale — ancré sur la fenêtre, pas sur le contenu -->
+            <div class="absolute bottom-4 right-4 z-10 opacity-30 hover:opacity-100 transition-opacity duration-200">
+              <VoiceRecorder source="editor" @chunk="onEditorVoiceChunk" />
+            </div>
           </div>
         </template>
       </SplitterPanel>

@@ -5,6 +5,7 @@ import { useCardsStore } from '@/stores/cards.store'
 import { useEditorStore } from '@/stores/editor.store'
 import { notesService } from '@/services/notes.service'
 import CardImagesTab from '@/components/editor/CardImagesTab.vue'
+import VoiceTextarea from '@/components/shared/VoiceTextarea.vue'
 import type { Note } from '@/types'
 
 const props = defineProps<{
@@ -520,14 +521,7 @@ const dialogPt = computed(() => ({
                 <!-- Mode édition -->
                 <template v-if="editingNoteId === note.id">
                   <div class="p-3">
-                    <textarea
-                      v-model="editingNoteBody"
-                      rows="4"
-                      autofocus
-                      class="w-full text-sm rounded-lg border border-gray-300 dark:border-gray-600
-                             bg-white dark:bg-gray-700 text-gray-800 dark:text-gray-200
-                             p-2 resize-none focus:outline-none focus:ring-1 focus:ring-brand-500"
-                    />
+                    <VoiceTextarea v-model="editingNoteBody" :rows="4" source="card_note" />
                     <div class="flex gap-2 mt-2">
                       <button
                         :disabled="!editingNoteBody.trim()"
@@ -579,15 +573,7 @@ const dialogPt = computed(() => ({
             </div>
 
             <template v-if="showNoteForm">
-              <textarea
-                v-model="newNoteBody"
-                rows="3"
-                placeholder="Nouvelle note…"
-                autofocus
-                class="w-full text-sm rounded-lg border border-gray-300 dark:border-gray-700
-                       bg-white dark:bg-gray-800 text-gray-800 dark:text-gray-200
-                       p-2.5 resize-none focus:outline-none focus:ring-1 focus:ring-brand-500"
-              />
+              <VoiceTextarea v-model="newNoteBody" :rows="3" placeholder="Nouvelle note…" source="card_note" />
               <div class="flex gap-2 mt-2">
                 <button
                   :disabled="!newNoteBody.trim()"

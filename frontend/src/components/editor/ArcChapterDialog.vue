@@ -7,6 +7,7 @@ import { todosService } from '@/services/todos.service'
 import { useAuthStore } from '@/stores/auth.store'
 import { useAppConfigStore } from '@/stores/appConfig.store'
 import PremiumLock from '@/components/common/PremiumLock.vue'
+import VoiceInputText from '@/components/shared/VoiceInputText.vue'
 
 const props = defineProps<{
   type: 'arc' | 'chapter'
@@ -352,12 +353,12 @@ const typeLabel = computed(() => props.type === 'arc' ? "l'arc" : 'le chapitre')
           <!-- Saisie nouvelle todo -->
           <div class="px-4 py-3 border-t border-gray-100 dark:border-gray-800 shrink-0">
             <div class="flex gap-2">
-              <input
+              <VoiceInputText
                 v-model="newTodoText"
-                type="text"
                 placeholder="Nouvelle todo…"
-                class="flex-1 text-sm rounded-lg border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 text-gray-900 dark:text-gray-100 px-3 py-1.5 focus:outline-none focus:ring-2 focus:ring-brand-500"
-                @keyup.enter="addTodo"
+                source="todo"
+                class="flex-1"
+                @submit="addTodo"
               />
               <button
                 class="px-3 py-1.5 rounded-lg bg-brand-600 hover:bg-brand-700 text-white text-xs font-medium transition-colors disabled:opacity-50"

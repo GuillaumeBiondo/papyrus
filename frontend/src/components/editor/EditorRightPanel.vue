@@ -5,6 +5,8 @@ import { useAuthStore } from '@/stores/auth.store'
 import { cardsService } from '@/services/cards.service'
 import { todosService } from '@/services/todos.service'
 import CardInlineView from './CardInlineView.vue'
+import VoiceTextarea from '@/components/shared/VoiceTextarea.vue'
+import VoiceInputText from '@/components/shared/VoiceInputText.vue'
 import type { Annotation, Card, Todo } from '@/types'
 
 const props = defineProps<{
@@ -377,8 +379,7 @@ function relativeTime(dateStr: string) {
                 :style="{ background: c.value, borderColor: selectedColor === c.value ? c.value : 'transparent', transform: selectedColor === c.value ? 'scale(1.25)' : 'scale(1)' }"
                 :title="c.label" @click="selectedColor = c.value" />
             </div>
-            <textarea v-model="inlineAnnotationBody" placeholder="Votre annotation…" rows="2" v-focus
-              class="w-full text-xs rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-800 dark:text-gray-200 p-2 resize-none focus:outline-none focus:ring-1 focus:ring-brand-500" />
+            <VoiceTextarea v-model="inlineAnnotationBody" placeholder="Votre annotation…" :rows="2" source="annotation" />
             <div class="flex gap-2 mt-2">
               <button :disabled="!inlineAnnotationBody.trim()" class="flex-1 text-white text-xs rounded-lg py-1.5 transition-colors disabled:opacity-40" :style="{ background: selectedColor }" @click="submitInlineAnnotation">Annoter</button>
               <button class="text-xs text-gray-400 hover:text-gray-600 px-2" @click="emit('discard-selection'); inlineAnnotationBody = ''">Annuler</button>
@@ -418,8 +419,7 @@ function relativeTime(dateStr: string) {
                     :style="{ background: c.value, borderColor: editingAnnotationColor === c.value ? c.value : 'transparent', transform: editingAnnotationColor === c.value ? 'scale(1.25)' : 'scale(1)' }"
                     @click="editingAnnotationColor = c.value" />
                 </div>
-                <textarea v-model="editingAnnotationBody" rows="3" v-focus
-                  class="w-full text-xs rounded border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-800 dark:text-gray-200 p-1.5 resize-none focus:outline-none focus:ring-1 focus:ring-brand-500" />
+                <VoiceTextarea v-model="editingAnnotationBody" :rows="3" source="annotation" />
                 <div class="flex gap-2 mt-1.5">
                   <button :disabled="!editingAnnotationBody.trim()" class="flex-1 text-white text-xs rounded py-1 disabled:opacity-40" :style="{ background: editingAnnotationColor }" @click="saveEditAnnotation">Enregistrer</button>
                   <button class="text-xs text-gray-400 hover:text-gray-600 px-2" @click="editingAnnotationId = null">Annuler</button>
@@ -455,8 +455,7 @@ function relativeTime(dateStr: string) {
                   :style="{ background: c.value, borderColor: selectedColor === c.value ? c.value : 'transparent', transform: selectedColor === c.value ? 'scale(1.25)' : 'scale(1)' }"
                   @click="selectedColor = c.value" />
               </div>
-              <textarea v-model="newAnnotationBody" placeholder="Note globale sur la scène…" rows="2" v-focus
-                class="w-full text-xs rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-800 dark:text-gray-200 p-2 resize-none focus:outline-none focus:ring-1 focus:ring-brand-500" />
+              <VoiceTextarea v-model="newAnnotationBody" placeholder="Note globale sur la scène…" :rows="2" source="annotation" />
               <div class="flex gap-2 mt-1.5">
                 <button :disabled="!newAnnotationBody.trim()" class="flex-1 text-white text-xs rounded-lg py-1 disabled:opacity-40" :style="{ background: selectedColor }" @click="submitGlobalAnnotation">Ajouter</button>
                 <button class="text-xs text-gray-400 hover:text-gray-600 px-2" @click="showGlobalForm = false; newAnnotationBody = ''">Annuler</button>
@@ -471,8 +470,7 @@ function relativeTime(dateStr: string) {
     <!-- ── Notes ── -->
     <div v-else-if="tab === 'notes'" class="flex-1 flex flex-col overflow-hidden">
       <div v-if="newNoteOpen" class="p-3 border-b border-gray-200 dark:border-gray-800 shrink-0">
-        <textarea v-model="newNoteBody" placeholder="Votre note…" rows="3" v-focus
-          class="w-full text-xs rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-800 dark:text-gray-200 p-2 resize-none focus:outline-none focus:ring-1 focus:ring-brand-500" />
+        <VoiceTextarea v-model="newNoteBody" placeholder="Votre note…" :rows="3" source="editor_note" />
         <div class="flex gap-2 mt-2">
           <button :disabled="!newNoteBody.trim()" class="flex-1 bg-brand-600 hover:bg-brand-800 disabled:opacity-40 text-white text-xs rounded-lg py-1.5 transition-colors" @click="submitNote">Ajouter</button>
           <button class="text-xs text-gray-400 hover:text-gray-600 px-2" @click="newNoteOpen = false; newNoteBody = ''">Annuler</button>
@@ -482,8 +480,7 @@ function relativeTime(dateStr: string) {
       <div class="flex-1 overflow-y-auto p-3 space-y-2">
         <div v-for="note in editor.projectNotes" :key="note.id" class="rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 shadow-sm p-2.5 group relative">
           <template v-if="editingNoteId === note.id">
-            <textarea v-model="editingNoteBody" rows="4" v-focus
-              class="w-full text-xs rounded border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-800 dark:text-gray-200 p-1.5 resize-none focus:outline-none focus:ring-1 focus:ring-brand-500" />
+            <VoiceTextarea v-model="editingNoteBody" :rows="4" source="editor_note" />
             <div class="flex gap-2 mt-1.5">
               <button :disabled="!editingNoteBody.trim()" class="flex-1 bg-brand-600 hover:bg-brand-800 disabled:opacity-40 text-white text-xs rounded py-1 transition-colors" @click="saveEditNote">Enregistrer</button>
               <button class="text-xs text-gray-400 hover:text-gray-600 px-2" @click="editingNoteId = null">Annuler</button>
@@ -733,12 +730,13 @@ function relativeTime(dateStr: string) {
       <!-- Nouvelle todo -->
       <div class="px-3 py-2 border-t border-gray-200 dark:border-gray-800 shrink-0">
         <div class="flex gap-1.5">
-          <input
+          <VoiceInputText
             v-model="newTodoText"
-            type="text"
             placeholder="Nouvelle todo…"
-            class="flex-1 text-xs rounded-lg border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 text-gray-900 dark:text-gray-100 px-2.5 py-1.5 focus:outline-none focus:ring-1 focus:ring-brand-500"
-            @keyup.enter="addSidebarTodo"
+            source="todo"
+            input-class="flex-1 text-xs"
+            class="flex-1"
+            @submit="addSidebarTodo"
           />
           <button
             class="px-2.5 py-1.5 rounded-lg bg-brand-600 hover:bg-brand-700 text-white text-xs font-medium transition-colors disabled:opacity-50"
