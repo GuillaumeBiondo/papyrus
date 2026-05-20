@@ -439,6 +439,8 @@ export interface AiVerification {
   sort_order: number
   allowed_card_types: string[] | null
   allow_multiple_cards: boolean
+  include_card_lore: boolean
+  include_card_links: boolean
   created_at?: string
   updated_at?: string
 }

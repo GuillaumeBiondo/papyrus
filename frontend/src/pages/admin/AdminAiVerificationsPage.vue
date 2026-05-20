@@ -28,6 +28,7 @@ const form = ref<Partial<AiVerification>>({
   has_extra_input: false, extra_input_label: '',
   extra_input_placeholder: '', pre_prompt: '',
   allowed_card_types: null, allow_multiple_cards: false,
+  include_card_lore: false, include_card_links: false,
 })
 
 function resetForm() {
@@ -37,6 +38,7 @@ function resetForm() {
     has_extra_input: false, extra_input_label: '',
     extra_input_placeholder: '', pre_prompt: '',
     allowed_card_types: null, allow_multiple_cards: false,
+    include_card_lore: false, include_card_links: false,
   }
 }
 
@@ -647,13 +649,20 @@ onMounted(async () => {
                 {{ ct.label }}
               </label>
             </div>
-            <label
-              v-if="(form.allowed_card_types ?? []).length > 0"
-              class="flex items-center gap-2 text-sm text-gray-700 dark:text-gray-300 cursor-pointer"
-            >
-              <input type="checkbox" v-model="form.allow_multiple_cards" class="accent-brand-500" />
-              Autoriser la sélection de plusieurs fiches
-            </label>
+            <div v-if="(form.allowed_card_types ?? []).length > 0" class="space-y-1.5">
+              <label class="flex items-center gap-2 text-sm text-gray-700 dark:text-gray-300 cursor-pointer">
+                <input type="checkbox" v-model="form.allow_multiple_cards" class="accent-brand-500" />
+                Autoriser la sélection de plusieurs fiches
+              </label>
+              <label class="flex items-center gap-2 text-sm text-gray-700 dark:text-gray-300 cursor-pointer">
+                <input type="checkbox" v-model="form.include_card_lore" class="accent-brand-500" />
+                Inclure le lore (biographie) dans le contexte IA
+              </label>
+              <label class="flex items-center gap-2 text-sm text-gray-700 dark:text-gray-300 cursor-pointer">
+                <input type="checkbox" v-model="form.include_card_links" class="accent-brand-500" />
+                Inclure les descriptions de liaisons dans le contexte IA
+              </label>
+            </div>
           </div>
 
           <div>

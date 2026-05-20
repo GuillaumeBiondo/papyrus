@@ -18,6 +18,8 @@ class AiVerification extends Model
         'sort_order',
         'allowed_card_types',
         'allow_multiple_cards',
+        'include_card_lore',
+        'include_card_links',
         'is_premium',
     ];
 
@@ -30,6 +32,8 @@ class AiVerification extends Model
             'sort_order'           => 'integer',
             'allowed_card_types'   => 'array',
             'allow_multiple_cards' => 'boolean',
+            'include_card_lore'    => 'boolean',
+            'include_card_links'   => 'boolean',
         ];
     }
 }
