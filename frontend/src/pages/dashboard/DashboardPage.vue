@@ -7,6 +7,8 @@ import { useThemeStore } from '@/stores/theme.store'
 import { useAppConfigStore } from '@/stores/appConfig.store'
 import { ACCENT_PALETTES } from '@/utils/accentColors'
 import ProjectSettingsDialog from '@/components/dashboard/ProjectSettingsDialog.vue'
+import GenreSelector from '@/components/ui/GenreSelector.vue'
+import { getGenreName } from '@/data/genres'
 import type { Project } from '@/types'
 
 const router = useRouter()
@@ -25,7 +27,7 @@ const atProjectLimit = computed(() =>
 // ── Création ──────────────────────────────────────────────
 const showNewForm = ref(false)
 const newTitle = ref('')
-const newGenre = ref('')
+const newGenres = ref<string[]>([])
 const creating = ref(false)
 
 onMounted(() => { projects.fetchAll(); appConfig.fetch() })
@@ -36,11 +38,11 @@ async function createProject() {
   try {
     const project = await projects.create({
       title: newTitle.value.trim(),
-      genre: newGenre.value.trim() || undefined,
+      genres: newGenres.value.length > 0 ? newGenres.value : undefined,
     })
     showNewForm.value = false
     newTitle.value = ''
-    newGenre.value = ''
+    newGenres.value = []
     router.push({ name: 'editor', params: { projectId: project.id } })
   } finally {
     creating.value = false
@@ -55,7 +57,7 @@ const filtered = computed(() => {
   let list = [...projects.projects]
   if (search.value.trim()) {
     const q = search.value.toLowerCase()
-    list = list.filter(p => p.title.toLowerCase().includes(q) || p.genre?.toLowerCase().includes(q))
+    list = list.filter(p => p.title.toLowerCase().includes(q) || p.genres?.some(g => g.toLowerCase().includes(q)))
   }
   if (sort.value === 'title') list.sort((a, b) => a.title.localeCompare(b.title))
   else if (sort.value === 'progress') list.sort((a, b) => wordPct(b) - wordPct(a))
@@ -125,7 +127,7 @@ function onProjectUpdated(updated: Project) {
   const existing = projects.projects.find(p => p.id === updated.id)
   if (existing) {
     existing.title  = updated.title
-    existing.genre  = updated.genre
+    existing.genres = updated.genres
     existing.status = updated.status
     existing.color  = updated.color
   }
@@ -204,7 +206,9 @@ function onProjectDeleted(id: string) {
             <h2 class="font-semibold text-[15px] leading-tight truncate text-gray-900 dark:text-gray-100">
               {{ p.title }}
             </h2>
-            <p class="text-xs text-gray-400 mt-0.5">{{ p.genre ?? '—' }}</p>
+            <p class="text-xs text-gray-400 mt-0.5">
+              {{ p.genres && p.genres.length > 0 ? p.genres.map(g => getGenreName(g)).join(' · ') : '—' }}
+            </p>
           </div>
           <button
             class="shrink-0 mt-0.5 p-1.5 rounded-lg text-gray-400 hover:text-gray-600 dark:hover:text-gray-200
@@ -369,16 +373,8 @@ function onProjectDeleted(id: string) {
               />
             </div>
             <div>
-              <label class="block text-xs font-medium text-gray-500 mb-1">Genre</label>
-              <input
-                v-model="newGenre"
-                type="text"
-                placeholder="Fantasy, Thriller, Romance…"
-                class="w-full rounded-lg border border-gray-300 dark:border-gray-700
-                       bg-white dark:bg-gray-800 text-sm text-gray-900 dark:text-gray-100
-                       px-3 py-2 focus:outline-none focus:ring-2 focus:ring-brand-500"
-                @keyup.escape="showNewForm = false"
-              />
+              <label class="block text-xs font-medium text-gray-500 mb-1">Genres</label>
+              <GenreSelector v-model="newGenres" />
             </div>
           </div>
           <div class="flex gap-2 mt-5">
