@@ -13,6 +13,7 @@ class StoreCardLinkRequest extends FormRequest
         return [
             'linked_card_id' => ['required', 'uuid', 'exists:cards,id'],
             'label'          => ['nullable', 'string', 'max:100'],
+            'description'    => ['nullable', 'string'],
         ];
     }
 }

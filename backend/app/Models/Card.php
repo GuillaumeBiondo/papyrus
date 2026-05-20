@@ -19,6 +19,7 @@ class Card extends Model
         'project_id',
         'type',
         'title',
+        'lore',
     ];
 
     public function project(): BelongsTo

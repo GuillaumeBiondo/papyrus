@@ -353,6 +353,7 @@ export interface Card {
   project_id: string
   type: string
   title: string
+  lore?: string | null
   attributes?: CardAttribute[]
   links?: CardLink[]
   keywords?: CardKeyword[]
@@ -372,6 +373,7 @@ export interface CardLink {
   card_id: string
   linked_card: Card
   label: string | null
+  description: string | null
 }
 
 export interface Note {

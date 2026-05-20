@@ -27,7 +27,7 @@ const editor = useEditorStore()
 const loading = ref(false)
 
 // ── Tabs ──────────────────────────────────────────────────────
-const activeTab = ref<'attributs' | 'liaisons' | 'referentiel' | 'images'>('attributs')
+const activeTab = ref<'attributs' | 'liaisons' | 'lore' | 'referentiel' | 'images'>('attributs')
 
 // ── Titre éditable ────────────────────────────────────────────
 const editingTitle = ref(false)
@@ -99,6 +99,48 @@ const linkLabel = ref('')
 const showLinkForm = ref(false)
 let linkSearchTimer: ReturnType<typeof setTimeout> | null = null
 
+// per-link expanded description state
+const expandedLinkId = ref<string | null>(null)
+const editingLinkId = ref<string | null>(null)
+const editingLinkLabel = ref('')
+const editingLinkDescription = ref('')
+const savingLinkId = ref<string | null>(null)
+
+function expandLink(linkId: string) {
+  if (expandedLinkId.value === linkId) {
+    expandedLinkId.value = null
+    cancelEditLink()
+  } else {
+    expandedLinkId.value = linkId
+    cancelEditLink()
+  }
+}
+
+function startEditLink(link: { id: string; label: string | null; description: string | null }) {
+  editingLinkId.value = link.id
+  editingLinkLabel.value = link.label ?? ''
+  editingLinkDescription.value = link.description ?? ''
+}
+
+function cancelEditLink() {
+  editingLinkId.value = null
+  editingLinkLabel.value = ''
+  editingLinkDescription.value = ''
+}
+
+async function saveEditLink(linkId: string) {
+  savingLinkId.value = linkId
+  try {
+    await cards.updateLink(linkId, {
+      label: editingLinkLabel.value.trim() || null,
+      description: editingLinkDescription.value.trim() || null,
+    })
+    cancelEditLink()
+  } finally {
+    savingLinkId.value = null
+  }
+}
+
 async function onLinkSearch() {
   if (linkSearchTimer) clearTimeout(linkSearchTimer)
   if (!linkSearch.value.trim()) { linkSearchResults.value = []; return }
@@ -133,10 +175,40 @@ function resetLinkForm() {
   linkSearchResults.value = []
 }
 
+// ── Lore ──────────────────────────────────────────────────────
+const loreText = ref('')
+const loreSaving = ref(false)
+let loreSaveTimer: ReturnType<typeof setTimeout> | null = null
+
+watch(() => cards.activeCard?.lore, (val) => {
+  loreText.value = val ?? ''
+}, { immediate: true })
+
+function onLoreInput() {
+  if (loreSaveTimer) clearTimeout(loreSaveTimer)
+  loreSaveTimer = setTimeout(saveLore, 1500)
+}
+
+async function saveLore() {
+  if (!cards.activeCard) return
+  loreSaving.value = true
+  try {
+    await cards.updateCard({ lore: loreText.value })
+  } finally {
+    loreSaving.value = false
+  }
+}
+
+async function saveLoreNow() {
+  if (loreSaveTimer) { clearTimeout(loreSaveTimer); loreSaveTimer = null }
+  await saveLore()
+}
+
 // ── Notes ─────────────────────────────────────────────────────
 const cardNotes = ref<Note[]>([])
 const newNoteBody = ref('')
 const showNoteForm = ref(false)
+const integratingNoteId = ref<string | null>(null)
 
 watch(() => cards.activeCard?.id, async (id) => {
   cardNotes.value = []
@@ -175,6 +247,18 @@ async function saveEditNote() {
   editingNoteBody.value = ''
 }
 
+async function integrateNoteIntoLore(noteId: string) {
+  integratingNoteId.value = noteId
+  try {
+    const newLore = await cards.integrateLoreNote(noteId)
+    loreText.value = newLore
+    cardNotes.value = cardNotes.value.filter(n => n.id !== noteId)
+    activeTab.value = 'lore'
+  } finally {
+    integratingNoteId.value = null
+  }
+}
+
 const avatarImage = computed(() =>
   cards.activeCard?.images?.find(i => i.is_avatar) ?? null
 )
@@ -188,6 +272,8 @@ watch(() => props.cardId, async (id) => {
   editingTitle.value = false
   showKwForm.value = false
   showNoteForm.value = false
+  expandedLinkId.value = null
+  cancelEditLink()
   try {
     await cards.loadCard(id)
   } finally {
@@ -338,16 +424,17 @@ const dialogPt = computed(() => ({
     <div v-else-if="cards.activeCard" class="flex flex-col h-full">
 
       <!-- Tabs -->
-      <div class="flex items-center gap-1 px-6 border-b border-gray-200 dark:border-gray-700 shrink-0">
+      <div class="flex items-center gap-1 px-6 border-b border-gray-200 dark:border-gray-700 shrink-0 overflow-x-auto">
         <button
           v-for="{ key, label } in [
             { key: 'attributs',   label: 'Attributs'   },
             { key: 'liaisons',    label: 'Liaisons'    },
+            { key: 'lore',        label: 'Lore'        },
             { key: 'referentiel', label: 'Référentiel' },
             { key: 'images',      label: 'Images'      },
           ]"
           :key="key"
-          class="py-3 px-1 mr-3 text-sm border-b-2 transition-colors -mb-px"
+          class="py-3 px-1 mr-3 text-sm border-b-2 transition-colors -mb-px whitespace-nowrap"
           :class="activeTab === key
             ? 'border-brand-500 text-brand-600 dark:text-brand-400 font-medium'
             : 'border-transparent text-gray-500 hover:text-gray-700 dark:hover:text-gray-300'"
@@ -358,7 +445,7 @@ const dialogPt = computed(() => ({
 
         <!-- Confirmation suppression -->
         <template v-if="confirmDelete">
-          <span class="text-xs text-gray-500 dark:text-gray-400 mr-1">Supprimer définitivement ?</span>
+          <span class="text-xs text-gray-500 dark:text-gray-400 mr-1 whitespace-nowrap">Supprimer définitivement ?</span>
           <button
             class="text-xs px-2.5 py-1.5 my-2 rounded-lg bg-red-500 hover:bg-red-600 text-white transition-colors disabled:opacity-50"
             :disabled="deleting"
@@ -516,7 +603,7 @@ const dialogPt = computed(() => ({
               <div
                 v-for="note in cardNotes"
                 :key="note.id"
-                class="group rounded-lg border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800"
+                class="rounded-lg border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800"
               >
                 <!-- Mode édition -->
                 <template v-if="editingNoteId === note.id">
@@ -538,15 +625,31 @@ const dialogPt = computed(() => ({
 
                 <!-- Mode lecture -->
                 <template v-else>
-                  <div class="flex gap-2 p-3">
-                    <p class="flex-1 text-sm text-gray-700 dark:text-gray-300 leading-relaxed whitespace-pre-wrap">
+                  <div class="p-3">
+                    <p class="text-sm text-gray-700 dark:text-gray-300 leading-relaxed whitespace-pre-wrap mb-2">
                       {{ note.body }}
                     </p>
-                    <div class="flex flex-col items-end gap-1.5 shrink-0">
+                    <div class="flex items-center justify-between gap-2">
                       <span class="text-xs text-gray-400">{{ relativeTime(note.updated_at) }}</span>
-                      <div class="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                      <div class="flex items-center gap-1">
                         <button
-                          class="text-gray-400 hover:text-brand-500 transition-colors p-0.5"
+                          class="flex items-center gap-1 text-xs text-brand-500 hover:text-brand-700 dark:hover:text-brand-300 transition-colors px-2 py-1 rounded-md hover:bg-brand-50 dark:hover:bg-brand-900/20 disabled:opacity-40"
+                          :disabled="integratingNoteId === note.id"
+                          title="Intégrer au lore via IA"
+                          @click="integrateNoteIntoLore(note.id)"
+                        >
+                          <svg v-if="integratingNoteId !== note.id" class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                  d="M5 3l14 9-14 9V3z"/>
+                          </svg>
+                          <svg v-else class="w-3.5 h-3.5 animate-spin" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                  d="M4 12a8 8 0 018-8v8H4z"/>
+                          </svg>
+                          {{ integratingNoteId === note.id ? '…' : 'Lore' }}
+                        </button>
+                        <button
+                          class="text-gray-400 hover:text-brand-500 transition-colors p-1.5 rounded-md hover:bg-gray-100 dark:hover:bg-gray-700"
                           title="Modifier"
                           @click="startEditNote(note)"
                         >
@@ -556,7 +659,7 @@ const dialogPt = computed(() => ({
                           </svg>
                         </button>
                         <button
-                          class="text-gray-400 hover:text-red-400 transition-colors p-0.5"
+                          class="text-gray-400 hover:text-red-400 transition-colors p-1.5 rounded-md hover:bg-gray-100 dark:hover:bg-gray-700"
                           title="Supprimer"
                           @click="removeCardNote(note.id)"
                         >
@@ -604,29 +707,92 @@ const dialogPt = computed(() => ({
             <div
               v-for="link in cards.activeCard.links"
               :key="link.id"
-              class="flex items-center gap-3 p-3 rounded-lg border border-gray-200 dark:border-gray-700
-                     bg-white dark:bg-gray-800 group"
+              class="rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 overflow-hidden"
             >
-              <div
-                class="w-8 h-8 rounded-full flex items-center justify-center text-xs font-medium text-white shrink-0"
-                :class="typeConfig(link.linked_card.type).bg"
-              >{{ initials(link.linked_card.title) }}</div>
-              <div class="flex-1 min-w-0">
-                <p class="text-sm font-medium text-gray-800 dark:text-gray-100">{{ link.linked_card.title }}</p>
-                <p class="text-xs text-gray-400">
-                  {{ typeConfig(link.linked_card.type).label }}
-                  <template v-if="link.label"> · <em>{{ link.label }}</em></template>
-                </p>
+              <!-- En-tête liaison -->
+              <div class="flex items-center gap-3 p-3">
+                <div
+                  class="w-8 h-8 rounded-full flex items-center justify-center text-xs font-medium text-white shrink-0"
+                  :class="typeConfig(link.linked_card.type).bg"
+                >{{ initials(link.linked_card.title) }}</div>
+                <div class="flex-1 min-w-0">
+                  <p class="text-sm font-medium text-gray-800 dark:text-gray-100">{{ link.linked_card.title }}</p>
+                  <p class="text-xs text-gray-400">
+                    {{ typeConfig(link.linked_card.type).label }}
+                    <template v-if="link.label"> · <em>{{ link.label }}</em></template>
+                  </p>
+                </div>
+                <div class="flex items-center gap-1 shrink-0">
+                  <button
+                    class="p-1.5 rounded-md text-gray-400 hover:text-brand-500 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
+                    :title="expandedLinkId === link.id ? 'Masquer' : 'Développer / modifier'"
+                    @click="expandLink(link.id)"
+                  >
+                    <svg
+                      class="w-3.5 h-3.5 transition-transform"
+                      :class="expandedLinkId === link.id ? 'rotate-180' : ''"
+                      fill="none" stroke="currentColor" viewBox="0 0 24 24"
+                    >
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
+                    </svg>
+                  </button>
+                  <button
+                    class="p-1.5 rounded-md text-gray-300 hover:text-red-400 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
+                    title="Supprimer la liaison"
+                    @click="cards.removeLink(link.id)"
+                  >
+                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+                    </svg>
+                  </button>
+                </div>
               </div>
-              <button
-                class="opacity-0 group-hover:opacity-100 text-gray-300 hover:text-red-400 transition-opacity shrink-0"
-                title="Supprimer la liaison"
-                @click="cards.removeLink(link.id)"
-              >
-                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
-                </svg>
-              </button>
+
+              <!-- Zone description / édition -->
+              <div v-if="expandedLinkId === link.id" class="border-t border-gray-100 dark:border-gray-700 px-3 pb-3 pt-2 bg-gray-50 dark:bg-gray-800/50">
+                <template v-if="editingLinkId === link.id">
+                  <div class="space-y-2">
+                    <input
+                      v-model="editingLinkLabel"
+                      type="text"
+                      placeholder="Relation (ami, ennemi, mentor…)"
+                      class="w-full text-sm rounded-lg border border-gray-300 dark:border-gray-600
+                             bg-white dark:bg-gray-800 text-gray-800 dark:text-gray-200
+                             px-3 py-1.5 focus:outline-none focus:ring-1 focus:ring-brand-500"
+                    />
+                    <textarea
+                      v-model="editingLinkDescription"
+                      rows="4"
+                      placeholder="Décris cette relation, son histoire, son évolution…"
+                      class="w-full text-sm rounded-lg border border-gray-300 dark:border-gray-600
+                             bg-white dark:bg-gray-800 text-gray-800 dark:text-gray-200
+                             px-3 py-2 focus:outline-none focus:ring-1 focus:ring-brand-500 resize-none"
+                    />
+                    <div class="flex gap-2">
+                      <button
+                        :disabled="savingLinkId === link.id"
+                        class="flex-1 bg-brand-600 hover:bg-brand-800 disabled:opacity-40 text-white text-sm rounded-lg py-1.5 transition-colors"
+                        @click="saveEditLink(link.id)"
+                      >{{ savingLinkId === link.id ? '…' : 'Enregistrer' }}</button>
+                      <button
+                        class="text-sm text-gray-400 hover:text-gray-600 px-3"
+                        @click="cancelEditLink"
+                      >Annuler</button>
+                    </div>
+                  </div>
+                </template>
+                <template v-else>
+                  <p
+                    v-if="link.description"
+                    class="text-sm text-gray-600 dark:text-gray-300 leading-relaxed whitespace-pre-wrap mb-2"
+                  >{{ link.description }}</p>
+                  <p v-else class="text-sm text-gray-400 italic mb-2">Aucune description.</p>
+                  <button
+                    class="text-xs text-brand-600 dark:text-brand-400 hover:underline"
+                    @click="startEditLink(link)"
+                  >Modifier</button>
+                </template>
+              </div>
             </div>
           </div>
           <p v-else class="text-sm text-gray-400">Aucune liaison définie.</p>
@@ -674,7 +840,7 @@ const dialogPt = computed(() => ({
             <input
               v-model="linkLabel"
               type="text"
-              placeholder="Label (ex: ami, ennemi, mentor)…"
+              placeholder="Relation (ami, ennemi, mentor)…"
               class="w-full text-sm rounded-lg border border-gray-300 dark:border-gray-600
                      bg-white dark:bg-gray-800 text-gray-800 dark:text-gray-200
                      px-3 py-2 focus:outline-none focus:ring-1 focus:ring-brand-500"
@@ -700,6 +866,32 @@ const dialogPt = computed(() => ({
                    py-2 text-sm text-gray-400 hover:text-brand-600 hover:border-brand-400 transition-colors"
             @click="showLinkForm = true"
           >+ nouvelle liaison</button>
+        </div>
+
+        <!-- ── Lore ── -->
+        <div v-else-if="activeTab === 'lore'" class="p-6 flex flex-col h-full gap-3">
+          <div class="flex items-center justify-between">
+            <p class="text-xs font-semibold uppercase tracking-wide text-gray-400 dark:text-gray-500">
+              Lore — biographie &amp; histoire
+            </p>
+            <span
+              v-if="loreSaving"
+              class="text-xs text-gray-400 animate-pulse"
+            >Sauvegarde…</span>
+          </div>
+          <textarea
+            v-model="loreText"
+            placeholder="Écris ici tout ce que tu sais sur ce personnage : son histoire, sa psychologie, ses secrets, ses contradictions…"
+            class="flex-1 w-full text-sm rounded-xl border border-gray-200 dark:border-gray-700
+                   bg-white dark:bg-gray-800 text-gray-800 dark:text-gray-200
+                   px-4 py-3 focus:outline-none focus:ring-2 focus:ring-brand-400
+                   resize-none leading-relaxed min-h-[300px]"
+            @input="onLoreInput"
+            @blur="saveLoreNow"
+          />
+          <p class="text-xs text-gray-400">
+            Le lore est sauvegardé automatiquement. Tu peux aussi intégrer des notes depuis l'onglet Attributs.
+          </p>
         </div>
 
         <!-- ── Images ── -->
@@ -758,4 +950,3 @@ const dialogPt = computed(() => ({
     </div>
   </Dialog>
 </template>
-
