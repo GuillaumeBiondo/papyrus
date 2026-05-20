@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, ref, watch } from 'vue'
+import { computed, onBeforeUnmount, ref, watch } from 'vue'
 import Dialog from 'primevue/dialog'
 import { useCardsStore } from '@/stores/cards.store'
 import { useEditorStore } from '@/stores/editor.store'
@@ -179,15 +179,19 @@ function resetLinkForm() {
 const loreText = ref('')
 const loreSaving = ref(false)
 let loreSaveTimer: ReturnType<typeof setTimeout> | null = null
+let loreSkipWatch = false
 
 watch(() => cards.activeCard?.lore, (val) => {
+  loreSkipWatch = true
   loreText.value = val ?? ''
 }, { immediate: true })
 
-function onLoreInput() {
+// Autosave déclenché par toute modification (saisie clavier ou dictée vocale)
+watch(loreText, () => {
+  if (loreSkipWatch) { loreSkipWatch = false; return }
   if (loreSaveTimer) clearTimeout(loreSaveTimer)
   loreSaveTimer = setTimeout(saveLore, 1500)
-}
+})
 
 async function saveLore() {
   if (!cards.activeCard) return
@@ -203,6 +207,9 @@ async function saveLoreNow() {
   if (loreSaveTimer) { clearTimeout(loreSaveTimer); loreSaveTimer = null }
   await saveLore()
 }
+
+// Sauvegarde à la fermeture du dialog (remplace le @blur de la textarea)
+onBeforeUnmount(() => saveLoreNow())
 
 // ── Notes ─────────────────────────────────────────────────────
 const cardNotes = ref<Note[]>([])
@@ -760,13 +767,11 @@ const dialogPt = computed(() => ({
                              bg-white dark:bg-gray-800 text-gray-800 dark:text-gray-200
                              px-3 py-1.5 focus:outline-none focus:ring-1 focus:ring-brand-500"
                     />
-                    <textarea
+                    <VoiceTextarea
                       v-model="editingLinkDescription"
-                      rows="4"
+                      :rows="4"
                       placeholder="Décris cette relation, son histoire, son évolution…"
-                      class="w-full text-sm rounded-lg border border-gray-300 dark:border-gray-600
-                             bg-white dark:bg-gray-800 text-gray-800 dark:text-gray-200
-                             px-3 py-2 focus:outline-none focus:ring-1 focus:ring-brand-500 resize-none"
+                      source="card_liaison"
                     />
                     <div class="flex gap-2">
                       <button
@@ -879,15 +884,12 @@ const dialogPt = computed(() => ({
               class="text-xs text-gray-400 animate-pulse"
             >Sauvegarde…</span>
           </div>
-          <textarea
+          <VoiceTextarea
             v-model="loreText"
             placeholder="Écris ici tout ce que tu sais sur ce personnage : son histoire, sa psychologie, ses secrets, ses contradictions…"
-            class="flex-1 w-full text-sm rounded-xl border border-gray-200 dark:border-gray-700
-                   bg-white dark:bg-gray-800 text-gray-800 dark:text-gray-200
-                   px-4 py-3 focus:outline-none focus:ring-2 focus:ring-brand-400
-                   resize-none leading-relaxed min-h-[300px]"
-            @input="onLoreInput"
-            @blur="saveLoreNow"
+            :rows="14"
+            source="card_lore"
+            textarea-class="flex-1 min-h-[300px] leading-relaxed"
           />
           <p class="text-xs text-gray-400">
             Le lore est sauvegardé automatiquement. Tu peux aussi intégrer des notes depuis l'onglet Attributs.
