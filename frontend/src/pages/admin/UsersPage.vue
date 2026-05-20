@@ -120,7 +120,7 @@ function hasPreferences(u: AdminUser) {
 </script>
 
 <template>
-  <div class="p-8">
+  <div class="p-4 md:p-8">
     <div class="flex items-center justify-between mb-6">
       <h1 class="text-xl font-semibold text-gray-900 dark:text-gray-100">Utilisateurs</h1>
       <button
@@ -135,7 +135,127 @@ function hasPreferences(u: AdminUser) {
     <div v-else-if="error" class="text-red-500 text-sm">{{ error }}</div>
 
     <template v-else>
-      <div class="bg-white dark:bg-gray-900 rounded-lg border border-gray-200 dark:border-gray-800 overflow-x-auto">
+      <!-- Mobile: cards -->
+      <div class="md:hidden space-y-3">
+        <template v-for="u in users" :key="u.id">
+          <div class="bg-white dark:bg-gray-900 rounded-lg border border-gray-200 dark:border-gray-800 p-4">
+            <!-- Header -->
+            <div class="flex items-start justify-between gap-2 mb-1">
+              <div class="flex items-center gap-2 flex-wrap">
+                <span class="font-medium text-gray-900 dark:text-gray-100 text-sm">{{ u.name }}</span>
+                <span
+                  class="inline-block px-2 py-0.5 rounded text-xs font-medium"
+                  :class="u.role === 'admin'
+                    ? 'bg-purple-100 text-purple-700 dark:bg-purple-950 dark:text-purple-300'
+                    : 'bg-gray-100 text-gray-600 dark:bg-gray-800 dark:text-gray-400'"
+                >
+                  {{ u.role }}
+                </span>
+                <span
+                  v-if="u.is_premium"
+                  class="text-[10px] font-semibold px-1.5 py-0.5 rounded bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-400"
+                >
+                  ★ payé
+                </span>
+              </div>
+              <button
+                v-if="hasPreferences(u)"
+                class="text-xs text-brand-600 dark:text-brand-400 hover:underline shrink-0"
+                @click="expanded = expanded === u.id ? null : u.id"
+              >
+                {{ expanded === u.id ? 'masquer' : 'prefs' }}
+              </button>
+            </div>
+
+            <!-- Email -->
+            <p class="text-xs text-gray-500 truncate mb-2">{{ u.email }}</p>
+
+            <!-- Stats -->
+            <div class="flex flex-wrap gap-x-4 gap-y-0.5 text-xs text-gray-400 mb-3">
+              <span>{{ u.projects_count }} projet(s)</span>
+              <span>{{ formatNumber(u.total_words) }} mots</span>
+              <span>Connexion : {{ formatDate(u.last_login_at) }}</span>
+            </div>
+
+            <!-- Toggles (non-admin only) -->
+            <div v-if="u.role !== 'admin'" class="flex items-center gap-5">
+              <div class="flex items-center gap-1.5">
+                <span class="text-xs text-gray-500">Premium</span>
+                <button
+                  class="relative inline-flex h-5 w-9 rounded-full transition-colors"
+                  :class="[
+                    u.premium_override ? 'bg-amber-500' : 'bg-gray-300 dark:bg-gray-700',
+                    togglingPremium === u.id ? 'opacity-50 pointer-events-none' : '',
+                  ]"
+                  :title="u.premium_override ? 'Premium forcé par admin' : 'Forcer le premium'"
+                  @click="togglePremiumOverride(u)"
+                >
+                  <span class="absolute top-0.5 left-0.5 h-4 w-4 rounded-full bg-white shadow transition-transform"
+                        :class="u.premium_override ? 'translate-x-4' : 'translate-x-0'" />
+                </button>
+              </div>
+              <div class="flex items-center gap-1.5">
+                <span class="text-xs text-gray-500">Maint.</span>
+                <button
+                  class="relative inline-flex h-5 w-9 rounded-full transition-colors"
+                  :class="[
+                    u.maintenance_bypass ? 'bg-brand-600' : 'bg-gray-300 dark:bg-gray-700',
+                    togglingBypass === u.id ? 'opacity-50 pointer-events-none' : '',
+                  ]"
+                  :title="u.maintenance_bypass ? 'Accès autorisé pendant la maintenance' : 'Bloqué pendant la maintenance'"
+                  @click="toggleBypass(u)"
+                >
+                  <span class="absolute top-0.5 left-0.5 h-4 w-4 rounded-full bg-white shadow transition-transform"
+                        :class="u.maintenance_bypass ? 'translate-x-4' : 'translate-x-0'" />
+                </button>
+              </div>
+              <div class="flex items-center gap-1.5">
+                <span class="text-xs text-gray-500">Bloqué</span>
+                <button
+                  class="relative inline-flex h-5 w-9 rounded-full transition-colors"
+                  :class="[
+                    u.is_blocked ? 'bg-red-500' : 'bg-gray-300 dark:bg-gray-700',
+                    togglingBlock === u.id ? 'opacity-50 pointer-events-none' : '',
+                  ]"
+                  :title="u.is_blocked ? `Bloqué${u.block_reason ? ' : ' + u.block_reason : ''}` : 'Compte actif'"
+                  @click="toggleBlock(u)"
+                >
+                  <span class="absolute top-0.5 left-0.5 h-4 w-4 rounded-full bg-white shadow transition-transform"
+                        :class="u.is_blocked ? 'translate-x-4' : 'translate-x-0'" />
+                </button>
+              </div>
+            </div>
+
+            <!-- Block reason input -->
+            <div v-if="showBlockReason === u.id" class="mt-3 flex items-center gap-2">
+              <input
+                v-model="blockReasonInput"
+                type="text"
+                maxlength="255"
+                placeholder="Raison (optionnelle)…"
+                class="flex-1 rounded border border-red-200 dark:border-red-800 bg-white dark:bg-gray-900 px-2 py-1 text-xs text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-1 focus:ring-red-400"
+              />
+              <button
+                class="px-2.5 py-1 text-xs rounded bg-red-600 text-white hover:bg-red-700 transition-colors"
+                :disabled="togglingBlock === u.id"
+                @click="toggleBlock(u)"
+              >
+                OK
+              </button>
+              <button class="px-2.5 py-1 text-xs text-gray-500" @click="cancelBlock">✕</button>
+            </div>
+
+            <!-- Preferences expanded -->
+            <div v-if="expanded === u.id" class="mt-3 bg-gray-50 dark:bg-gray-800/30 rounded p-2">
+              <pre class="text-xs text-gray-600 dark:text-gray-400 whitespace-pre-wrap font-mono overflow-x-auto">{{ JSON.stringify(u.preferences, null, 2) }}</pre>
+            </div>
+          </div>
+        </template>
+        <p v-if="users.length === 0" class="text-center text-gray-400 text-sm py-8">Aucun utilisateur.</p>
+      </div>
+
+      <!-- Desktop: table -->
+      <div class="hidden md:block bg-white dark:bg-gray-900 rounded-lg border border-gray-200 dark:border-gray-800 overflow-x-auto">
         <table class="w-full text-sm">
           <thead>
             <tr class="border-b border-gray-100 dark:border-gray-800 text-left">
@@ -177,13 +297,11 @@ function hasPreferences(u: AdminUser) {
                 <td class="td text-right text-gray-500">{{ formatNumber(u.avg_words_per_project) }}</td>
                 <td class="td text-center">
                   <div class="flex items-center justify-center gap-1.5">
-                    <!-- Badge "payé" -->
                     <span
                       v-if="u.is_premium"
                       class="text-[10px] font-semibold px-1.5 py-0.5 rounded bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-400"
                       title="Abonnement actif"
                     >★ payé</span>
-                    <!-- Toggle override -->
                     <button
                       v-if="u.role !== 'admin'"
                       class="relative inline-flex h-5 w-9 rounded-full transition-colors"
@@ -201,7 +319,6 @@ function hasPreferences(u: AdminUser) {
                   </div>
                 </td>
                 <td class="td">
-                  <!-- Bypass maintenance (désactivé pour les admins) -->
                   <button
                     v-if="u.role !== 'admin'"
                     class="relative inline-flex h-5 w-9 rounded-full transition-colors"
@@ -285,8 +402,8 @@ function hasPreferences(u: AdminUser) {
 
     <!-- Create modal -->
     <Transition name="modal">
-      <div v-if="showCreate" class="fixed inset-0 z-50 flex items-center justify-center bg-black/40" @click.self="showCreate = false">
-        <div class="bg-white dark:bg-gray-900 rounded-xl shadow-xl w-full max-w-md p-6 border border-gray-200 dark:border-gray-800">
+      <div v-if="showCreate" class="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/40" @click.self="showCreate = false">
+        <div class="bg-white dark:bg-gray-900 rounded-t-2xl sm:rounded-xl shadow-xl w-full sm:max-w-md p-4 sm:p-6 border border-gray-200 dark:border-gray-800">
           <h2 class="text-base font-semibold text-gray-900 dark:text-gray-100 mb-4">Créer un compte utilisateur</h2>
           <form class="space-y-3" @submit.prevent="createUser">
             <div>

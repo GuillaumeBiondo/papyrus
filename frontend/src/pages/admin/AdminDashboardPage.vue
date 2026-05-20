@@ -28,21 +28,25 @@ function formatNumber(n: number) {
 </script>
 
 <template>
-  <div class="p-8 max-w-5xl">
+  <div class="p-4 md:p-8 max-w-5xl">
     <h1 class="text-xl font-semibold text-gray-900 dark:text-gray-100 mb-6">Tableau de bord</h1>
 
     <div v-if="loading" class="text-gray-400 text-sm">Chargement…</div>
 
     <template v-else-if="stats">
       <!-- Stats cards -->
-      <div class="grid grid-cols-2 md:grid-cols-3 gap-4 mb-8">
-        <div v-for="card in [
-          { label: 'Utilisateurs', value: formatNumber(stats.total_users), sub: `+${stats.new_users_week} cette semaine` },
-          { label: 'Actifs (7 jours)', value: formatNumber(stats.active_users_week) },
-          { label: 'Projets', value: formatNumber(stats.total_projects) },
-          { label: 'Mots écrits', value: formatNumber(stats.total_words) },
-          { label: 'Administrateurs', value: formatNumber(stats.total_admins) },
-        ]" :key="card.label" class="bg-white dark:bg-gray-900 rounded-lg border border-gray-200 dark:border-gray-800 p-4">
+      <div class="grid grid-cols-2 md:grid-cols-3 gap-3 md:gap-4 mb-8">
+        <div
+          v-for="card in [
+            { label: 'Utilisateurs', value: formatNumber(stats.total_users), sub: `+${stats.new_users_week} cette semaine` },
+            { label: 'Actifs (7 jours)', value: formatNumber(stats.active_users_week) },
+            { label: 'Projets', value: formatNumber(stats.total_projects) },
+            { label: 'Mots écrits', value: formatNumber(stats.total_words) },
+            { label: 'Administrateurs', value: formatNumber(stats.total_admins) },
+          ]"
+          :key="card.label"
+          class="bg-white dark:bg-gray-900 rounded-lg border border-gray-200 dark:border-gray-800 p-3 md:p-4"
+        >
           <p class="text-xs text-gray-500 dark:text-gray-500 mb-1">{{ card.label }}</p>
           <p class="text-2xl font-semibold text-gray-900 dark:text-gray-100">{{ card.value }}</p>
           <p v-if="card.sub" class="text-xs text-gray-400 mt-0.5">{{ card.sub }}</p>
@@ -51,7 +55,26 @@ function formatNumber(n: number) {
 
       <!-- Recent users -->
       <h2 class="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-3">Inscriptions récentes</h2>
-      <div class="bg-white dark:bg-gray-900 rounded-lg border border-gray-200 dark:border-gray-800 overflow-hidden">
+
+      <!-- Mobile: cards -->
+      <div class="md:hidden space-y-2">
+        <div
+          v-for="u in recentUsers"
+          :key="u.id"
+          class="bg-white dark:bg-gray-900 rounded-lg border border-gray-200 dark:border-gray-800 p-3"
+        >
+          <p class="font-medium text-sm text-gray-900 dark:text-gray-100">{{ u.name }}</p>
+          <p class="text-xs text-gray-500 mt-0.5 truncate">{{ u.email }}</p>
+          <div class="flex flex-wrap gap-3 mt-2 text-xs text-gray-400">
+            <span>Inscrit le {{ formatDate(u.created_at) }}</span>
+            <span>Connexion {{ formatDate(u.last_login_at) }}</span>
+          </div>
+        </div>
+        <p v-if="recentUsers.length === 0" class="text-center text-gray-400 text-sm py-6">Aucun utilisateur récent.</p>
+      </div>
+
+      <!-- Desktop: table -->
+      <div class="hidden md:block bg-white dark:bg-gray-900 rounded-lg border border-gray-200 dark:border-gray-800 overflow-hidden">
         <table class="w-full text-sm">
           <thead>
             <tr class="border-b border-gray-100 dark:border-gray-800 text-left">
@@ -78,4 +101,3 @@ function formatNumber(n: number) {
     </template>
   </div>
 </template>
-
