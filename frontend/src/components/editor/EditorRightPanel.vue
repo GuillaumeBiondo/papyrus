@@ -294,7 +294,7 @@ function relativeTime(dateStr: string) {
         :class="tab === t ? 'border-b-2 border-brand-600 text-brand-600' : 'text-gray-400 hover:text-gray-600 dark:hover:text-gray-300'"
         @click="emit('update:tab', t)"
       >
-        {{ t === 'annotations' ? 'Annot.' : t === 'notes' ? 'Notes' : t === 'fiches' ? (editor.currentProject?.content_type?.short_name ?? 'Fiches') : 'Todos' }}
+        {{ t === 'annotations' ? 'Annot.' : t === 'notes' ? 'Notes' : t === 'fiches' ? 'Fiches' : 'Todos' }}
         <span
           v-if="t === 'todos' && (arcTodos.filter(x => !x.is_done).length + chapterTodos.filter(x => !x.is_done).length) > 0"
           class="absolute top-1 right-1 w-1.5 h-1.5 rounded-full bg-brand-500"
