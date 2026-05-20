@@ -10,8 +10,29 @@ const auth  = useAuthStore()
 const theme = useThemeStore()
 const fonts = useFontsStore()
 
-// ── Section active ────────────────────────────────────────────
-const activeSection = ref<'theme' | 'appearance' | 'cards' | 'attributes' | 'writing' | 'goals'>('theme')
+// ── Navigation ────────────────────────────────────────────────
+const NAV_ITEMS = [
+  { key: 'theme',      label: 'Thème',           icon: '🌓' },
+  { key: 'appearance', label: 'Apparence',        icon: '🎨' },
+  { key: 'cards',      label: 'Fiches',           icon: '🃏' },
+  { key: 'attributes', label: 'Attrs par défaut', icon: '📋' },
+  { key: 'writing',    label: 'Écriture',         icon: '✍️' },
+  { key: 'goals',      label: 'Objectifs',        icon: '🎯' },
+] as const
+
+type SectionKey = typeof NAV_ITEMS[number]['key']
+
+const activeSection = ref<SectionKey>('theme')
+const mobileShowContent = ref(false)
+
+function selectSection(key: SectionKey) {
+  activeSection.value = key
+  mobileShowContent.value = true
+}
+
+function backToMenu() {
+  mobileShowContent.value = false
+}
 
 // ── Thème ─────────────────────────────────────────────────────
 const themeOptions = [
@@ -182,31 +203,61 @@ watch(() => theme.applied, (t) => { appearanceMode.value = t }, { immediate: tru
 <template>
   <div class="flex h-full overflow-hidden">
 
-    <!-- Sidebar sections -->
-    <aside class="w-44 shrink-0 border-r border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900/50 p-3 space-y-0.5">
+    <!-- Sidebar (desktop) -->
+    <aside class="hidden md:flex md:w-44 shrink-0 flex-col border-r border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900/50 p-3 space-y-0.5">
       <p class="text-[10px] font-semibold uppercase tracking-widest text-gray-400 px-2 mb-2 mt-1">Paramètres</p>
       <button
-        v-for="{ key, label, icon } in [
-          { key: 'theme',      label: 'Thème',          icon: '🌓' },
-          { key: 'appearance', label: 'Apparence',       icon: '🎨' },
-          { key: 'cards',      label: 'Fiches',          icon: '🃏' },
-          { key: 'attributes', label: 'Attrs par défaut', icon: '📋' },
-          { key: 'writing',    label: 'Écriture',         icon: '✍️' },
-          { key: 'goals',      label: 'Objectifs',        icon: '🎯' },
-        ]"
-        :key="key"
+        v-for="item in NAV_ITEMS"
+        :key="item.key"
         class="w-full text-left text-sm px-3 py-2 rounded-lg transition-colors flex items-center gap-2"
-        :class="activeSection === key
+        :class="activeSection === item.key
           ? 'bg-white dark:bg-gray-800 text-brand-600 dark:text-brand-400 font-medium shadow-sm'
           : 'text-gray-600 dark:text-gray-400 hover:bg-white/60 dark:hover:bg-gray-800/50'"
-        @click="activeSection = key as 'theme' | 'appearance' | 'cards' | 'attributes' | 'writing' | 'goals'"
+        @click="activeSection = item.key"
       >
-        <span>{{ icon }}</span>{{ label }}
+        <span>{{ item.icon }}</span>{{ item.label }}
       </button>
     </aside>
 
+    <!-- Menu mobile (affiché quand aucune section sélectionnée) -->
+    <div
+      v-if="!mobileShowContent"
+      class="md:hidden flex-1 overflow-y-auto"
+    >
+      <div class="p-4">
+        <p class="text-[10px] font-semibold uppercase tracking-widest text-gray-400 px-1 mb-3">Paramètres</p>
+        <div class="space-y-1">
+          <button
+            v-for="item in NAV_ITEMS"
+            :key="item.key"
+            class="w-full text-left flex items-center gap-3 px-4 py-3.5 rounded-xl bg-white dark:bg-gray-800/60 border border-gray-100 dark:border-gray-700/50 text-gray-700 dark:text-gray-300 active:bg-gray-50 dark:active:bg-gray-700/60 transition-colors"
+            @click="selectSection(item.key)"
+          >
+            <span class="text-xl w-7 text-center">{{ item.icon }}</span>
+            <span class="flex-1 text-sm font-medium">{{ item.label }}</span>
+            <svg class="w-4 h-4 text-gray-400 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
+            </svg>
+          </button>
+        </div>
+      </div>
+    </div>
+
     <!-- Contenu -->
-    <div class="flex-1 overflow-y-auto p-6 max-w-xl">
+    <div
+      class="flex-1 overflow-y-auto p-4 md:p-6 md:max-w-xl"
+      :class="{ 'hidden md:block': !mobileShowContent }"
+    >
+      <!-- Retour mobile -->
+      <button
+        class="md:hidden flex items-center gap-1.5 text-sm text-brand-600 dark:text-brand-400 mb-5 -ml-1 active:opacity-70"
+        @click="backToMenu"
+      >
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/>
+        </svg>
+        Paramètres
+      </button>
 
       <!-- ── THÈME ── -->
       <section v-if="activeSection === 'theme'">
