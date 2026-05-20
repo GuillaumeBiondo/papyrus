@@ -267,7 +267,7 @@ export interface MaintenanceStatus {
 export interface Project {
   id: string
   title: string
-  genre: string | null
+  genres: string[]
   color: string | null
   status: 'draft' | 'in_progress' | 'revision' | 'complete'
   target_words: number

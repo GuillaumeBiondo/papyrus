@@ -20,7 +20,7 @@ class Project extends Model
         'owner_id',
         'content_type_id',
         'title',
-        'genre',
+        'genres',
         'color',
         'target_words',
         'target_scenes',
@@ -34,6 +34,7 @@ class Project extends Model
     protected function casts(): array
     {
         return [
+            'genres'          => 'array',
             'target_words'    => 'integer',
             'target_scenes'   => 'integer',
             'word_goal_arc'   => 'integer',

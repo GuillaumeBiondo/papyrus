@@ -5,6 +5,7 @@ import { activityService } from '@/services/activity.service'
 import { useAuthStore } from '@/stores/auth.store'
 import ActivityGrid from '@/components/activity/ActivityGrid.vue'
 import ActivityHeatmap from '@/components/activity/ActivityHeatmap.vue'
+import GenreSelector from '@/components/ui/GenreSelector.vue'
 import type { ActivityDay, ActivityHour, Project } from '@/types'
 
 const props = defineProps<{ project: Project }>()
@@ -36,14 +37,14 @@ function toggleAccordion(key: TabKey) {
 
 // ── Informations ──────────────────────────────────────────────
 const title  = ref(props.project.title)
-const genre  = ref(props.project.genre ?? '')
+const genres = ref<string[]>(props.project.genres ?? [])
 const status = ref<Project['status']>(props.project.status)
 const saving = ref(false)
 const saved  = ref(false)
 
 watch(() => props.project, p => {
   title.value  = p.title
-  genre.value  = p.genre ?? ''
+  genres.value = p.genres ?? []
   status.value = p.status
 })
 
@@ -59,7 +60,7 @@ async function saveInfos() {
   try {
     const updated = await projectsService.update(props.project.id, {
       title:  title.value.trim() || props.project.title,
-      genre:  genre.value.trim() || null,
+      genres: genres.value,
       status: status.value,
     })
     saved.value = true
@@ -240,8 +241,8 @@ async function confirmDelete() {
                       <input v-model="title" type="text" class="input-field" />
                     </div>
                     <div>
-                      <label class="block text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">Genre</label>
-                      <input v-model="genre" type="text" placeholder="Fantasy, Thriller…" class="input-field" />
+                      <label class="block text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">Genres</label>
+                      <GenreSelector v-model="genres" />
                     </div>
                     <div>
                       <label class="block text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">Statut</label>
@@ -394,8 +395,8 @@ async function confirmDelete() {
                   <input v-model="title" type="text" class="input-field" />
                 </div>
                 <div>
-                  <label class="block text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">Genre</label>
-                  <input v-model="genre" type="text" placeholder="Fantasy, Thriller, Romance…" class="input-field" />
+                  <label class="block text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">Genres</label>
+                  <GenreSelector v-model="genres" />
                 </div>
                 <div>
                   <label class="block text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">Statut</label>
