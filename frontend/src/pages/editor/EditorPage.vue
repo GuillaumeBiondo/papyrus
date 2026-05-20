@@ -989,8 +989,8 @@ const rightPanelPt = { root: { class: 'flex flex-col overflow-hidden h-full bord
               />
             </div>
             <SuggestionPanel :editor="tiptap()" />
-            <!-- Bouton dictée vocale — ancré sur la fenêtre, pas sur le contenu -->
-            <div class="absolute bottom-4 right-4 z-10 opacity-30 hover:opacity-100 transition-opacity duration-200">
+            <!-- Bouton dictée vocale — fixed sur mobile (viewport), absolute sur desktop (conteneur) -->
+            <div class="fixed md:absolute bottom-4 right-4 z-10 opacity-30 hover:opacity-100 transition-opacity duration-200">
               <VoiceRecorder source="editor" @chunk="onEditorVoiceChunk" />
             </div>
           </div>
