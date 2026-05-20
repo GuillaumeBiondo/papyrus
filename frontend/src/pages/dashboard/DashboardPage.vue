@@ -157,7 +157,18 @@ function onProjectDeleted(id: string) {
                  focus:outline-none focus:ring-2 focus:ring-brand-500"
         />
       </div>
-      <div class="ml-auto flex items-center bg-gray-100 dark:bg-gray-800 rounded-lg p-0.5">
+      <!-- Select on mobile, button group on sm+ -->
+      <select
+        v-model="sort"
+        class="sm:hidden ml-auto text-xs px-2 py-1.5 rounded-lg border border-gray-200 dark:border-gray-700
+               bg-white dark:bg-gray-900 text-gray-700 dark:text-gray-300
+               focus:outline-none focus:ring-2 focus:ring-brand-500"
+      >
+        <option value="recent">Récent</option>
+        <option value="title">Titre</option>
+        <option value="progress">Progression</option>
+      </select>
+      <div class="hidden sm:flex ml-auto items-center bg-gray-100 dark:bg-gray-800 rounded-lg p-0.5">
         <button
           v-for="(label, key) in ({ recent: 'Récent', title: 'Titre', progress: 'Progression' } as const)"
           :key="key"
