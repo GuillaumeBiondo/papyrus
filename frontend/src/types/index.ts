@@ -534,6 +534,24 @@ export interface AiChange {
   explanation?: string
 }
 
+export interface GenreAdmin {
+  id: string
+  name: string
+  bridges: string[] | null
+  sort_order: number
+}
+
+export interface GenreCategoryAdmin {
+  id: string
+  name: string
+  color: string
+  light_color: string
+  text_color: string
+  adjacent_categories: string[] | null
+  sort_order: number
+  genres: GenreAdmin[]
+}
+
 export interface PaginatedResponse<T> {
   data: T[]
   meta: {

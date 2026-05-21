@@ -23,6 +23,7 @@ class DatabaseSeeder extends Seeder
         ]);
 
         $this->call(AvailableFontsSeeder::class);
+        $this->call(GenreSeeder::class);
 
         \App\Models\Setting::firstOrCreate(
             ['key' => 'snapshot_interval_words'],

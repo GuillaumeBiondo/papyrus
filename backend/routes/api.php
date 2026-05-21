@@ -33,6 +33,8 @@ use App\Http\Controllers\Api\Admin\AiEnrichController as AdminAiEnrichController
 use App\Http\Controllers\Api\Admin\AiVerificationController as AdminAiVerificationController;
 use App\Http\Controllers\Api\Admin\AiStatsController as AdminAiStatsController;
 use App\Http\Controllers\Api\Admin\WorkshopController as AdminWorkshopController;
+use App\Http\Controllers\Api\Admin\GenreCategoryController as AdminGenreCategoryController;
+use App\Http\Controllers\Api\GenreController;
 use App\Http\Controllers\Api\TodoController;
 use App\Http\Controllers\Api\EditionDocumentController;
 use App\Http\Controllers\Api\EditionSettingsController;
@@ -72,6 +74,9 @@ Route::prefix('v1')->middleware(['auth:sanctum', 'throttle:60,1', 'user_blocked'
 
     // Polices disponibles (liste publique des polices actives)
     Route::get('fonts', [FontController::class, 'index']);
+
+    // Genres (liste publique pour le sélecteur de genres)
+    Route::get('genres', [GenreController::class, 'index']);
 
     // Snapshots de scènes
     Route::get('scenes/{scene}/snapshots',                    [SceneSnapshotController::class, 'index']);
@@ -285,5 +290,20 @@ Route::prefix('v1')->middleware(['auth:sanctum', 'throttle:60,1', 'user_blocked'
         Route::get('workshops', [AdminWorkshopController::class, 'index']);
         Route::put('workshops/reorder', [AdminWorkshopController::class, 'reorder']);
         Route::put('workshops/{workshop}', [AdminWorkshopController::class, 'update']);
+
+        // Genre categories
+        Route::get('genre-categories', [AdminGenreCategoryController::class, 'index']);
+        Route::post('genre-categories', [AdminGenreCategoryController::class, 'store']);
+        Route::put('genre-categories/reorder', [AdminGenreCategoryController::class, 'reorderCategories']);
+        Route::put('genre-categories/{genreCategory}', [AdminGenreCategoryController::class, 'update']);
+        Route::delete('genre-categories/{genreCategory}', [AdminGenreCategoryController::class, 'destroy']);
+        // Genres within categories
+        Route::post('genre-categories/{genreCategory}/genres', [AdminGenreCategoryController::class, 'storeGenre']);
+        Route::put('genre-categories/{genreCategory}/genres/reorder', [AdminGenreCategoryController::class, 'reorderGenres']);
+        Route::put('genre-categories/{genreCategory}/genres/{genre}', [AdminGenreCategoryController::class, 'updateGenre']);
+        Route::delete('genre-categories/{genreCategory}/genres/{genre}', [AdminGenreCategoryController::class, 'destroyGenre']);
+        // Proximity matrix
+        Route::get('genre-proximity', [AdminGenreCategoryController::class, 'getProximity']);
+        Route::put('genre-proximity', [AdminGenreCategoryController::class, 'updateProximity']);
     });
 });

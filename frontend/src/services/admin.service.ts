@@ -1,5 +1,5 @@
 import api from './api'
-import type { AdminStats, AdminUser, AiEnrichType, AiStats, AiVerification, AvailableFont, Changelog, ContentType, Setting } from '@/types'
+import type { AdminStats, AdminUser, AiEnrichType, AiStats, AiVerification, AvailableFont, Changelog, ContentType, GenreAdmin, GenreCategoryAdmin, Setting } from '@/types'
 
 export const adminService = {
   // Dashboard
@@ -176,5 +176,58 @@ export const adminService = {
   async updateWorkshop(id: number, payload: Partial<import('@/types').Workshop>): Promise<{ workshop: import('@/types').Workshop }> {
     const { data } = await api.put(`/admin/workshops/${id}`, payload)
     return data
+  },
+
+  // Genre categories
+  async getGenreCategories(): Promise<{ categories: GenreCategoryAdmin[] }> {
+    const { data } = await api.get('/admin/genre-categories')
+    return data
+  },
+
+  async createGenreCategory(payload: Partial<GenreCategoryAdmin>): Promise<{ category: GenreCategoryAdmin }> {
+    const { data } = await api.post('/admin/genre-categories', payload)
+    return data
+  },
+
+  async updateGenreCategory(id: string, payload: Partial<GenreCategoryAdmin>): Promise<{ category: GenreCategoryAdmin }> {
+    const { data } = await api.put(`/admin/genre-categories/${id}`, payload)
+    return data
+  },
+
+  async deleteGenreCategory(id: string): Promise<void> {
+    await api.delete(`/admin/genre-categories/${id}`)
+  },
+
+  async reorderGenreCategories(items: { id: string; sort_order: number }[]): Promise<void> {
+    await api.put('/admin/genre-categories/reorder', { items })
+  },
+
+  // Genres
+  async createGenre(categoryId: string, payload: Partial<GenreAdmin>): Promise<{ genre: GenreAdmin }> {
+    const { data } = await api.post(`/admin/genre-categories/${categoryId}/genres`, payload)
+    return data
+  },
+
+  async updateGenre(categoryId: string, genreId: string, payload: Partial<GenreAdmin>): Promise<{ genre: GenreAdmin }> {
+    const { data } = await api.put(`/admin/genre-categories/${categoryId}/genres/${genreId}`, payload)
+    return data
+  },
+
+  async deleteGenre(categoryId: string, genreId: string): Promise<void> {
+    await api.delete(`/admin/genre-categories/${categoryId}/genres/${genreId}`)
+  },
+
+  async reorderGenres(categoryId: string, items: { id: string; sort_order: number }[]): Promise<void> {
+    await api.put(`/admin/genre-categories/${categoryId}/genres/reorder`, { items })
+  },
+
+  // Proximity matrix
+  async getGenreProximity(): Promise<{ proximity: Record<string, Record<string, number>> }> {
+    const { data } = await api.get('/admin/genre-proximity')
+    return data
+  },
+
+  async updateGenreProximity(proximity: Record<string, Record<string, number>>): Promise<void> {
+    await api.put('/admin/genre-proximity', { proximity })
   },
 }

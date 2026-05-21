@@ -1,3 +1,5 @@
+import api from '@/services/api'
+
 export type CategoryId = 'noire' | 'blanche' | 'sentimentale' | 'imaginaire'
 
 export interface GenreItem {
@@ -115,6 +117,31 @@ const CATEGORY_PROXIMITY: Record<CategoryId, Record<CategoryId, number>> = {
   blanche:      { noire: 0.65, blanche: 1.0, sentimentale: 0.55, imaginaire: 0.50 },
   sentimentale: { noire: 0.35, blanche: 0.55, sentimentale: 1.0, imaginaire: 0.75 },
   imaginaire:   { noire: 0.25, blanche: 0.50, sentimentale: 0.75, imaginaire: 1.0 },
+}
+
+// API-backed genre data (can be used by components dynamically)
+export async function fetchGenresFromApi(): Promise<{
+  categories: GenreCategory[]
+  proximity: Record<string, Record<string, number>>
+}> {
+  const { data } = await api.get('/genres')
+
+  // Map snake_case API fields to camelCase frontend fields
+  const categories: GenreCategory[] = (data.categories ?? []).map((cat: any) => ({
+    id: cat.id,
+    name: cat.name,
+    color: cat.color,
+    lightColor: cat.light_color,
+    textColor: cat.text_color,
+    adjacentCategories: cat.adjacent_categories ?? [],
+    genres: (cat.genres ?? []).map((g: any) => ({
+      id: g.id,
+      name: g.name,
+      bridges: g.bridges ?? undefined,
+    })),
+  }))
+
+  return { categories, proximity: data.proximity ?? {} }
 }
 
 export function getGenreName(id: string): string {

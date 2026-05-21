@@ -1,11 +1,13 @@
 <script setup lang="ts">
-import { ref, computed } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import {
   GENRE_CATEGORIES,
+  fetchGenresFromApi,
   getGenreName,
   getCategoryForGenre,
   computeFusion,
   type CategoryId,
+  type GenreCategory,
 } from '@/data/genres'
 import FlaskIcon from '@/components/ui/FlaskIcon.vue'
 
@@ -18,9 +20,24 @@ const emit = defineEmits<{
 }>()
 
 const open = ref(false)
-const expandedCat = ref<CategoryId | null>(null)
+const expandedCat = ref<string | null>(null)
+
+// Reactive genre data (starts from hardcoded, updated from API on mount)
+const genreCategories = ref<GenreCategory[]>(GENRE_CATEGORIES)
 
 const fusion = computed(() => computeFusion(props.modelValue))
+
+function getGenreNameLocal(id: string): string {
+  for (const cat of genreCategories.value) {
+    const genre = cat.genres.find((g) => g.id === id)
+    if (genre) return genre.name
+  }
+  return getGenreName(id)
+}
+
+function getCategoryForGenreLocal(id: string): GenreCategory | undefined {
+  return genreCategories.value.find((cat) => cat.genres.some((g) => g.id === id))
+}
 
 function toggle(id: string) {
   const next = props.modelValue.includes(id)
@@ -29,12 +46,12 @@ function toggle(id: string) {
   emit('update:modelValue', next)
 }
 
-function selectedInCategory(catId: CategoryId): number {
-  const cat = GENRE_CATEGORIES.find((c) => c.id === catId)
+function selectedInCategory(catId: string): number {
+  const cat = genreCategories.value.find((c) => c.id === catId)
   return cat ? cat.genres.filter((g) => props.modelValue.includes(g.id)).length : 0
 }
 
-function toggleCategory(catId: CategoryId) {
+function toggleCategory(catId: string) {
   expandedCat.value = expandedCat.value === catId ? null : catId
 }
 
@@ -42,6 +59,17 @@ function close() {
   open.value = false
   expandedCat.value = null
 }
+
+onMounted(async () => {
+  try {
+    const { categories } = await fetchGenresFromApi()
+    if (categories.length > 0) {
+      genreCategories.value = categories
+    }
+  } catch {
+    // Fallback to hardcoded data silently
+  }
+})
 </script>
 
 <template>
@@ -63,12 +91,12 @@ function close() {
         :key="id"
         class="inline-flex items-center text-xs px-2 py-0.5 rounded-full font-medium"
         :style="{
-          background: getCategoryForGenre(id)?.lightColor,
-          color: getCategoryForGenre(id)?.textColor,
-          border: `1px solid ${getCategoryForGenre(id)?.color}40`,
+          background: getCategoryForGenreLocal(id)?.lightColor,
+          color: getCategoryForGenreLocal(id)?.textColor,
+          border: `1px solid ${getCategoryForGenreLocal(id)?.color}40`,
         }"
       >
-        {{ getGenreName(id) }}
+        {{ getGenreNameLocal(id) }}
       </span>
     </div>
   </button>
@@ -119,13 +147,13 @@ function close() {
                   class="inline-flex items-center gap-1 text-xs px-2.5 py-1 rounded-full font-medium
                          transition-all duration-150 active:scale-95"
                   :style="{
-                    background: getCategoryForGenre(id)?.lightColor,
-                    color: getCategoryForGenre(id)?.textColor,
-                    border: `1px solid ${getCategoryForGenre(id)?.color}50`,
+                    background: getCategoryForGenreLocal(id)?.lightColor,
+                    color: getCategoryForGenreLocal(id)?.textColor,
+                    border: `1px solid ${getCategoryForGenreLocal(id)?.color}50`,
                   }"
                   @click="toggle(id)"
                 >
-                  {{ getGenreName(id) }}
+                  {{ getGenreNameLocal(id) }}
                   <svg class="w-3 h-3 opacity-60" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
                     <path d="M9 3L3 9M3 3l6 6" />
                   </svg>
@@ -146,7 +174,7 @@ function close() {
           <!-- Category list -->
           <div class="flex-1 overflow-y-auto p-3 space-y-2">
             <div
-              v-for="cat in GENRE_CATEGORIES"
+              v-for="cat in genreCategories"
               :key="cat.id"
               class="rounded-xl overflow-hidden border transition-shadow"
               :class="expandedCat === cat.id
@@ -176,11 +204,11 @@ function close() {
                 </span>
 
                 <span
-                  v-if="selectedInCategory(cat.id) > 0"
+                  v-if="selectedInCategory(cat.id as CategoryId) > 0"
                   class="text-xs font-bold px-1.5 py-0.5 rounded-full mr-1"
                   :style="{ background: cat.color + '28', color: cat.textColor }"
                 >
-                  {{ selectedInCategory(cat.id) }}
+                  {{ selectedInCategory(cat.id as CategoryId) }}
                 </span>
 
                 <span class="text-xs text-gray-400 mr-1">{{ cat.genres.length }}</span>
