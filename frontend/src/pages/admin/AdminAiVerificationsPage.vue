@@ -1,7 +1,8 @@
 <script setup lang="ts">
 import { computed, onMounted, ref } from 'vue'
 import { adminService } from '@/services/admin.service'
-import type { AiStats, AiVerification } from '@/types'
+import { projectsService } from '@/services/projects.service'
+import type { AiStats, AiVerification, ContentType } from '@/types'
 
 const CARD_TYPES = [
   { key: 'personnage', label: 'Personnages' },
@@ -13,6 +14,9 @@ const CARD_TYPES = [
 
 // ── Tab ───────────────────────────────────────────────────────
 const activeTab = ref<'config' | 'stats'>('config')
+
+// ── Types de contenu ──────────────────────────────────────────
+const contentTypes = ref<Pick<ContentType, 'id' | 'name' | 'short_name' | 'slug'>[]>([])
 
 // ── Révisions (config) ────────────────────────────────────────
 const verifications = ref<AiVerification[]>([])
@@ -29,6 +33,7 @@ const form = ref<Partial<AiVerification>>({
   extra_input_placeholder: '', pre_prompt: '',
   allowed_card_types: null, allow_multiple_cards: false,
   include_card_lore: false, include_card_links: false,
+  allowed_content_types: null,
 })
 
 function resetForm() {
@@ -39,6 +44,7 @@ function resetForm() {
     extra_input_placeholder: '', pre_prompt: '',
     allowed_card_types: null, allow_multiple_cards: false,
     include_card_lore: false, include_card_links: false,
+    allowed_content_types: null,
   }
 }
 
@@ -172,11 +178,26 @@ function toggleCardType(key: string) {
   else form.value.allowed_card_types = current.filter(s => s !== key)
 }
 
+// ── Types de contenu ──────────────────────────────────────────
+function toggleContentType(id: string) {
+  const current = form.value.allowed_content_types ?? []
+  const idx = current.indexOf(id)
+  if (idx === -1) form.value.allowed_content_types = [...current, id]
+  else {
+    const next = current.filter(s => s !== id)
+    form.value.allowed_content_types = next.length > 0 ? next : null
+  }
+}
+
 // ── Chargement initial ────────────────────────────────────────
 onMounted(async () => {
   try {
-    const { verifications: list } = await adminService.getAiVerifications()
+    const [{ verifications: list }, ctRes] = await Promise.all([
+      adminService.getAiVerifications(),
+      projectsService.getActiveContentTypes(),
+    ])
     verifications.value = list
+    contentTypes.value = ctRes.content_types
   } finally {
     loadingConfig.value = false
   }
@@ -262,6 +283,12 @@ onMounted(async () => {
               </span>
               <span v-if="v.allowed_card_types?.length" class="text-xs px-1.5 py-0.5 rounded bg-purple-50 dark:bg-purple-950 text-purple-600 dark:text-purple-400">
                 Fiches : {{ v.allowed_card_types.join(', ') }}{{ v.allow_multiple_cards ? ' (multi)' : '' }}
+              </span>
+              <span
+                v-if="v.allowed_content_types?.length"
+                class="text-xs px-1.5 py-0.5 rounded bg-teal-50 dark:bg-teal-950 text-teal-600 dark:text-teal-400"
+              >
+                Types : {{ v.allowed_content_types.map(id => contentTypes.find(c => c.id === id)?.short_name || contentTypes.find(c => c.id === id)?.name || id).join(', ') }}
               </span>
             </div>
             <p v-if="v.description" class="text-xs text-gray-500 dark:text-gray-400 italic line-clamp-1">{{ v.description }}</p>
@@ -661,6 +688,32 @@ onMounted(async () => {
               <label class="flex items-center gap-2 text-sm text-gray-700 dark:text-gray-300 cursor-pointer">
                 <input type="checkbox" v-model="form.include_card_links" class="accent-brand-500" />
                 Inclure les descriptions de liaisons dans le contexte IA
+              </label>
+            </div>
+          </div>
+
+          <!-- Types de contenu concernés -->
+          <div v-if="contentTypes.length" class="space-y-2">
+            <label class="block text-xs font-medium text-gray-700 dark:text-gray-300">
+              Types de projet concernés
+              <span class="text-gray-400 font-normal"> — laisser vide = tous les types</span>
+            </label>
+            <div class="flex flex-wrap gap-2">
+              <label
+                v-for="ct in contentTypes"
+                :key="ct.id"
+                class="flex items-center gap-1.5 text-sm cursor-pointer px-2.5 py-1 rounded-lg border transition-colors"
+                :class="(form.allowed_content_types ?? []).includes(ct.id)
+                  ? 'border-teal-400 bg-teal-50 dark:bg-teal-950 text-teal-700 dark:text-teal-300'
+                  : 'border-gray-200 dark:border-gray-700 text-gray-700 dark:text-gray-300 hover:border-gray-300 dark:hover:border-gray-600'"
+              >
+                <input
+                  type="checkbox"
+                  class="accent-teal-500"
+                  :checked="(form.allowed_content_types ?? []).includes(ct.id)"
+                  @change="toggleContentType(ct.id)"
+                />
+                {{ ct.short_name || ct.name }}
               </label>
             </div>
           </div>

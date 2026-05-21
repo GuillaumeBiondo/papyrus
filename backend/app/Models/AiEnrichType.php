@@ -14,10 +14,12 @@ class AiEnrichType extends Model
         'is_premium',
         'system_prompt',
         'sort_order',
+        'allowed_content_types',
     ];
 
     protected $casts = [
-        'is_active'  => 'boolean',
-        'is_premium' => 'boolean',
+        'is_active'             => 'boolean',
+        'is_premium'            => 'boolean',
+        'allowed_content_types' => 'array',
     ];
 }

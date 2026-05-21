@@ -234,6 +234,8 @@ export interface AdminUser {
 export interface Workshop {
   id: number
   key: string
+  content_type_id: string | null
+  content_type?: { id: string; name: string; slug: string } | null
   label: string
   description: string | null
   is_active: boolean
@@ -252,6 +254,7 @@ export interface AiEnrichType {
   is_premium: boolean
   system_prompt: string
   sort_order: number
+  allowed_content_types: string[] | null
 }
 
 export interface MaintenanceStatus {
@@ -441,6 +444,7 @@ export interface AiVerification {
   allow_multiple_cards: boolean
   include_card_lore: boolean
   include_card_links: boolean
+  allowed_content_types: string[] | null
   created_at?: string
   updated_at?: string
 }
@@ -522,8 +526,10 @@ export interface AiEnrichType {
   label: string
   description: string | null
   is_active: boolean
+  is_premium: boolean
   system_prompt: string
   sort_order: number
+  allowed_content_types: string[] | null
   created_at?: string
   updated_at?: string
 }

@@ -1,10 +1,14 @@
 <script setup lang="ts">
 import { computed, onMounted, ref } from 'vue'
 import { adminService } from '@/services/admin.service'
-import type { AiEnrichType, AiStats } from '@/types'
+import { projectsService } from '@/services/projects.service'
+import type { AiEnrichType, AiStats, ContentType } from '@/types'
 
 // ── Tab ───────────────────────────────────────────────────────
 const activeTab = ref<'config' | 'stats'>('config')
+
+// ── Types de contenu ──────────────────────────────────────────
+const contentTypes = ref<Pick<ContentType, 'id' | 'name' | 'short_name' | 'slug'>[]>([])
 
 // ── Types (config) ────────────────────────────────────────────
 const types        = ref<AiEnrichType[]>([])
@@ -16,12 +20,12 @@ const saving    = ref(false)
 const error     = ref('')
 
 const form = ref<Partial<AiEnrichType>>({
-  type_key: '', label: '', description: '', is_active: true, system_prompt: '',
+  type_key: '', label: '', description: '', is_active: true, system_prompt: '', allowed_content_types: null,
 })
 
 function resetForm() {
   editingId.value = null
-  form.value = { type_key: '', label: '', description: '', is_active: true, system_prompt: '' }
+  form.value = { type_key: '', label: '', description: '', is_active: true, system_prompt: '', allowed_content_types: null }
 }
 
 function startCreate() { resetForm(); showForm.value = true }
@@ -138,11 +142,26 @@ function formatNumber(n: number) {
   return new Intl.NumberFormat('fr-FR').format(n)
 }
 
+// ── Types de contenu ──────────────────────────────────────────
+function toggleContentType(id: string) {
+  const current = form.value.allowed_content_types ?? []
+  const idx = current.indexOf(id)
+  if (idx === -1) form.value.allowed_content_types = [...current, id]
+  else {
+    const next = current.filter(s => s !== id)
+    form.value.allowed_content_types = next.length > 0 ? next : null
+  }
+}
+
 // ── Chargement initial ────────────────────────────────────────
 onMounted(async () => {
   try {
-    const { types: list } = await adminService.getAiEnrichTypes()
+    const [{ types: list }, ctRes] = await Promise.all([
+      adminService.getAiEnrichTypes(),
+      projectsService.getActiveContentTypes(),
+    ])
     types.value = list
+    contentTypes.value = ctRes.content_types
   } finally {
     loadingConfig.value = false
   }
@@ -222,6 +241,12 @@ onMounted(async () => {
             <div class="flex items-center gap-2 flex-wrap">
               <span class="font-medium text-gray-900 dark:text-gray-100">{{ t.label }}</span>
               <code class="text-xs px-1.5 py-0.5 rounded bg-gray-100 dark:bg-gray-800 text-gray-500 dark:text-gray-400 font-mono">{{ t.type_key }}</code>
+              <span
+                v-if="t.allowed_content_types?.length"
+                class="text-xs px-1.5 py-0.5 rounded bg-teal-50 dark:bg-teal-950 text-teal-600 dark:text-teal-400"
+              >
+                Types : {{ t.allowed_content_types.map(id => contentTypes.find(c => c.id === id)?.short_name || contentTypes.find(c => c.id === id)?.name || id).join(', ') }}
+              </span>
             </div>
             <p v-if="t.description" class="text-xs text-gray-500 dark:text-gray-400 italic">{{ t.description }}</p>
             <p class="text-xs text-gray-400 dark:text-gray-500 line-clamp-2 font-mono">{{ t.system_prompt }}</p>
@@ -414,6 +439,32 @@ onMounted(async () => {
               La réponse attendue est un objet JSON avec la clé <code class="bg-gray-100 dark:bg-gray-800 px-1 rounded">"items": [{"text": "...", "detail": "..."}]</code>.
               Le mot ou l'expression sélectionné sera fourni entre guillemets dans le message utilisateur.
             </p>
+          </div>
+
+          <!-- Types de contenu concernés -->
+          <div v-if="contentTypes.length" class="space-y-2">
+            <label class="block text-xs font-medium text-gray-700 dark:text-gray-300">
+              Types de projet concernés
+              <span class="text-gray-400 font-normal"> — laisser vide = tous les types</span>
+            </label>
+            <div class="flex flex-wrap gap-2">
+              <label
+                v-for="ct in contentTypes"
+                :key="ct.id"
+                class="flex items-center gap-1.5 text-sm cursor-pointer px-2.5 py-1 rounded-lg border transition-colors"
+                :class="(form.allowed_content_types ?? []).includes(ct.id)
+                  ? 'border-teal-400 bg-teal-50 dark:bg-teal-950 text-teal-700 dark:text-teal-300'
+                  : 'border-gray-200 dark:border-gray-700 text-gray-700 dark:text-gray-300 hover:border-gray-300 dark:hover:border-gray-600'"
+              >
+                <input
+                  type="checkbox"
+                  class="accent-teal-500"
+                  :checked="(form.allowed_content_types ?? []).includes(ct.id)"
+                  @change="toggleContentType(ct.id)"
+                />
+                {{ ct.short_name || ct.name }}
+              </label>
+            </div>
           </div>
 
           <label class="flex items-center gap-2 text-sm text-gray-700 dark:text-gray-300 cursor-pointer">

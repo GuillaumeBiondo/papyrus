@@ -1,5 +1,5 @@
 import api from './api'
-import type { AdminStats, AdminUser, AiEnrichType, AiStats, AiVerification, AvailableFont, Changelog, ContentType, GenreAdmin, GenreCategoryAdmin, Setting } from '@/types'
+import type { AdminStats, AdminUser, AiEnrichType, AiStats, AiVerification, AvailableFont, Changelog, ContentType, GenreAdmin, GenreCategoryAdmin, Setting, Workshop } from '@/types'
 
 export const adminService = {
   // Dashboard
@@ -168,12 +168,12 @@ export const adminService = {
     return data
   },
 
-  async getWorkshops(): Promise<{ workshops: import('@/types').Workshop[] }> {
+  async getWorkshops(): Promise<{ workshops: Workshop[] }> {
     const { data } = await api.get('/admin/workshops')
     return data
   },
 
-  async updateWorkshop(id: number, payload: Partial<import('@/types').Workshop>): Promise<{ workshop: import('@/types').Workshop }> {
+  async updateWorkshop(id: number, payload: Partial<Workshop & { content_type_id: string | null }>): Promise<{ workshop: Workshop }> {
     const { data } = await api.put(`/admin/workshops/${id}`, payload)
     return data
   },
