@@ -34,8 +34,15 @@ class ProjectController extends Controller
             ->withCount('cards')
             ->addSelect([
                 'projects.*',
-                'word_count' => $sceneBase()->selectRaw('COALESCE(SUM(scenes.word_count), 0)'),
-                'scene_count' => $sceneBase()->selectRaw('COUNT(*)'),
+                'word_count'     => $sceneBase()->selectRaw('COALESCE(SUM(scenes.word_count), 0)'),
+                'scene_count'    => $sceneBase()->selectRaw('COUNT(*)'),
+                'arcs_count'     => \App\Models\Arc::query()
+                    ->whereColumn('project_id', 'projects.id')
+                    ->selectRaw('COUNT(*)'),
+                'chapters_count' => \App\Models\Chapter::query()
+                    ->join('arcs', 'chapters.arc_id', '=', 'arcs.id')
+                    ->whereColumn('arcs.project_id', 'projects.id')
+                    ->selectRaw('COUNT(*)'),
                 'last_scene_title' => $sceneBase()
                     ->select('scenes.title')
                     ->orderByDesc('scenes.updated_at')

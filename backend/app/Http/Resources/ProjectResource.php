@@ -23,6 +23,8 @@ class ProjectResource extends JsonResource
             // Stats calculées dans le controller (subqueries)
             'word_count'       => (int) ($this->word_count ?? 0),
             'scene_count'      => (int) ($this->scene_count ?? 0),
+            'arcs_count'       => (int) ($this->arcs_count ?? 0),
+            'chapters_count'   => (int) ($this->chapters_count ?? 0),
             'cards_count'      => (int) ($this->cards_count ?? 0),
             'last_scene_title' => $this->last_scene_title,
             'content_type'     => $this->whenLoaded('contentType', fn () => [

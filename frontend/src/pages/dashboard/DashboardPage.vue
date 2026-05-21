@@ -99,11 +99,45 @@ function hexRgba(hex: string, alpha: number) {
   return `rgba(${r},${g},${b},${alpha})`
 }
 
-function darkenHex(hex: string, factor = 0.65) {
-  const r = Math.round(parseInt(hex.slice(1, 3), 16) * factor)
-  const g = Math.round(parseInt(hex.slice(3, 5), 16) * factor)
-  const b = Math.round(parseInt(hex.slice(5, 7), 16) * factor)
-  return `rgb(${r},${g},${b})`
+function headerGradient(p: Project): string {
+  const dark = theme.applied === 'dark'
+  const seen = new Map<string, string>()
+  for (const gid of (p.genres ?? [])) {
+    const cat = getCategoryForGenre(gid)
+    if (cat && !seen.has(cat.id)) seen.set(cat.id, cat.color)
+  }
+  const cols = [...seen.values()]
+  if (cols.length === 0) {
+    const c = cardColor(p)
+    return `linear-gradient(135deg, ${hexRgba(c, dark ? 0.55 : 0.18)}, ${hexRgba(c, dark ? 0.20 : 0.06)})`
+  }
+  if (cols.length === 1) return `linear-gradient(135deg, ${hexRgba(cols[0]!, dark ? 0.72 : 0.34)}, ${hexRgba(cols[0]!, dark ? 0.28 : 0.10)})`
+  return `linear-gradient(135deg, ${hexRgba(cols[0]!, dark ? 0.70 : 0.36)} 0%, ${hexRgba(cols[1]!, dark ? 0.48 : 0.22)} 100%)`
+}
+
+const waveCache = ref<Record<string, string>>({})
+
+function generateWave(): string {
+  const r = () => Math.random()
+  // 3 peaks with random amplitude (5–14px) and random y-offsets
+  const amp = () => (5 + r() * 9) * (r() > 0.5 ? 1 : -1)
+  const yBase = 14
+  const y0 = yBase + (r() - 0.5) * 10
+  const y1 = yBase + (r() - 0.5) * 10
+  const y2 = yBase + (r() - 0.5) * 10
+  const y3 = yBase + (r() - 0.5) * 10
+  const f = (n: number) => Math.max(1, Math.min(26, n)).toFixed(1)
+  return (
+    `M0,${f(y0)} ` +
+    `C70,${f(y0 + amp())} 120,${f(y1 + amp())} 200,${f(y1)} ` +
+    `C270,${f(y1 + amp())} 330,${f(y2 + amp())} 400,${f(y3)} ` +
+    `L400,28 L0,28 Z`
+  )
+}
+
+function wavePath(p: Project): string {
+  if (!waveCache.value[p.id]) waveCache.value[p.id] = generateWave()
+  return waveCache.value[p.id]!
 }
 
 function relativeDate(dateStr: string) {
@@ -122,13 +156,18 @@ function initials(name: string) {
 
 function genreChipStyle(genreId: string) {
   const cat = getCategoryForGenre(genreId)
-  if (!cat) return { background: '#f3f4f6', color: '#6b7280' }
-  return { background: cat.lightColor, color: cat.textColor, border: `1px solid ${cat.color}40` }
+  if (!cat) return { background: 'rgba(255,255,255,0.82)', color: '#6b7280', border: '1.5px solid rgba(107,114,128,0.35)' }
+  return {
+    background: 'rgba(255,255,255,0.82)',
+    color: cat.textColor,
+    border: `1.5px solid ${cat.color}70`,
+  }
 }
 
 function wordRingDash(p: Project) {
   const circ = 113.1 // 2π × r18
-  return `${Math.min(wordPct(p), 100) / 100 * circ} ${circ}`
+  const pct = Math.max(wordPct(p), 4) // arc minimum visible
+  return `${Math.min(pct, 100) / 100 * circ} ${circ}`
 }
 
 // ── Paramètres projet ─────────────────────────────────────
@@ -165,30 +204,31 @@ function onProjectDeleted(id: string) {
           type="text"
           placeholder="Rechercher…"
           class="w-52 pl-8 pr-3 py-1.5 text-sm rounded-lg shadow-sm
-                 border border-gray-200 dark:border-gray-700
-                 bg-white dark:bg-gray-900 text-gray-700 dark:text-gray-300
+                 border border-gray-200 dark:border-gray-600
+                 bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-200
+                 placeholder:text-gray-400 dark:placeholder:text-gray-500
                  focus:outline-none focus:ring-2 focus:ring-brand-500"
         />
       </div>
       <!-- Select on mobile, button group on sm+ -->
       <select
         v-model="sort"
-        class="sm:hidden ml-auto text-xs px-2 py-1.5 rounded-lg border border-gray-200 dark:border-gray-700
-               bg-white dark:bg-gray-900 text-gray-700 dark:text-gray-300
+        class="sm:hidden ml-auto text-xs px-2 py-1.5 rounded-lg border border-gray-200 dark:border-gray-600
+               bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-200
                focus:outline-none focus:ring-2 focus:ring-brand-500"
       >
         <option value="recent">Récent</option>
         <option value="title">Titre</option>
         <option value="progress">Progression</option>
       </select>
-      <div class="hidden sm:flex ml-auto items-center bg-gray-100 dark:bg-gray-800 rounded-lg p-0.5">
+      <div class="hidden sm:flex ml-auto items-center bg-gray-100 dark:bg-gray-700 rounded-lg p-0.5">
         <button
           v-for="(label, key) in ({ recent: 'Récent', title: 'Titre', progress: 'Progression' } as const)"
           :key="key"
           class="text-xs px-3 py-1 rounded-md transition-all"
           :class="sort === key
-            ? 'bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 shadow-sm font-medium'
-            : 'text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200'"
+            ? 'bg-white dark:bg-gray-500 text-gray-900 dark:text-white shadow-sm font-medium'
+            : 'text-gray-500 dark:text-gray-300 hover:text-gray-700 dark:hover:text-white'"
           @click="sort = key"
         >{{ label }}</button>
       </div>
@@ -203,40 +243,34 @@ function onProjectDeleted(id: string) {
       <div
         v-for="p in filtered"
         :key="p.id"
-        class="rounded-xl border border-gray-200 dark:border-gray-700
-               bg-white dark:bg-gray-900 shadow-sm hover:shadow-md transition-all flex flex-col overflow-hidden"
-        :style="{ borderTop: `4px solid ${cardColor(p)}` }"
+        class="rounded-xl border border-gray-200 dark:border-gray-600
+               bg-white dark:bg-gray-800 shadow-sm hover:shadow-md transition-shadow flex flex-col overflow-hidden"
       >
-        <!-- Header avec wash de couleur ─────────── -->
-        <div class="px-4 pt-3.5 pb-3 flex items-start gap-3"
-             :style="{ background: hexRgba(cardColor(p), 0.06) }">
+        <!-- Header — gradient depuis les univers du roman ── -->
+        <div class="relative px-4 pt-3.5 pb-7 flex items-start gap-3"
+             :style="{ background: headerGradient(p) }">
 
           <!-- Gauche : statut, titre, genres -->
           <div class="flex-1 min-w-0">
-            <div class="flex items-center gap-2 mb-1.5">
+            <!-- Pastille statut — toujours visible sur mobile, expand au hover desktop -->
+            <div class="group/status flex items-center gap-1.5 mb-1.5 cursor-default select-none">
               <span
-                class="inline-flex items-center text-[10px] font-semibold uppercase tracking-wider px-2 py-0.5 rounded-full"
-                :style="{ background: hexRgba(STATUS_COLOR[p.status].bg, 0.12), color: STATUS_COLOR[p.status].bg }"
+                class="w-2 h-2 rounded-full shrink-0"
+                :style="{ background: STATUS_COLOR[p.status].bg }"
+              />
+              <span
+                class="overflow-hidden max-w-full sm:max-w-0 sm:group-hover/status:max-w-[6rem]
+                       transition-[max-width] duration-200 ease-out
+                       text-[10px] font-semibold uppercase tracking-wider whitespace-nowrap"
+                :style="{ color: STATUS_COLOR[p.status].bg }"
               >{{ STATUS_LABEL[p.status] }}</span>
-              <button
-                class="ml-auto p-1 rounded-md text-gray-400 hover:text-gray-600 dark:hover:text-gray-200
-                       hover:bg-black/5 dark:hover:bg-white/10 transition-colors"
-                title="Paramètres du roman"
-                @click.stop="settingsProject = p"
-              >
-                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"
-                    d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/>
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
-                </svg>
-              </button>
             </div>
 
             <h2 class="font-semibold text-[15px] leading-tight text-gray-900 dark:text-gray-100">
               {{ p.title }}
             </h2>
 
-            <!-- Chips genres colorés par univers littéraire -->
+            <!-- Chips genres -->
             <div v-if="p.genres?.length" class="flex flex-wrap gap-1 mt-2">
               <span
                 v-for="gid in p.genres" :key="gid"
@@ -244,70 +278,79 @@ function onProjectDeleted(id: string) {
                 :style="genreChipStyle(gid)"
               >{{ getGenreName(gid) }}</span>
             </div>
-            <p v-else class="text-[11px] text-gray-300 dark:text-gray-600 mt-1.5">Aucun genre</p>
           </div>
 
-          <!-- Droite : anneau de progression mots -->
-          <div v-if="p.target_words" class="shrink-0 self-center mt-5">
+          <!-- Anneau de progression -->
+          <div
+            v-if="p.target_words"
+            class="shrink-0 self-center mt-4 cursor-default"
+            :title="`${p.word_count.toLocaleString('fr-FR')} / ${p.target_words.toLocaleString('fr-FR')} mots`"
+          >
             <svg width="46" height="46" viewBox="0 0 46 46" fill="none">
-              <!-- Piste -->
               <circle cx="23" cy="23" r="18"
-                      :stroke="hexRgba(cardColor(p), 0.18)"
+                      :stroke="hexRgba(cardColor(p), 0.28)"
                       stroke-width="5"/>
-              <!-- Arc progression -->
               <circle cx="23" cy="23" r="18"
                       :stroke="cardColor(p)"
                       stroke-width="5"
                       stroke-linecap="round"
                       :stroke-dasharray="wordRingDash(p)"
                       transform="rotate(-90 23 23)"/>
-              <!-- Pourcentage -->
               <text x="23" y="27.5"
                     text-anchor="middle"
-                    font-size="9.5"
+                    font-size="9"
                     font-weight="700"
-                    :fill="cardColor(p)">{{ wordPct(p) }}%</text>
+                    :fill="cardColor(p)"
+              >{{ wordPct(p) }}%</text>
             </svg>
           </div>
+
+          <!-- Vague décorative en bas du header -->
+          <svg
+            class="absolute bottom-0 left-0 w-full text-white dark:text-gray-800"
+            style="height:28px"
+            viewBox="0 0 400 28"
+            preserveAspectRatio="none"
+            fill="currentColor"
+          >
+            <path :d="wavePath(p)" />
+          </svg>
         </div>
 
         <!-- Corps ───────────────────────────────── -->
-        <div class="px-4 py-3 flex-1 space-y-2.5 border-t border-gray-100 dark:border-gray-800">
+        <div class="px-4 py-3 flex-1 space-y-2">
 
-          <!-- Compteur mots (compact) -->
-          <p class="text-xs text-gray-500 dark:text-gray-400">
-            <span class="font-semibold text-gray-800 dark:text-gray-200">
-              {{ p.word_count.toLocaleString('fr-FR') }}
-            </span>
-            <template v-if="p.target_words">
-              / {{ p.target_words.toLocaleString('fr-FR') }} mots
-              <template v-if="p.target_scenes"> · {{ p.scene_count }}/{{ p.target_scenes }} scènes</template>
+          <!-- Stats : chapitres + scènes + fiches (+ mots si pas d'anneau) -->
+          <p class="text-xs text-gray-500 dark:text-gray-300">
+            <template v-if="p.chapters_count">
+              <span class="font-semibold text-gray-700 dark:text-gray-100">{{ p.chapters_count }}</span> chap. ·
             </template>
-            <template v-else>
-              mot{{ p.word_count !== 1 ? 's' : '' }}
-              <template v-if="p.scene_count"> · {{ p.scene_count }} scène{{ p.scene_count !== 1 ? 's' : '' }}</template>
+            <template v-if="p.target_scenes">
+              <span class="font-semibold text-gray-700 dark:text-gray-100">{{ p.scene_count }}/{{ p.target_scenes }}</span> scènes ·
+            </template>
+            <template v-else-if="p.scene_count">
+              <span class="font-semibold text-gray-700 dark:text-gray-100">{{ p.scene_count }}</span> scène{{ p.scene_count !== 1 ? 's' : '' }} ·
+            </template>
+            <span class="font-semibold text-gray-700 dark:text-gray-100">{{ p.cards_count }}</span> fiche{{ p.cards_count !== 1 ? 's' : '' }}
+            <template v-if="!p.target_words && p.word_count">
+              · <span class="font-semibold text-gray-700 dark:text-gray-100">{{ p.word_count.toLocaleString('fr-FR') }}</span> mots
             </template>
           </p>
 
-          <!-- Dernière scène (mise en avant) -->
-          <p v-if="p.last_scene_title"
-             class="flex items-start gap-1.5 text-xs text-gray-500 dark:text-gray-400">
-            <svg class="w-3 h-3 shrink-0 mt-0.5 opacity-50" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <!-- Dernière scène + date sur la même ligne -->
+          <div class="flex items-center gap-1.5 text-xs text-gray-400 dark:text-gray-300 min-w-0">
+            <svg v-if="p.last_scene_title" class="w-3 h-3 shrink-0 opacity-40" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                     d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"/>
             </svg>
-            <span class="italic truncate">{{ p.last_scene_title }}</span>
-          </p>
-
-          <!-- Meta : fiches & date -->
-          <div class="flex items-center justify-between text-xs text-gray-400 pt-0.5">
-            <span>{{ p.cards_count }} fiche{{ p.cards_count !== 1 ? 's' : '' }}</span>
-            <span>{{ relativeDate(p.updated_at) }}</span>
+            <span v-if="p.last_scene_title" class="italic truncate flex-1 min-w-0">{{ p.last_scene_title }}</span>
+            <span v-else class="flex-1 text-gray-300 dark:text-gray-500 text-[11px]">Aucune scène</span>
+            <span class="shrink-0 text-[11px] text-gray-400 dark:text-gray-400">{{ relativeDate(p.updated_at) }}</span>
           </div>
         </div>
 
         <!-- Footer ──────────────────────────────── -->
-        <div class="px-4 py-3 border-t border-gray-100 dark:border-gray-800 flex items-center justify-between gap-2">
+        <div class="px-4 py-2.5 border-t border-gray-100 dark:border-gray-700 flex items-center gap-2">
           <div class="flex -space-x-1.5">
             <div
               v-for="m in (p.members ?? []).slice(0, 4)"
@@ -318,11 +361,15 @@ function onProjectDeleted(id: string) {
               :title="m.name"
             >{{ initials(m.name) }}</div>
           </div>
-          <div class="flex gap-1.5">
+          <div class="flex gap-1 ml-auto">
             <button
-              class="text-xs px-3 py-1.5 rounded-lg transition-colors
-                     text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800"
-            >Accès</button>
+              class="px-2.5 py-1.5 rounded-lg text-gray-500 dark:text-gray-300
+                     hover:text-gray-800 dark:hover:text-white
+                     hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors
+                     text-base leading-none font-black tracking-widest"
+              title="Paramètres du roman"
+              @click.stop="settingsProject = p"
+            >···</button>
             <button
               class="text-xs px-3 py-1.5 rounded-lg font-medium text-white transition-opacity hover:opacity-90"
               :style="{ background: cardColor(p) }"
@@ -335,10 +382,10 @@ function onProjectDeleted(id: string) {
       <!-- Card "+ Nouveau roman" ──────────────────── -->
       <button
         v-if="!atProjectLimit"
-        class="rounded-xl border-2 border-dashed border-gray-200 dark:border-gray-700
-               hover:border-brand-300 dark:hover:border-brand-600 transition-colors
+        class="rounded-xl border-2 border-dashed border-gray-300 dark:border-gray-600
+               hover:border-brand-300 dark:hover:border-brand-500 transition-colors
                flex flex-col items-center justify-center gap-3 min-h-48 py-8
-               text-gray-400 hover:text-brand-600 dark:hover:text-brand-400"
+               text-gray-400 dark:text-gray-500 hover:text-brand-600 dark:hover:text-brand-400"
         title="Créer un nouveau projet"
         @click="showNewForm = true"
       >
@@ -353,11 +400,11 @@ function onProjectDeleted(id: string) {
       <!-- Card premium requis ─────────────────────── -->
       <div
         v-else
-        class="rounded-xl border border-gray-200 dark:border-gray-700
-               bg-gray-50 dark:bg-gray-800/50
+        class="rounded-xl border border-gray-200 dark:border-gray-600
+               bg-gray-50 dark:bg-gray-800
                flex flex-col items-center justify-center gap-3 min-h-48 py-8 px-6 text-center"
       >
-        <div class="w-10 h-10 rounded-full bg-amber-100 dark:bg-amber-900/30
+        <div class="w-10 h-10 rounded-full bg-amber-100 dark:bg-amber-900/40
                     flex items-center justify-center">
           <svg class="w-5 h-5 text-amber-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
@@ -365,8 +412,8 @@ function onProjectDeleted(id: string) {
           </svg>
         </div>
         <div>
-          <p class="text-sm font-medium text-gray-700 dark:text-gray-300">Limite atteinte</p>
-          <p class="text-xs text-gray-400 mt-0.5 leading-relaxed">
+          <p class="text-sm font-medium text-gray-700 dark:text-gray-200">Limite atteinte</p>
+          <p class="text-xs text-gray-400 dark:text-gray-400 mt-0.5 leading-relaxed">
             Passez premium pour créer<br>des projets supplémentaires
           </p>
         </div>

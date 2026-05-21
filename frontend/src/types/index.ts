@@ -278,6 +278,8 @@ export interface Project {
   content_type: ProjectContentType | null
   word_count: number
   scene_count: number
+  arcs_count: number
+  chapters_count: number
   cards_count: number
   last_scene_title: string | null
   owner: User

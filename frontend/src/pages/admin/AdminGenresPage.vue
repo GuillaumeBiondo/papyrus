@@ -341,28 +341,36 @@ onMounted(async () => {
                 class="w-full text-sm px-3 py-2 rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-brand-500"
               />
             </div>
-            <div class="flex gap-3">
-              <div class="flex-1">
+            <div class="grid grid-cols-3 gap-3 sm:col-span-2">
+              <div>
                 <label class="block text-xs text-gray-500 dark:text-gray-400 mb-1">Couleur principale</label>
                 <div class="flex items-center gap-2">
                   <input v-model="categoryForm.color" type="color" class="w-10 h-9 rounded border border-gray-200 dark:border-gray-700 cursor-pointer p-0.5 bg-white dark:bg-gray-900" />
-                  <input v-model="categoryForm.color" type="text" class="flex-1 text-sm px-2 py-2 rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-brand-500" />
+                  <input v-model="categoryForm.color" type="text" class="flex-1 min-w-0 text-sm px-2 py-2 rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-brand-500" />
                 </div>
               </div>
-              <div class="flex-1">
+              <div>
                 <label class="block text-xs text-gray-500 dark:text-gray-400 mb-1">Couleur claire</label>
                 <div class="flex items-center gap-2">
                   <input v-model="categoryForm.light_color" type="color" class="w-10 h-9 rounded border border-gray-200 dark:border-gray-700 cursor-pointer p-0.5 bg-white dark:bg-gray-900" />
-                  <input v-model="categoryForm.light_color" type="text" class="flex-1 text-sm px-2 py-2 rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-brand-500" />
+                  <input v-model="categoryForm.light_color" type="text" class="flex-1 min-w-0 text-sm px-2 py-2 rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-brand-500" />
                 </div>
               </div>
-              <div class="flex-1">
+              <div>
                 <label class="block text-xs text-gray-500 dark:text-gray-400 mb-1">Couleur texte</label>
                 <div class="flex items-center gap-2">
                   <input v-model="categoryForm.text_color" type="color" class="w-10 h-9 rounded border border-gray-200 dark:border-gray-700 cursor-pointer p-0.5 bg-white dark:bg-gray-900" />
-                  <input v-model="categoryForm.text_color" type="text" class="flex-1 text-sm px-2 py-2 rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-brand-500" />
+                  <input v-model="categoryForm.text_color" type="text" class="flex-1 min-w-0 text-sm px-2 py-2 rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-brand-500" />
                 </div>
               </div>
+            </div>
+            <!-- Aperçu chip -->
+            <div class="flex items-center gap-2 text-xs text-gray-400">
+              <span>Aperçu chip :</span>
+              <span class="px-2 py-0.5 rounded-full text-[11px] font-medium"
+                    :style="{ background: categoryForm.light_color, color: categoryForm.text_color, border: `1px solid ${categoryForm.color}40` }">
+                {{ categoryForm.name || 'Exemple' }}
+              </span>
             </div>
             <div>
               <label class="block text-xs text-gray-500 dark:text-gray-400 mb-1">Univers adjacents</label>
