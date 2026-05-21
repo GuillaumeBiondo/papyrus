@@ -7,6 +7,7 @@ import {
   computeFusion,
   type CategoryId,
 } from '@/data/genres'
+import FlaskIcon from '@/components/ui/FlaskIcon.vue'
 
 const props = defineProps<{
   modelValue: string[]
@@ -132,19 +133,12 @@ function close() {
               </div>
 
               <!-- Fusion meter -->
-              <div v-if="modelValue.length > 1" class="mt-2 space-y-1">
-                <div class="flex items-center gap-2">
-                  <div class="flex-1 h-1.5 bg-gray-100 dark:bg-gray-800 rounded-full overflow-hidden">
-                    <div
-                      class="h-full rounded-full transition-all duration-500"
-                      :style="{ width: `${fusion.score * 100}%`, background: fusion.color }"
-                    />
-                  </div>
-                  <span class="text-xs font-semibold shrink-0" :style="{ color: fusion.color }">
-                    {{ fusion.label }}
-                  </span>
+              <div v-if="modelValue.length > 1" class="mt-2 flex items-center gap-3">
+                <FlaskIcon :score="fusion.score" :color="fusion.color" class="shrink-0" />
+                <div class="min-w-0">
+                  <p class="text-xs font-semibold leading-tight" :style="{ color: fusion.color }">{{ fusion.label }}</p>
+                  <p class="text-[10px] text-gray-400 leading-tight mt-0.5">{{ fusion.description }}</p>
                 </div>
-                <p class="text-[10px] text-gray-400 leading-tight">{{ fusion.description }}</p>
               </div>
             </div>
           </Transition>

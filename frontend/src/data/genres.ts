@@ -142,18 +142,13 @@ export function computeFusion(selectedIds: string[]): FusionInfo {
     return { score: 1, label: 'Genre unique', description: 'Un genre défini, une direction claire.', color: '#22c55e' }
   }
 
-  const categories = new Set<CategoryId>()
-  let bridgeBonus = 0
-
-  for (const id of selectedIds) {
+  const genreData = selectedIds.map((id) => {
     const cat = getCategoryForGenre(id)
-    if (cat) {
-      categories.add(cat.id)
-      const genre = cat.genres.find((g) => g.id === id)
-      if (genre?.bridges) bridgeBonus += 0.1
-    }
-  }
+    const genre = cat?.genres.find((g) => g.id === id)
+    return { id, catId: cat?.id as CategoryId | undefined, bridges: genre?.bridges ?? [] }
+  }).filter((g) => g.catId)
 
+  const categories = new Set<CategoryId>(genreData.map((g) => g.catId!))
   const catArray = [...categories] as CategoryId[]
 
   if (catArray.length === 1) {
@@ -165,16 +160,31 @@ export function computeFusion(selectedIds: string[]): FusionInfo {
     }
   }
 
+  // Paires de catégories reliées par un genre-pont sélectionné
+  const bridgedPairs = new Set<string>()
+  for (const gd of genreData) {
+    for (const bridge of gd.bridges) {
+      if (categories.has(bridge as CategoryId) && bridge !== gd.catId) {
+        bridgedPairs.add([gd.catId, bridge].sort().join('|'))
+      }
+    }
+  }
+
   let totalProximity = 0
   let pairs = 0
   for (let i = 0; i < catArray.length; i++) {
     for (let j = i + 1; j < catArray.length; j++) {
-      totalProximity += CATEGORY_PROXIMITY[catArray[i]][catArray[j]]
+      const ci = catArray[i] as CategoryId
+      const cj = catArray[j] as CategoryId
+      const key = [ci, cj].sort().join('|')
+      const base = CATEGORY_PROXIMITY[ci][cj]
+      // Un genre-pont actif élève la proximité de la paire à 0.8 minimum
+      totalProximity += bridgedPairs.has(key) ? Math.max(base, 0.8) : base
       pairs++
     }
   }
 
-  const score = Math.min(1, (pairs > 0 ? totalProximity / pairs : 1) + bridgeBonus)
+  const score = Math.min(1, totalProximity / pairs)
 
   if (score >= 0.7) {
     return { score, label: 'Fusion créative', description: 'Ces genres se complètent bien. Un mélange accessible.', color: '#84cc16' }
