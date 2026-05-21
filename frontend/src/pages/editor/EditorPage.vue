@@ -1037,7 +1037,14 @@ const rightPanelPt = { root: { class: 'flex flex-col overflow-hidden h-full bord
             <div class="w-10 h-1 rounded-full bg-gray-300 dark:bg-gray-600" />
           </div>
           <div class="flex-1 min-h-0">
+            <!-- Atelier Édition -->
+            <EditionRightPanel
+              v-if="currentAtelier === 'editing' && editor.currentProject"
+              :project-id="editor.currentProject.id"
+            />
+            <!-- Atelier Écriture -->
             <EditorRightPanel
+              v-else
               v-model:tab="rightTab"
               :pending-selection="pendingSelection"
               :highlighted-annotation-id="highlightedAnnotationId"
