@@ -21,10 +21,12 @@ class AiEnrichController extends Controller
             'type_key'      => ['required', 'string', 'max:50', 'unique:ai_enrich_types,type_key', 'regex:/^[a-z0-9_]+$/'],
             'label'         => ['required', 'string', 'max:100'],
             'description'   => ['nullable', 'string', 'max:500'],
-            'is_active'     => ['boolean'],
-            'is_premium'    => ['boolean'],
-            'system_prompt' => ['required', 'string'],
-            'sort_order'    => ['integer'],
+            'is_active'                => ['boolean'],
+            'is_premium'               => ['boolean'],
+            'system_prompt'            => ['required', 'string'],
+            'sort_order'               => ['integer'],
+            'allowed_content_types'    => ['nullable', 'array'],
+            'allowed_content_types.*'  => ['string', 'max:50'],
         ]);
 
         if (! isset($data['sort_order'])) {
@@ -40,10 +42,12 @@ class AiEnrichController extends Controller
         $data = $request->validate([
             'label'         => ['sometimes', 'string', 'max:100'],
             'description'   => ['nullable', 'string', 'max:500'],
-            'is_active'     => ['sometimes', 'boolean'],
-            'is_premium'    => ['sometimes', 'boolean'],
-            'system_prompt' => ['sometimes', 'string'],
-            'sort_order'    => ['sometimes', 'integer'],
+            'is_active'                => ['sometimes', 'boolean'],
+            'is_premium'               => ['sometimes', 'boolean'],
+            'system_prompt'            => ['sometimes', 'string'],
+            'sort_order'               => ['sometimes', 'integer'],
+            'allowed_content_types'    => ['nullable', 'array'],
+            'allowed_content_types.*'  => ['string', 'max:50'],
         ]);
 
         $aiEnrichType->update($data);

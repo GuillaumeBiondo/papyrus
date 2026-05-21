@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\Api\Admin\ChangelogController as AdminChangelogController;
 use App\Http\Controllers\Api\MaintenanceController;
+use App\Http\Controllers\Api\ContentTypeController;
 use App\Http\Controllers\Api\Admin\ContentTypeController as AdminContentTypeController;
 use App\Http\Controllers\Api\Admin\DashboardController as AdminDashboardController;
 use App\Http\Controllers\Api\Admin\SettingController as AdminSettingController;
@@ -77,6 +78,9 @@ Route::prefix('v1')->middleware(['auth:sanctum', 'throttle:60,1', 'user_blocked'
 
     // Genres (liste publique pour le sélecteur de genres)
     Route::get('genres', [GenreController::class, 'index']);
+
+    // Types de contenu (liste publique pour la création de projets)
+    Route::get('content-types', [ContentTypeController::class, 'index']);
 
     // Snapshots de scènes
     Route::get('scenes/{scene}/snapshots',                    [SceneSnapshotController::class, 'index']);

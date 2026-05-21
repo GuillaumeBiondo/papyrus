@@ -31,9 +31,11 @@ class AiVerificationController extends Controller
             'allowed_card_types'      => ['nullable', 'array'],
             'allowed_card_types.*'    => ['string', 'max:50'],
             'allow_multiple_cards'    => ['sometimes', 'boolean'],
-            'include_card_lore'       => ['sometimes', 'boolean'],
-            'include_card_links'      => ['sometimes', 'boolean'],
-            'is_premium'              => ['sometimes', 'boolean'],
+            'include_card_lore'        => ['sometimes', 'boolean'],
+            'include_card_links'       => ['sometimes', 'boolean'],
+            'is_premium'               => ['sometimes', 'boolean'],
+            'allowed_content_types'    => ['nullable', 'array'],
+            'allowed_content_types.*'  => ['string', 'max:50'],
         ]);
 
         $data['sort_order'] = AiVerification::max('sort_order') + 1;
@@ -58,9 +60,11 @@ class AiVerificationController extends Controller
             'allowed_card_types'      => ['nullable', 'array'],
             'allowed_card_types.*'    => ['string', 'max:50'],
             'allow_multiple_cards'    => ['sometimes', 'boolean'],
-            'include_card_lore'       => ['sometimes', 'boolean'],
-            'include_card_links'      => ['sometimes', 'boolean'],
-            'is_premium'              => ['sometimes', 'boolean'],
+            'include_card_lore'        => ['sometimes', 'boolean'],
+            'include_card_links'       => ['sometimes', 'boolean'],
+            'is_premium'               => ['sometimes', 'boolean'],
+            'allowed_content_types'    => ['nullable', 'array'],
+            'allowed_content_types.*'  => ['string', 'max:50'],
         ]);
 
         $aiVerification->update($data);

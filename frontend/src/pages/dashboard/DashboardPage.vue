@@ -9,6 +9,7 @@ import { ACCENT_PALETTES } from '@/utils/accentColors'
 import ProjectSettingsDialog from '@/components/dashboard/ProjectSettingsDialog.vue'
 import GenreSelector from '@/components/ui/GenreSelector.vue'
 import { getGenreName, getCategoryForGenre } from '@/data/genres'
+import { projectsService } from '@/services/projects.service'
 import type { Project } from '@/types'
 
 const router = useRouter()
@@ -24,13 +25,57 @@ const atProjectLimit = computed(() =>
   !isPremium.value && projects.projects.length >= projectLimit.value
 )
 
-// ── Création ──────────────────────────────────────────────
+// ── Types de contenu ──────────────────────────────────────
+type ContentTypeItem = { id: string; name: string; short_name: string | null; slug: string; is_premium: boolean; description: string | null }
+const contentTypes = ref<ContentTypeItem[]>([])
+
+// ── Création (étape 1 : choix du type) ───────────────────
+const showTypeSelect = ref(false)
+const selectedContentType = ref<ContentTypeItem | null>(null)
+
+// ── Création (étape 2 : formulaire) ──────────────────────
 const showNewForm = ref(false)
 const newTitle = ref('')
 const newGenres = ref<string[]>([])
 const creating = ref(false)
 
-onMounted(() => { projects.fetchAll(); appConfig.fetch() })
+onMounted(async () => {
+  projects.fetchAll()
+  appConfig.fetch()
+  try {
+    const res = await projectsService.getActiveContentTypes()
+    contentTypes.value = res.content_types
+  } catch {
+    // silently ignore — fallback to no type
+  }
+})
+
+function openTypeSelect() {
+  if (contentTypes.value.length <= 1) {
+    selectedContentType.value = contentTypes.value[0] ?? null
+    showNewForm.value = true
+  } else {
+    showTypeSelect.value = true
+  }
+}
+
+function selectType(ct: ContentTypeItem) {
+  if (ct.is_premium && !isPremium.value) return
+  selectedContentType.value = ct
+  showTypeSelect.value = false
+  showNewForm.value = true
+}
+
+function cancelTypeSelect() {
+  showTypeSelect.value = false
+}
+
+function cancelNewForm() {
+  showNewForm.value = false
+  newTitle.value = ''
+  newGenres.value = []
+  selectedContentType.value = null
+}
 
 async function createProject() {
   if (!newTitle.value.trim()) return
@@ -39,10 +84,9 @@ async function createProject() {
     const project = await projects.create({
       title: newTitle.value.trim(),
       genres: newGenres.value.length > 0 ? newGenres.value : undefined,
-    })
-    showNewForm.value = false
-    newTitle.value = ''
-    newGenres.value = []
+      content_type_id: selectedContentType.value?.id,
+    } as any)
+    cancelNewForm()
     router.push({ name: 'editor', params: { projectId: project.id } })
   } finally {
     creating.value = false
@@ -332,7 +376,7 @@ function onProjectDeleted(id: string) {
         </div>
       </div>
 
-      <!-- Card "+ Nouveau roman" ──────────────────── -->
+      <!-- Card "+ Nouveau projet" ──────────────────── -->
       <button
         v-if="!atProjectLimit"
         class="rounded-xl border-2 border-dashed border-gray-200 dark:border-gray-700
@@ -340,14 +384,14 @@ function onProjectDeleted(id: string) {
                flex flex-col items-center justify-center gap-3 min-h-48 py-8
                text-gray-400 hover:text-brand-600 dark:hover:text-brand-400"
         title="Créer un nouveau projet"
-        @click="showNewForm = true"
+        @click="openTypeSelect"
       >
         <div class="w-10 h-10 rounded-full border-2 border-current flex items-center justify-center">
           <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
           </svg>
         </div>
-        <span class="text-sm font-medium">Nouveau roman</span>
+        <span class="text-sm font-medium">Nouveau projet</span>
       </button>
 
       <!-- Card premium requis ─────────────────────── -->
@@ -386,15 +430,74 @@ function onProjectDeleted(id: string) {
       @deleted="onProjectDeleted"
     />
 
+    <!-- Modal sélection du type ─────────────────── -->
+    <Transition name="fade">
+      <div
+        v-if="showTypeSelect"
+        class="fixed inset-0 z-50 flex items-center justify-center bg-black/30 backdrop-blur-sm"
+        @click.self="cancelTypeSelect"
+      >
+        <div class="w-full max-w-2xl bg-white dark:bg-gray-900 rounded-2xl shadow-xl p-6 mx-4">
+          <h2 class="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-1">Quel type de projet ?</h2>
+          <p class="text-sm text-gray-500 dark:text-gray-400 mb-5">Choisissez le format qui correspond à votre projet d'écriture.</p>
+
+          <div class="grid grid-cols-2 sm:grid-cols-3 gap-3">
+            <button
+              v-for="ct in contentTypes"
+              :key="ct.id"
+              class="relative flex flex-col items-start gap-2 rounded-xl border-2 p-4 text-left transition-all"
+              :class="ct.is_premium && !isPremium
+                ? 'border-gray-200 dark:border-gray-700 opacity-75 cursor-not-allowed'
+                : 'border-gray-200 dark:border-gray-700 hover:border-brand-400 dark:hover:border-brand-500 hover:shadow-sm cursor-pointer'"
+              @click="selectType(ct)"
+            >
+              <!-- Cadenas premium -->
+              <span
+                v-if="ct.is_premium && !isPremium"
+                class="absolute top-3 right-3 flex items-center gap-1 text-[10px] font-semibold text-amber-500"
+                title="Premium requis"
+              >
+                <svg class="w-3.5 h-3.5" fill="currentColor" viewBox="0 0 24 24">
+                  <path d="M12 1C8.676 1 6 3.676 6 7v1H4a1 1 0 00-1 1v13a1 1 0 001 1h16a1 1 0 001-1V9a1 1 0 00-1-1h-2V7c0-3.324-2.676-6-6-6zm0 2c2.276 0 4 1.724 4 4v1H8V7c0-2.276 1.724-4 4-4zm0 10a2 2 0 110 4 2 2 0 010-4z"/>
+                </svg>
+                Premium
+              </span>
+
+              <div class="text-base font-semibold text-gray-900 dark:text-gray-100">
+                {{ ct.short_name || ct.name }}
+              </div>
+              <p v-if="ct.description" class="text-xs text-gray-500 dark:text-gray-400 leading-snug line-clamp-2">{{ ct.description }}</p>
+            </button>
+          </div>
+
+          <div class="mt-5 text-right">
+            <button
+              class="px-4 text-sm text-gray-500 hover:text-gray-700 dark:hover:text-gray-300"
+              @click="cancelTypeSelect"
+            >Annuler</button>
+          </div>
+        </div>
+      </div>
+    </Transition>
+
     <!-- Modal création ──────────────────────────── -->
     <Transition name="fade">
       <div
         v-if="showNewForm"
         class="fixed inset-0 z-50 flex items-center justify-center bg-black/30 backdrop-blur-sm"
-        @click.self="showNewForm = false"
+        @click.self="cancelNewForm"
       >
         <div class="w-full max-w-md bg-white dark:bg-gray-900 rounded-2xl shadow-xl p-6 mx-4">
-          <h2 class="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4">Nouveau roman</h2>
+          <div class="flex items-center gap-2 mb-4">
+            <h2 class="text-lg font-semibold text-gray-900 dark:text-gray-100">
+              Nouveau {{ selectedContentType?.short_name || selectedContentType?.name || 'projet' }}
+            </h2>
+            <span
+              v-if="selectedContentType && contentTypes.length > 1"
+              class="text-xs px-2 py-0.5 rounded-full bg-brand-50 dark:bg-brand-950 text-brand-600 dark:text-brand-400 cursor-pointer hover:bg-brand-100"
+              @click="cancelNewForm(); showTypeSelect = true"
+            >Changer</span>
+          </div>
           <div class="space-y-3">
             <div>
               <label class="block text-xs font-medium text-gray-500 mb-1">Titre *</label>
@@ -407,7 +510,7 @@ function onProjectDeleted(id: string) {
                        bg-white dark:bg-gray-800 text-sm text-gray-900 dark:text-gray-100
                        px-3 py-2 focus:outline-none focus:ring-2 focus:ring-brand-500"
                 @keyup.enter="createProject"
-                @keyup.escape="showNewForm = false"
+                @keyup.escape="cancelNewForm"
               />
             </div>
             <div>
@@ -424,7 +527,7 @@ function onProjectDeleted(id: string) {
             >{{ creating ? 'Création…' : 'Créer et ouvrir' }}</button>
             <button
               class="px-4 text-sm text-gray-500 hover:text-gray-700 dark:hover:text-gray-300"
-              @click="showNewForm = false"
+              @click="cancelNewForm"
             >Annuler</button>
           </div>
         </div>
