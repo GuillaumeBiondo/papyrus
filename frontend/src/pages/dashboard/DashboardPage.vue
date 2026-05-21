@@ -8,7 +8,7 @@ import { useAppConfigStore } from '@/stores/appConfig.store'
 import { ACCENT_PALETTES } from '@/utils/accentColors'
 import ProjectSettingsDialog from '@/components/dashboard/ProjectSettingsDialog.vue'
 import GenreSelector from '@/components/ui/GenreSelector.vue'
-import { getGenreName } from '@/data/genres'
+import { getGenreName, getCategoryForGenre } from '@/data/genres'
 import type { Project } from '@/types'
 
 const router = useRouter()
@@ -120,6 +120,17 @@ function initials(name: string) {
   return name.split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase()
 }
 
+function genreChipStyle(genreId: string) {
+  const cat = getCategoryForGenre(genreId)
+  if (!cat) return { background: '#f3f4f6', color: '#6b7280' }
+  return { background: cat.lightColor, color: cat.textColor, border: `1px solid ${cat.color}40` }
+}
+
+function wordRingDash(p: Project) {
+  const circ = 113.1 // 2π × r18
+  return `${Math.min(wordPct(p), 100) / 100 * circ} ${circ}`
+}
+
 // ── Paramètres projet ─────────────────────────────────────
 const settingsProject = ref<Project | null>(null)
 
@@ -193,79 +204,106 @@ function onProjectDeleted(id: string) {
         v-for="p in filtered"
         :key="p.id"
         class="rounded-xl border border-gray-200 dark:border-gray-700
-               bg-white dark:bg-gray-900 shadow-sm hover:shadow-md transition-all flex flex-col"
-        :style="{ borderTop: `3px solid ${cardColor(p)}` }"
+               bg-white dark:bg-gray-900 shadow-sm hover:shadow-md transition-all flex flex-col overflow-hidden"
+        :style="{ borderTop: `4px solid ${cardColor(p)}` }"
       >
-        <!-- Header ──────────────────────────────── -->
-        <div class="px-4 pt-4 pb-3 flex items-start gap-2">
+        <!-- Header avec wash de couleur ─────────── -->
+        <div class="px-4 pt-3.5 pb-3 flex items-start gap-3"
+             :style="{ background: hexRgba(cardColor(p), 0.06) }">
+
+          <!-- Gauche : statut, titre, genres -->
           <div class="flex-1 min-w-0">
-            <span
-              class="inline-flex items-center text-[10px] font-semibold uppercase tracking-wider px-2 py-0.5 rounded-full mb-2"
-              :style="{ background: hexRgba(STATUS_COLOR[p.status].bg, 0.12), color: STATUS_COLOR[p.status].bg }"
-            >{{ STATUS_LABEL[p.status] }}</span>
-            <h2 class="font-semibold text-[15px] leading-tight truncate text-gray-900 dark:text-gray-100">
+            <div class="flex items-center gap-2 mb-1.5">
+              <span
+                class="inline-flex items-center text-[10px] font-semibold uppercase tracking-wider px-2 py-0.5 rounded-full"
+                :style="{ background: hexRgba(STATUS_COLOR[p.status].bg, 0.12), color: STATUS_COLOR[p.status].bg }"
+              >{{ STATUS_LABEL[p.status] }}</span>
+              <button
+                class="ml-auto p-1 rounded-md text-gray-400 hover:text-gray-600 dark:hover:text-gray-200
+                       hover:bg-black/5 dark:hover:bg-white/10 transition-colors"
+                title="Paramètres du roman"
+                @click.stop="settingsProject = p"
+              >
+                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"
+                    d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/>
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
+                </svg>
+              </button>
+            </div>
+
+            <h2 class="font-semibold text-[15px] leading-tight text-gray-900 dark:text-gray-100">
               {{ p.title }}
             </h2>
-            <p class="text-xs text-gray-400 mt-0.5">
-              {{ p.genres && p.genres.length > 0 ? p.genres.map(g => getGenreName(g)).join(' · ') : '—' }}
-            </p>
+
+            <!-- Chips genres colorés par univers littéraire -->
+            <div v-if="p.genres?.length" class="flex flex-wrap gap-1 mt-2">
+              <span
+                v-for="gid in p.genres" :key="gid"
+                class="text-[10px] font-medium px-2 py-0.5 rounded-full"
+                :style="genreChipStyle(gid)"
+              >{{ getGenreName(gid) }}</span>
+            </div>
+            <p v-else class="text-[11px] text-gray-300 dark:text-gray-600 mt-1.5">Aucun genre</p>
           </div>
-          <button
-            class="shrink-0 mt-0.5 p-1.5 rounded-lg text-gray-400 hover:text-gray-600 dark:hover:text-gray-200
-                   hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
-            title="Paramètres du roman"
-            @click.stop="settingsProject = p"
-          >
-            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"
-                d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/>
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
+
+          <!-- Droite : anneau de progression mots -->
+          <div v-if="p.target_words" class="shrink-0 self-center mt-5">
+            <svg width="46" height="46" viewBox="0 0 46 46" fill="none">
+              <!-- Piste -->
+              <circle cx="23" cy="23" r="18"
+                      :stroke="hexRgba(cardColor(p), 0.18)"
+                      stroke-width="5"/>
+              <!-- Arc progression -->
+              <circle cx="23" cy="23" r="18"
+                      :stroke="cardColor(p)"
+                      stroke-width="5"
+                      stroke-linecap="round"
+                      :stroke-dasharray="wordRingDash(p)"
+                      transform="rotate(-90 23 23)"/>
+              <!-- Pourcentage -->
+              <text x="23" y="27.5"
+                    text-anchor="middle"
+                    font-size="9.5"
+                    font-weight="700"
+                    :fill="cardColor(p)">{{ wordPct(p) }}%</text>
             </svg>
-          </button>
+          </div>
         </div>
 
-        <!-- Stats ───────────────────────────────── -->
-        <div class="px-4 py-3 flex-1 space-y-3 border-t border-gray-100 dark:border-gray-800">
-          <!-- Mots -->
-          <div v-if="p.target_words">
-            <div class="flex justify-between text-xs mb-1">
-              <span class="text-gray-500 dark:text-gray-400">Mots</span>
-              <span class="font-medium" :style="{ color: cardColor(p) }">{{ wordPct(p) }}%</span>
-            </div>
-            <div class="h-1 bg-gray-100 dark:bg-gray-800 rounded-full overflow-hidden">
-              <div class="h-full rounded-full transition-all"
-                   :style="{ width: wordPct(p) + '%', background: cardColor(p) }"/>
-            </div>
-            <p class="text-xs text-gray-400 mt-1">
-              {{ p.word_count.toLocaleString('fr-FR') }} / {{ p.target_words.toLocaleString('fr-FR') }} mots
-            </p>
-          </div>
-          <div v-else class="text-xs text-gray-500 dark:text-gray-400">
-            {{ p.word_count.toLocaleString('fr-FR') }} mot{{ p.word_count !== 1 ? 's' : '' }}
-          </div>
+        <!-- Corps ───────────────────────────────── -->
+        <div class="px-4 py-3 flex-1 space-y-2.5 border-t border-gray-100 dark:border-gray-800">
 
-          <!-- Scènes -->
-          <div v-if="p.target_scenes">
-            <div class="flex justify-between text-xs mb-1">
-              <span class="text-gray-500 dark:text-gray-400">Scènes</span>
-              <span class="text-gray-500 dark:text-gray-400">{{ p.scene_count }}/{{ p.target_scenes }}</span>
-            </div>
-            <div class="h-1 bg-gray-100 dark:bg-gray-800 rounded-full overflow-hidden">
-              <div class="h-full rounded-full transition-all"
-                   :style="{ width: scenePct(p) + '%', background: cardColor(p), opacity: 0.5 }"/>
-            </div>
-          </div>
+          <!-- Compteur mots (compact) -->
+          <p class="text-xs text-gray-500 dark:text-gray-400">
+            <span class="font-semibold text-gray-800 dark:text-gray-200">
+              {{ p.word_count.toLocaleString('fr-FR') }}
+            </span>
+            <template v-if="p.target_words">
+              / {{ p.target_words.toLocaleString('fr-FR') }} mots
+              <template v-if="p.target_scenes"> · {{ p.scene_count }}/{{ p.target_scenes }} scènes</template>
+            </template>
+            <template v-else>
+              mot{{ p.word_count !== 1 ? 's' : '' }}
+              <template v-if="p.scene_count"> · {{ p.scene_count }} scène{{ p.scene_count !== 1 ? 's' : '' }}</template>
+            </template>
+          </p>
 
-          <!-- Meta -->
+          <!-- Dernière scène (mise en avant) -->
+          <p v-if="p.last_scene_title"
+             class="flex items-start gap-1.5 text-xs text-gray-500 dark:text-gray-400">
+            <svg class="w-3 h-3 shrink-0 mt-0.5 opacity-50" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                    d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"/>
+            </svg>
+            <span class="italic truncate">{{ p.last_scene_title }}</span>
+          </p>
+
+          <!-- Meta : fiches & date -->
           <div class="flex items-center justify-between text-xs text-gray-400 pt-0.5">
             <span>{{ p.cards_count }} fiche{{ p.cards_count !== 1 ? 's' : '' }}</span>
             <span>{{ relativeDate(p.updated_at) }}</span>
           </div>
-
-          <!-- Dernière scène -->
-          <p v-if="p.last_scene_title" class="text-xs text-gray-400 truncate">
-            <span class="italic">{{ p.last_scene_title }}</span>
-          </p>
         </div>
 
         <!-- Footer ──────────────────────────────── -->
